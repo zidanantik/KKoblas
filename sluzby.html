@@ -94,13 +94,17 @@
               <span class="pkg-card__item-title">Individuální plán v systému <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a></span>
               <span class="pkg-card__item-desc">Vytvoříš si bezplatný účet a já se s tebou propojím přes svou licenci. Neplatíš žádné poplatky za platformu.</span>
             </li>
-            <li>
+           <li>
               <span class="pkg-card__item-title">Suplementace s rozumem</span>
               <span class="pkg-card__item-desc">Pouze to, co tvoje tělo skutečně potřebuje (metodika <a href="https://www.kurzyatac.cz/" target="_blank" rel="noopener" class="pkg-anchor">ATAC</a>).</span>
             </li>
             <li>
               <span class="pkg-card__item-title">2× Diagnostika <a href="#inbody" class="pkg-anchor">InBody</a></span>
               <span class="pkg-card__item-desc">Úvodní a výstupní měření pro ověření výsledků.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Podpora na WhatsAppu</span>
+              <span class="pkg-card__item-desc">Průběžná asistence a prostor pro tvoje dotazy po celý měsíc spolupráce.</span>
             </li>
           </ul>
 
@@ -371,14 +375,14 @@
           set('price-mentoring', fmtKc(meJed));
           set('price-ultimate',  fmtKc(ulJed));
 
-          // InBody texty – bez InBody = cena + sleva
-          set('inbody-startup',   'bez InBody: ' + fmtKc(suJed + SU_INBODY) + ' (−' + fmtKc(SU_INBODY) + ')');
-          set('inbody-mentoring', 'bez InBody: ' + fmtKc(meJed + ME_INBODY) + ' (−' + fmtKc(ME_INBODY) + ')');
-          set('inbody-ultimate',  'bez InBody: ' + fmtKc(ulJed + UL_INBODY) + ' (−' + fmtKc(UL_INBODY) + ')');
+         // InBody texty – bez InBody = cena + sleva
+          set('inbody-startup',   'Hodnota: ' + fmtKc(suJed + SU_INBODY) + ' (odečteno ' + fmtKc(SU_INBODY) + ' na InBody)');
+          set('inbody-mentoring', 'Hodnota: ' + fmtKc(meJed + ME_INBODY) + ' (odečteno ' + fmtKc(ME_INBODY) + ' na InBody)');
+          set('inbody-ultimate',  'Hodnota: ' + fmtKc(ulJed + UL_INBODY) + ' (odečteno ' + fmtKc(UL_INBODY) + ' na InBody)');
 
           // Splátky texty – vlastní text z adminu nebo auto-výpočet
-          set('note-mentoring', me.splatkyNote || ('Nebo splátky: ' + fmtKc(meSpl) + ' (v 1. měs. po slevě jen ' + fmtKc(meSpl - ME_INBODY) + ') + 3× 2 800 Kč.'));
-          set('note-ultimate',  ul.splatkyNote || ('Nebo splátky: ' + fmtKc(ulSpl) + ' (po slevě na InBody jen ' + fmtKc(ulSpl - UL_INBODY) + ') + 5× 2 400 Kč.'));
+          set('note-mentoring', me.splatkyNote || ('Nebo splátky: ' + fmtKc(meSpl) + ' (v 1. měs. po slevě jen ' + fmtKc(meSpl - ME_INBODY) + ') + 3× 2 800 Kč.'));
+          set('note-ultimate',  ul.splatkyNote || ('Nebo splátky: ' + fmtKc(ulSpl) + ' (po slevě na InBody jen ' + fmtKc(ulSpl - UL_INBODY) + ') + 5× 2 400 Kč.'));
 
           // Tlačítka
           set('btn-startup-order',  'Objednat za ' + fmtKc(suJed));
