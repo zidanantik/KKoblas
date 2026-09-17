@@ -1,10 +1,10 @@
 const REQUIRED = ['Jmeno', 'Email', 'Telefon', 'Ulice', 'Mesto', 'PSC', 'Zeme', 'Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
 
-async function sendEmail(key, { from, to, subject, html }) {
+async function sendEmail(key, { from, to, subject, html, reply_to }) {
   return fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to, subject, html })
+    body: JSON.stringify({ from, to, subject, html, reply_to })
   });
 }
 
@@ -24,6 +24,7 @@ export async function onRequestPost(context) {
     const RESEND_KEY   = context.env.RESEND_API_KEY;
     const FROM_DOMAIN  = context.env.FROM_DOMAIN || 'onboarding@resend.dev';
     const OWNER_EMAIL  = 'koblas.nutricni@gmail.com';
+    const CLIENT_CONTACT_EMAIL = 'koblas.nutricni.info@gmail.com';
 
     // Email pro Kryštofa — přehled objednávky
     const htmlOwner = `
@@ -67,7 +68,7 @@ export async function onRequestPost(context) {
             <p style="margin:0;font-size:18px;font-weight:bold">${body.Sluzba || '—'}</p>
             <p style="margin:4px 0 0;color:#666">${body.Platba || ''} — <strong>${body.Cena || ''}</strong></p>
           </div>
-          <p>Pokud máš jakýkoli dotaz, napiš mi na <a href="mailto:${OWNER_EMAIL}" style="color:#1a1a1a">${OWNER_EMAIL}</a>.</p>
+          <p>Pokud máš jakýkoli dotaz, napiš mi na <a href="mailto:${CLIENT_CONTACT_EMAIL}" style="color:#1a1a1a">${CLIENT_CONTACT_EMAIL}</a>.</p>
           <p style="margin-bottom:0">Těším se na spolupráci,<br><strong>Kryštof Koblas</strong></p>
         </div>
         <div style="background:#f5f5f5;padding:16px;text-align:center">
@@ -85,10 +86,11 @@ export async function onRequestPost(context) {
         html: htmlOwner
       }),
       sendEmail(RESEND_KEY, {
-        from: FROM_DOMAIN,
-        to: [body.Email],
-        subject: 'Přijali jsme tvoji objednávku – Kryštof Koblas',
-        html: htmlClient
+       from: FROM_DOMAIN,
+       to: [body.Email],
+       reply_to: CLIENT_CONTACT_EMAIL,
+       subject: 'Přijali jsme tvoji objednávku – Kryštof Koblas',
+      html: htmlClient
       })
     ]);
 
