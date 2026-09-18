@@ -1,8 +1,8 @@
-async function sendEmail(key, { from, to, subject, html }) {
+async function sendEmail(key, { from, to, subject, html, reply_to }) {
   return fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to, subject, html })
+    body: JSON.stringify({ from, to, subject, html, reply_to })
   });
 }
 
@@ -64,6 +64,7 @@ export async function onRequestPost(context) {
       sendEmail(RESEND_KEY, {
         from: FROM_DOMAIN,
         to: [body.Email],
+        reply_to: 'koblas.nutricni.info@gmail.com',
         subject: 'Zapsali jsme tě na čekací listinu – Kryštof Koblas',
         html: htmlClient
       })
