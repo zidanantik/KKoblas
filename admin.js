@@ -306,6 +306,8 @@ document.getElementById('eventSave').addEventListener('click', async function ()
 });
 
 // ── Slevové a dárkové kódy ───────────────────────
+var loadedCodesCache = [];
+
 function handlePromoTypeChange() {
   var type = document.getElementById('newPromoType').value;
   var wrapper = document.getElementById('promoValueWrapper');
@@ -328,13 +330,233 @@ function getAdminAuthPass() {
   return ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
 }
 
+function copyCodeToClipboard(code, btn) {
+  navigator.clipboard.writeText(code).then(function() {
+    var origText = btn.innerHTML;
+    btn.innerHTML = '✓';
+    btn.style.color = '#2ecc71';
+    btn.style.borderColor = '#2ecc71';
+    setTimeout(function() {
+      btn.innerHTML = origText;
+      btn.style.color = '#ff9900';
+      btn.style.borderColor = '#444';
+    }, 1500);
+  }).catch(function() {
+    alert('Kód: ' + code);
+  });
+}
+
+// ── Tisk a výběr šablon (Rollup menu) ─────────────
+function printVoucherModal(id) {
+  var c = loadedCodesCache.find(function(item) { return item.id === id; });
+  if (!c) return;
+
+  var typeTitle = c.type === 'gift' ? 'DÁRKOVÝ POUKAZ' : 'SLEVOVÝ VOUCHER';
+  var valueDisplay = c.type === 'gift' ? '100% Uhrazeno' : (c.type === 'percent' ? 'Sleva ' + c.value + ' %' : 'Sleva ' + c.value + ' Kč');
+  var pkgsDisplay = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ') || 'VŠECHNY SLUŽBY';
+  var redeemUrl = 'https://koblas-nutricni.cz/objednavka.html?kod=' + encodeURIComponent(c.code);
+
+  var printWin = window.open('', '_blank', 'width=900,height=750');
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html lang="cs">
+    <head>
+      <meta charset="UTF-8">
+      <title>Voucher - ${c.code}</title>
+      <style>
+        @page { size: A4 landscape; margin: 12mm; }
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          padding: 20px;
+          background: #0d0d0d;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 95vh;
+        }
+
+        /* Lišta s ovládáním a výběrem šablony */
+        .toolbar {
+          margin-bottom: 25px;
+          display: flex;
+          gap: 15px;
+          align-items: center;
+          background: #181818;
+          border: 1px solid #333;
+          padding: 10px 20px;
+          border-radius: 8px;
+          flex-wrap: wrap;
+        }
+        .toolbar label {
+          color: #bbb;
+          font-family: monospace;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .toolbar select {
+          background: #090909;
+          color: #ff9900;
+          border: 1px solid #c88a2c;
+          padding: 7px 12px;
+          font-family: monospace;
+          font-size: 12px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        .btn-print {
+          background: #ff9900;
+          color: #000;
+          border: none;
+          font-weight: bold;
+          font-size: 13px;
+          padding: 8px 18px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-family: monospace;
+        }
+        .btn-close {
+          background: #252525;
+          color: #aaa;
+          border: 1px solid #444;
+          font-size: 12px;
+          padding: 7px 14px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-family: monospace;
+        }
+
+        /* ── ŠABLONA 1: Dark Gold (Prémiová tmavá) ── */
+        .tpl-dark-gold {
+          width: 740px;
+          background: #141414;
+          color: #eee;
+          border: 2px solid #c88a2c;
+          border-radius: 12px;
+          padding: 40px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+          background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
+        }
+        .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 26px; color: #ff9900; margin: 0; }
+        .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 11px; color: #888; letter-spacing: 3px; margin-top: 4px; }
+        .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; }
+        .tpl-dark-gold .service-name { font-size: 22px; letter-spacing: 3px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-dark-gold .service-desc { color: #aaa; font-size: 15px; }
+        .tpl-dark-gold .code-box { margin: 25px auto; padding: 16px 28px; background: #080808; border: 1px dashed #ff9900; border-radius: 8px; display: inline-block; }
+        .tpl-dark-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff9900; letter-spacing: 6px; }
+        .tpl-dark-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
+        .tpl-dark-gold a { color: #ff9900; }
+
+        /* ── ŠABLONA 2: Clean Minimal (Světlý úsporný tisk) ── */
+        .tpl-clean-white {
+          width: 740px;
+          background: #ffffff;
+          color: #111111;
+          border: 3px solid #111111;
+          border-radius: 4px;
+          padding: 40px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .tpl-clean-white .brand-title { font-family: Georgia, serif; font-size: 28px; color: #111; margin: 0; font-weight: bold; }
+        .tpl-clean-white .brand-sub { font-family: monospace; font-size: 11px; color: #555; letter-spacing: 3px; margin-top: 4px; }
+        .tpl-clean-white .badge-type { background: #111; border: 1px solid #111; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 2px; }
+        .tpl-clean-white .service-name { font-size: 22px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-clean-white .service-desc { color: #444; font-size: 15px; }
+        .tpl-clean-white .code-box { margin: 25px auto; padding: 16px 28px; background: #f4f4f4; border: 2px solid #111; border-radius: 4px; display: inline-block; }
+        .tpl-clean-white .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; }
+        .tpl-clean-white .instructions { margin-top: 20px; font-size: 12px; color: #555; border-top: 1px solid #ddd; padding-top: 18px; line-height: 1.6; }
+        .tpl-clean-white a { color: #111; font-weight: bold; }
+
+        /* ── ŠABLONA 3: Sport Energy (Fitness styl) ── */
+        .tpl-sport-energy {
+          width: 740px;
+          background: linear-gradient(135deg, #0f0f0f 0%, #1b1b1b 100%);
+          color: #fff;
+          border-left: 8px solid #ff5500;
+          border-top: 1px solid #333;
+          border-right: 1px solid #333;
+          border-bottom: 1px solid #333;
+          border-radius: 6px;
+          padding: 40px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 30px; color: #ff5500; margin: 0; letter-spacing: 1px; }
+        .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 11px; color: #999; letter-spacing: 2px; margin-top: 4px; }
+        .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 3px; font-weight: bold; }
+        .tpl-sport-energy .service-name { font-size: 22px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-sport-energy .service-desc { color: #ccc; font-size: 15px; }
+        .tpl-sport-energy .code-box { margin: 25px auto; padding: 16px 28px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
+        .tpl-sport-energy .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff5500; letter-spacing: 6px; }
+        .tpl-sport-energy .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 18px; line-height: 1.6; }
+        .tpl-sport-energy a { color: #ff5500; }
+
+        @media print {
+          body { background: #fff !important; padding: 0 !important; }
+          .toolbar { display: none !important; }
+          .voucher-card { box-shadow: none !important; width: 100% !important; margin: 0 !important; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="toolbar">
+        <label>ŠABLONA VOUCHERU:
+          <select id="templateSelector" onchange="changeTemplate(this.value)">
+            <option value="tpl-dark-gold">Dark Gold (Prémiová tmavá)</option>
+            <option value="tpl-clean-white">Clean Minimal (Světlý tisk / Úsporná)</option>
+            <option value="tpl-sport-energy">Sport &amp; Energy (Fitness styl)</option>
+          </select>
+        </label>
+        <button class="btn-print" onclick="window.print()">🖨 TISK / ULOŽIT DO PDF</button>
+        <button class="btn-close" onclick="window.close()">ZAVŘÍT</button>
+      </div>
+
+      <div id="voucherContainer" class="voucher-card tpl-dark-gold">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 25px;">
+          <div>
+            <h1 class="brand-title">KRYŠTOF KOBLAS</h1>
+            <div class="brand-sub">NUTRIČNÍ ANALÝZA &amp; COACHING</div>
+          </div>
+          <div class="badge-type">${typeTitle}</div>
+        </div>
+
+        <div style="text-align: center; margin: 25px 0;">
+          <div class="service-name">${pkgsDisplay}</div>
+          <div class="service-desc">${valueDisplay}</div>
+
+          <div class="code-box">
+            <div class="code-text">${c.code}</div>
+          </div>
+
+          <div class="instructions">
+            Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong>, zvolte odpovídající balíček a v objednávkovém formuláři zadejte tento kód.<br>
+            Přímý odkaz: <a href="${redeemUrl}">${redeemUrl}</a>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        function changeTemplate(tplClass) {
+          var container = document.getElementById('voucherContainer');
+          container.className = 'voucher-card ' + tplClass;
+        }
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+}
+
 async function loadPromoCodes() {
   var tbody = document.getElementById('promoCodesTableBody');
   if (!tbody) return;
 
   var pass = getAdminAuthPass();
   if (!pass) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff9900;">Pro zobrazení kódů zadejte heslo v přihlašovacím okně (případně obnovte stránku s odhlášením).</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff9900;">Pro zobrazení kódů zadejte heslo v přihlašovacím okně.</td></tr>';
     return;
   }
 
@@ -346,7 +568,8 @@ async function loadPromoCodes() {
     });
     if (!res.ok) throw new Error('Chyba autorizace (' + res.status + ')');
     var codes = await res.json();
-    renderPromoCodesList(codes);
+    loadedCodesCache = codes || [];
+    renderPromoCodesList(loadedCodesCache);
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání kódů: ' + err.message + '</td></tr>';
   }
@@ -380,15 +603,23 @@ function renderPromoCodesList(codes) {
       ? '<button onclick="togglePromoCodeActive(\'' + c.id + '\', false)" style="background: transparent; border: 1px solid #444; color: #bbb; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Vypnout</button>'
       : '<button onclick="togglePromoCodeActive(\'' + c.id + '\', true)" style="background: rgba(46,204,113,0.15); border: 1px solid #2ecc71; color: #2ecc71; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Aktivovat</button>';
 
+    var printBtn = '<button onclick="printVoucherModal(\'' + c.id + '\')" title="Tisk / PDF voucher" style="background: #151515; border: 1px solid #c88a2c; color: #ff9900; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">🖨 TISK</button>';
+
     return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">'
-      + '<td style="padding: 10px; font-weight: bold; color: #ff9900;">' + c.code + '</td>'
+      + '<td style="padding: 10px;">'
+      +   '<div style="display: flex; align-items: center; gap: 8px;">'
+      +     '<span style="font-weight: bold; color: #ff9900;">' + c.code + '</span>'
+      +     '<button onclick="copyCodeToClipboard(\'' + c.code + '\', this)" title="Kopírovat do schránky" style="background: transparent; border: 1px solid #444; color: #ff9900; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 10px;">📋</button>'
+      +   '</div>'
+      + '</td>'
       + '<td style="padding: 10px;">' + typeLabel + '</td>'
       + '<td style="padding: 10px; color: #aaa;">' + pkgs + '</td>'
       + '<td style="padding: 10px;">' + usage + '</td>'
       + '<td style="padding: 10px;">' + (c.active ? '<span style="color: #2ecc71;">● Aktivní</span>' : '<span style="color: #666;">○ Vypnut</span>') + '</td>'
       + '<td style="padding: 10px; text-align: right; display: flex; gap: 6px; justify-content: flex-end;">'
-      + toggleBtn
-      + '<button onclick="deletePromoCode(\'' + c.id + '\')" style="background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Smazat</button>'
+      +   printBtn
+      +   toggleBtn
+      +   '<button onclick="deletePromoCode(\'' + c.id + '\')" style="background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Smazat</button>'
       + '</td>'
       + '</tr>';
   }).join('');
