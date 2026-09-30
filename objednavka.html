@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="objednavka.css?v=2">
 
   <style>
-    /* ── Globální fixy rozestupů sekcí a nadpisů ── */
+    /* ── Oprava rozestupů a zamezení překrývání textů ── */
     .form-section {
       margin-bottom: 35px !important;
       position: relative;
@@ -131,77 +131,52 @@
       font-weight: normal;
     }
 
-    /* ── Dárkový režim (čistě integrovaný v Sekci I) ── */
-    .gift-toggle-box {
-      margin-top: 25px;
-      padding-top: 22px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .gift-toggle-card {
-      background: rgba(255, 153, 0, 0.03);
-      border: 1px solid rgba(255, 153, 0, 0.2);
-      border-radius: 8px;
-      padding: 16px 20px;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-    .gift-toggle-card:hover {
-      border-color: rgba(255, 153, 0, 0.4);
-      background: rgba(255, 153, 0, 0.05);
-    }
-    .gift-checkbox-label {
-      display: flex;
-      gap: 14px;
-      cursor: pointer;
-      align-items: flex-start;
-      margin: 0;
-    }
-    .gift-checkbox-label input[type="checkbox"] {
-      width: 19px;
-      height: 19px;
-      margin-top: 2px;
-      accent-color: #ff9900;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .gift-checkbox-text strong {
-      color: #ff9900;
-      font-size: 15px;
-      display: block;
-      margin-bottom: 4px;
-    }
-    .gift-checkbox-text small {
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.45;
-      display: block;
-    }
-
-    /* Oznámení pro dárek — korektní skrývání */
-    .gift-info-notice {
+    /* ── Dárkový banner s přerušovanou linkou ── */
+    .gift-banner-card {
+      margin-top: 24px;
       background: rgba(18, 18, 18, 0.95);
       border: 1px dashed #ff9900;
       border-radius: 8px;
       padding: 18px 22px;
-      margin-top: 16px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .gift-banner-card:hover {
+      background: rgba(255, 153, 0, 0.04);
+      box-shadow: 0 0 15px rgba(255, 153, 0, 0.15);
+    }
+    .gift-banner-card.is-active {
+      background: rgba(255, 153, 0, 0.07);
+      border-color: #ffaa22;
+      box-shadow: 0 0 20px rgba(255, 153, 0, 0.25);
+    }
+    .gift-banner-label {
       display: flex;
-      gap: 16px;
       align-items: center;
+      gap: 18px;
+      cursor: pointer;
+      margin: 0;
     }
-    .gift-info-notice[hidden] {
-      display: none !important;
-    }
-    .gift-info-notice__icon {
-      font-size: 30px;
+    .gift-banner-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #ff9900;
+      cursor: pointer;
       flex-shrink: 0;
     }
-    .gift-info-notice__text strong {
+    .gift-banner-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .gift-banner-title {
       color: #ff9900;
-      font-size: 14px;
+      font-size: 15px;
+      font-weight: 600;
       display: block;
       margin-bottom: 4px;
     }
-    .gift-info-notice__text p {
+    .gift-banner-text {
       color: #bbb;
       font-size: 13px;
       margin: 0;
@@ -259,7 +234,7 @@
             <strong class="order-summary__price" id="orderPrice">—</strong>
           </div>
 
-          <!-- Dělící linka před slevovým kódem -->
+          <!-- Dělící linka -->
           <div class="order-summary__divider"></div>
 
           <!-- Slevový kód / Dárkový poukaz -->
@@ -281,7 +256,7 @@
           <input type="hidden" name="Platba" id="hiddenPlatba">
           <input type="hidden" name="Cena" id="hiddenPrice">
 
-          <!-- Skrytá pole pro slevy a dárek -->
+          <!-- Skrytá pole pro kód a dárek -->
           <input type="hidden" name="Pouzity_kod" id="hiddenPromoCode" value="">
           <input type="hidden" name="Sleva_info" id="hiddenDiscountInfo" value="">
           <input type="hidden" name="Je_darek" id="hiddenIsGift" value="ne">
@@ -335,26 +310,16 @@
               </div>
             </div>
 
-            <!-- Dárkový přepínač – součást sekce I -->
-            <div class="gift-toggle-box">
-              <div class="gift-toggle-card">
-                <label class="gift-checkbox-label">
-                  <input type="checkbox" id="giftCheckbox" name="Koupit_jako_darek" value="ano">
-                  <div class="gift-checkbox-text">
-                    <strong>🎁 Objednávám tuto službu jako dárek pro někoho jiného</strong>
-                    <small>Míry a analytické údaje vyplní obdarovaný sám při uplatnění dárkového poukazu. Nyní zadáváte pouze své fakturační údaje pro vystavení voucheru.</small>
-                  </div>
-                </label>
-              </div>
-
-              <!-- Zobrazí se POUZE při zaškrtnutí -->
-              <div class="gift-info-notice" id="giftInfoNotice" hidden>
-                <div class="gift-info-notice__icon">🎁</div>
-                <div class="gift-info-notice__text">
-                  <strong>Objednáváte jako dárkový poukaz</strong>
-                  <p>Po úhradě objednávky obdržíte elektronický dárkový certifikát s unikátním kódem. Obdarovaný si balíček aktivuje na webu a své údaje pro analýzu zadá sám.</p>
+            <!-- Dárkový box v designu s přerušovanou linkou -->
+            <div class="gift-banner-card" id="giftCard">
+              <label class="gift-banner-label">
+                <input type="checkbox" id="giftCheckbox" name="Koupit_jako_darek" value="ano">
+                <div class="gift-banner-icon">🎁</div>
+                <div class="gift-banner-content">
+                  <strong class="gift-banner-title">Objednat jako dárkový poukaz</strong>
+                  <p class="gift-banner-text">Po úhradě objednávky obdržíte elektronický dárkový certifikát s unikátním kódem. Obdarovaný si balíček aktivuje na webu a své údaje pro analýzu zadá sám.</p>
                 </div>
-              </div>
+              </label>
             </div>
 
           </div>
@@ -419,6 +384,7 @@
                 <span>Souhlasím s <a href="#" class="gdpr-link" data-modal="modal-vop">Všeobecnými obchodními podmínkami</a> a potvrzuji, že jsem se seznámil/a se <a href="#" class="gdpr-link" data-modal="modal-gdpr">Zásadami ochrany osobních údajů</a>. <span class="req">*</span></span>
               </label>
 
+              <!-- Zdravotní souhlas (skryto při dárku) -->
               <label class="legal-check legal-check--required" id="checkHealthLabel">
                 <input type="checkbox" id="checkHealth" name="Souhlas_zdravotni_data" required value="ano">
                 <span>Uděluji výslovný souhlas se zpracováním údajů o svém zdravotním stavu (pro analýzu v aplikaci ZOF, vedení záznamů v Notion a interní evidenci poradce). Potvrzuji, že mi zdravotní stav umožňuje změnu návyků. <span class="req">*</span></span>
@@ -429,8 +395,9 @@
                 <span>Prohlašuji, že jsem plnoletý/á nebo jednám se souhlasem zákonného zástupce. <span class="req">*</span></span>
               </label>
 
-              <label class="legal-check">
-                <input type="checkbox" name="Souhlas_anonymni" value="ano">
+              <!-- Anonymní souhlas (skryto při dárku) -->
+              <label class="legal-check" id="checkAnonLabel">
+                <input type="checkbox" id="checkAnon" name="Souhlas_anonymni" value="ano">
                 <span>Souhlasím s anonymním použitím výsledků spolupráce (grafy progresu, anonymizované fotky) pro referenční účely poradce. <em>(Nepovinné)</em></span>
               </label>
             </div>
@@ -713,7 +680,7 @@
         });
       }
 
-      // Automatické uplatnění kódu z parametru v URL
+      // Auto-uplatnění kódu z parametru v URL
       const urlParams = new URLSearchParams(window.location.search);
       const urlCode = urlParams.get('kod') || urlParams.get('code');
       if (urlCode) {
@@ -730,13 +697,16 @@
         setTimeout(autoApply, 200);
       }
 
-      // ── Dárkový režim (skrytí sekce II) ──
+      // ── Dárkový režim (skrytí sekce II i souhlasů) ──
       const giftCheckbox = document.getElementById('giftCheckbox');
+      const giftCard = document.getElementById('giftCard');
       const sectionAnalysis = document.getElementById('sectionAnalysis');
-      const giftNotice = document.getElementById('giftInfoNotice');
       const hiddenIsGift = document.getElementById('hiddenIsGift');
+
       const checkHealth = document.getElementById('checkHealth');
       const checkHealthLabel = document.getElementById('checkHealthLabel');
+      const checkAnon = document.getElementById('checkAnon');
+      const checkAnonLabel = document.getElementById('checkAnonLabel');
 
       const analysisInputs = [
         document.getElementById('fage'),
@@ -749,9 +719,13 @@
         if (!giftCheckbox) return;
         const isGift = giftCheckbox.checked;
 
+        if (giftCard) {
+          giftCard.classList.toggle('is-active', isGift);
+        }
+
         if (isGift) {
+          // KUPUJÍCÍ DÁRKU
           if (sectionAnalysis) sectionAnalysis.style.display = 'none';
-          if (giftNotice) giftNotice.hidden = false;
           if (hiddenIsGift) hiddenIsGift.value = 'ano';
 
           analysisInputs.forEach(inp => {
@@ -761,15 +735,20 @@
             }
           });
 
+          // Skrýt zdravotní data (kupující je nevyplňuje)
           if (checkHealth) {
             checkHealth.removeAttribute('required');
             checkHealth.checked = true;
           }
           if (checkHealthLabel) checkHealthLabel.style.display = 'none';
 
+          // Skrýt anonymní výsledky (kupující žádné nemá)
+          if (checkAnon) checkAnon.checked = false;
+          if (checkAnonLabel) checkAnonLabel.style.display = 'none';
+
         } else {
+          // BĚŽNÝ KLIENT / OBDAROVANÝ
           if (sectionAnalysis) sectionAnalysis.style.display = 'block';
-          if (giftNotice) giftNotice.hidden = true;
           if (hiddenIsGift) hiddenIsGift.value = 'ne';
 
           analysisInputs.forEach(inp => {
@@ -781,6 +760,8 @@
             checkHealth.checked = false;
           }
           if (checkHealthLabel) checkHealthLabel.style.display = 'flex';
+
+          if (checkAnonLabel) checkAnonLabel.style.display = 'flex';
         }
       }
 
