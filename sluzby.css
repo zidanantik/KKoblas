@@ -1,4 +1,4 @@
-﻿/* ── Nav active ─────────────────────────────────── */
+/* ── Nav active ─────────────────────────────────── */
 .nav__link--active {
   background: rgba(77,174,140,.15);
   color: var(--heading);
@@ -439,6 +439,7 @@
 
 .pkg-card.plno .pkg-btns--normal { display: none; }
 .pkg-card.plno .pkg-btns--plno   { display: flex; }
+.pkg-card.plno .pkg-gift-btn     { display: none; }
 
 .plno-notice {
   font-size: .82rem;
@@ -449,6 +450,41 @@
   background: rgba(200,80,80,.08);
   border: 1px solid rgba(200,80,80,.2);
   border-radius: 8px;
+}
+
+/* ── Dárkové tlačítko na kartách služeb ─────────── */
+.pkg-gift-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 2px;
+  padding: 11px 18px;
+  background: rgba(255, 153, 0, 0.04);
+  border: 1px dashed rgba(255, 153, 0, 0.35);
+  border-radius: 999px;
+  color: #ff9900;
+  font-family: inherit;
+  font-size: .84rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all .25s ease;
+  box-sizing: border-box;
+}
+
+.pkg-gift-btn:hover {
+  background: rgba(255, 153, 0, 0.12);
+  border-color: #ff9900;
+  color: #ffaa22;
+  box-shadow: 0 0 16px rgba(255, 153, 0, 0.25);
+  transform: translateY(-2px);
+}
+
+.pkg-gift-btn:active {
+  transform: translateY(0);
 }
 
 /* ── Food photo slider ──────────────────────────── */
@@ -511,13 +547,13 @@
   filter: brightness(.82) saturate(.92);
   border: 2px solid rgba(201,168,76,.7);
   box-shadow: 0 0 0 4px rgba(201,168,76,.1), 0 6px 28px rgba(0,0,0,.35);
-  transform: translateX(calc(200% + 200px)); /* výchozí: daleko vpravo, skrytý */
+  transform: translateX(calc(200% + 200px));
   transition: transform .7s cubic-bezier(.4,0,.2,1);
   z-index: 0;
 }
 
 .food-slider__item.is-next    { transform: translateX(calc(100% + 112px)); z-index: 1; }
-.food-slider__item.is-active  { transform: translateX(0);                  z-index: 2; }
+.food-slider__item.is-active  { transform: translateX(0);                   z-index: 2; }
 .food-slider__item.is-prev    { transform: translateX(calc(-100% - 112px)); z-index: 1; }
 .food-slider__item.is-exiting { transform: translateX(calc(-200% - 224px)); z-index: 0; }
 
@@ -613,7 +649,7 @@
 
 /* ── Waitlist section ───────────────────────────── */
 .waitlist {
-  display: none; /* JS přepíše na block pokud je alespoň 1 služba uzavřena */
+  display: none;
   position: relative;
   overflow: hidden;
   background:
@@ -621,8 +657,6 @@
     var(--cream-dark);
   padding: 80px 24px;
 }
-
-/* Waitlist je řízen přes JS (element.style.display) */
 
 .waitlist__inner {
   position: relative;
@@ -1005,4 +1039,3 @@
   .food-slider__item { left: 28px; right: 28px; }
   .wl-services { flex-direction: column; gap: 12px; }
 }
-
