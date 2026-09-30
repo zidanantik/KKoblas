@@ -721,11 +721,11 @@
 
             // Pokud jde o uplatnění dárku, obdarovaný již NEMŮŽE kupovat jako dárek:
             if (giftCard) {
-              giftCard.style.display = 'none'; // úplně skryje box nákupu dárku
+              giftCard.style.display = 'none';
             }
             if (giftCheckbox && giftCheckbox.checked) {
               giftCheckbox.checked = false;
-              toggleGiftMode(); // zajistí, že sekce II i souhlasy zůstanou aktivní pro obdarovaného
+              toggleGiftMode();
             }
 
           } else if (data.type === 'percent') {
@@ -736,7 +736,6 @@
             priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
             showPromoMsg(`✓ Sleva ${data.value} % uplatněna (-${formatPrice(discountAmt)}).`, 'ok');
 
-            // Běžnou slevu lze koupit i jako dárek
             if (giftCard) giftCard.style.display = 'block';
 
           } else if (data.type === 'fixed') {
@@ -785,6 +784,14 @@
           }
         };
         setTimeout(autoApply, 200);
+      }
+
+      // Automatická aktivace dárkového režimu z URL (?darek=1 nebo ?darek=ano)
+      if (urlParams.get('darek') === '1' || urlParams.get('darek') === 'ano') {
+        if (giftCheckbox) {
+          giftCheckbox.checked = true;
+          toggleGiftMode();
+        }
       }
     })();
   </script>
