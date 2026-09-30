@@ -188,18 +188,22 @@
 
     <!-- ── Slevové a dárkové kódy ────────────────── -->
     <div class="event-panel" id="promoCodesPanel">
-      <div class="event-panel__header">
-        <div class="event-panel__title">
-          <span class="station-label">SLEVOVÉ A DÁRKOVÉ KÓDY</span>
-          <span class="station-duration">Správa slev a jednorázových voucherů v Cloudflare KV</span>
+      <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="font-family: monospace; font-size: 13px; font-weight: bold; color: #ff9900; letter-spacing: 2px;">SLEVOVÉ A DÁRKOVÉ KÓDY</div>
+          <div style="font-family: monospace; font-size: 11px; color: #777; margin-top: 3px;">Správa slev a jednorázových voucherů v Cloudflare KV</div>
         </div>
+        <button type="button" onclick="loadPromoCodes()" class="an-refresh-btn" style="cursor: pointer;" title="Obnovit seznam kódů">↻ OBNOVIT</button>
       </div>
 
       <div class="event-panel__fields">
         <!-- Vytvoření nového kódu -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
           <label class="event-label">Kód voucheru / slevy
-            <input type="text" id="newPromoCode" class="event-input" placeholder="např. KKSLEVA10" style="text-transform: uppercase;">
+            <div style="display: flex; gap: 6px; margin-top: 4px;">
+              <input type="text" id="newPromoCode" class="event-input" placeholder="např. KKSLEVA10" style="text-transform: uppercase; margin-top: 0; flex: 1;">
+              <button type="button" onclick="generateRandomCode()" style="background: #151515; border: 1px solid #444; color: #ff9900; font-family: monospace; font-size: 10px; padding: 0 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; height: 38px;">🎲 NÁHODNÝ</button>
+            </div>
           </label>
 
           <label class="event-label">Typ zvýhodnění
@@ -284,172 +288,6 @@
 
   </div>
 
-  <script src="admin.js?v=3"></script>
-
-  <!-- Obsluha správy slevových a dárkových kódů -->
-  <script>
-    function handlePromoTypeChange() {
-      const type = document.getElementById("newPromoType").value;
-      const wrapper = document.getElementById("promoValueWrapper");
-      if (wrapper) {
-        wrapper.style.display = type === "gift" ? "none" : "block";
-      }
-    }
-
-    function getAdminAuthHeader() {
-      const inputPass = document.getElementById("lockInput") ? document.getElementById("lockInput").value : "";
-      return inputPass || sessionStorage.getItem("admin_pass") || sessionStorage.getItem("ADMIN_PASS") || window.ADMIN_PASS || "";
-    }
-
-    async function loadPromoCodes() {
-      const tbody = document.getElementById("promoCodesTableBody");
-      if (!tbody) return;
-
-      try {
-        const res = await fetch("/api/codes", {
-          headers: { "x-admin-pass": getAdminAuthHeader() }
-        });
-        if (!res.ok) throw new Error("Chyba autorizace");
-        const codes = await res.json();
-        renderPromoCodesList(codes);
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání kódů: ${err.message}</td></tr>`;
-      }
-    }
-
-    function renderPromoCodesList(codes) {
-      const tbody = document.getElementById("promoCodesTableBody");
-      if (!codes || codes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #777;">Zatím nejsou vytvořeny žádné slevové ani dárkové kódy.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = codes.map(c => {
-        let typeLabel = "";
-        if (c.type === "percent") typeLabel = `${c.value} %`;
-        else if (c.type === "fixed") typeLabel = `${c.value} Kč`;
-        else if (c.type === "gift") typeLabel = `<span style="color: #ff9900; font-weight: bold;">DÁRKOVÝ (100 %)</span>`;
-
-        const pkgs = (c.packages || []).map(p => p.toUpperCase()).join(", ") || "VŠECHNY";
-        
-        let usage = "";
-        if (c.oneTime) {
-          usage = c.used 
-            ? `<span style="color: #e74c3c;">Uplatněn</span>` 
-            : `<span style="color: #2ecc71;">Jednorázový</span>`;
-        } else {
-          usage = `<span style="color: #3498db;">Neomezený</span>`;
-        }
-
-        const toggleBtn = c.active 
-          ? `<button onclick="togglePromoCodeActive('${c.id}', false)" style="background: transparent; border: 1px solid #444; color: #bbb; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Vypnout</button>`
-          : `<button onclick="togglePromoCodeActive('${c.id}', true)" style="background: rgba(46,204,113,0.15); border: 1px solid #2ecc71; color: #2ecc71; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Aktivovat</button>`;
-
-        return `
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <td style="padding: 10px; font-weight: bold; color: #ff9900;">${c.code}</td>
-            <td style="padding: 10px;">${typeLabel}</td>
-            <td style="padding: 10px; color: #aaa;">${pkgs}</td>
-            <td style="padding: 10px;">${usage}</td>
-            <td style="padding: 10px;">${c.active ? '<span style="color: #2ecc71;">● Aktivní</span>' : '<span style="color: #666;">○ Vypnut</span>'}</td>
-            <td style="padding: 10px; text-align: right; display: flex; gap: 6px; justify-content: flex-end;">
-              ${toggleBtn}
-              <button onclick="deletePromoCode('${c.id}')" style="background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Smazat</button>
-            </td>
-          </tr>
-        `;
-      }).join("");
-    }
-
-    async function createNewPromoCode() {
-      const code = document.getElementById("newPromoCode").value.trim();
-      const type = document.getElementById("newPromoType").value;
-      const value = document.getElementById("newPromoValue").value;
-      const oneTime = document.getElementById("newPromoOneTime").checked;
-
-      const pkgCheckboxes = document.querySelectorAll(".promo-pkg-cb:checked");
-      const packages = Array.from(pkgCheckboxes).map(cb => cb.value);
-
-      if (!code) {
-        alert("Zadej text kódu.");
-        return;
-      }
-      if (type !== "gift" && (!value || Number(value) <= 0)) {
-        alert("Zadej platnou číselnou hodnotu slevy.");
-        return;
-      }
-
-      const payload = { code, type, value, oneTime, packages };
-
-      try {
-        const res = await fetch("/api/codes", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-admin-pass": getAdminAuthHeader()
-          },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error("Chyba při ukládání kódu.");
-
-        document.getElementById("newPromoCode").value = "";
-        document.getElementById("newPromoValue").value = "";
-        loadPromoCodes();
-      } catch (err) {
-        alert(err.message);
-      }
-    }
-
-    async function togglePromoCodeActive(id, activeState) {
-      try {
-        await fetch("/api/codes", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-admin-pass": getAdminAuthHeader()
-          },
-          body: JSON.stringify({ id, active: activeState })
-        });
-        loadPromoCodes();
-      } catch (err) {
-        alert("Chyba při změně stavu: " + err.message);
-      }
-    }
-
-    async function deletePromoCode(id) {
-      if (!confirm("Opravdu smazat tento kód?")) return;
-      try {
-        await fetch("/api/codes", {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-admin-pass": getAdminAuthHeader()
-          },
-          body: JSON.stringify({ id })
-        });
-        loadPromoCodes();
-      } catch (err) {
-        alert("Chyba při mazání: " + err.message);
-      }
-    }
-
-    // Automatické načtení kódů při odemčení konzole
-    const consolEl = document.getElementById("consolEl");
-    if (consolEl) {
-      const observer = new MutationObserver(() => {
-        if (!consolEl.hidden) {
-          loadPromoCodes();
-        }
-      });
-      observer.observe(consolEl, { attributes: true, attributeFilter: ["hidden", "style", "class"] });
-    }
-
-    const lockForm = document.getElementById("lockForm");
-    if (lockForm) {
-      lockForm.addEventListener("submit", () => {
-        setTimeout(loadPromoCodes, 400);
-      });
-    }
-  </script>
+  <script src="admin.js?v=4"></script>
 </body>
 </html>
