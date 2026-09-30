@@ -186,6 +186,83 @@
       </div>
     </div>
 
+    <!-- ── Slevové a dárkové kódy ────────────────── -->
+    <div class="event-panel" id="promoCodesPanel">
+      <div class="event-panel__header">
+        <div class="event-panel__title">
+          <span class="station-label">SLEVOVÉ A DÁRKOVÉ KÓDY</span>
+          <span class="station-duration">Správa slev a jednorázových voucherů v Cloudflare KV</span>
+        </div>
+      </div>
+
+      <div class="event-panel__fields">
+        <!-- Vytvoření nového kódu -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+          <label class="event-label">Kód voucheru / slevy
+            <input type="text" id="newPromoCode" class="event-input" placeholder="např. KKSLEVA10" style="text-transform: uppercase;">
+          </label>
+
+          <label class="event-label">Typ zvýhodnění
+            <select id="newPromoType" class="event-input" onchange="handlePromoTypeChange()">
+              <option value="percent">Procentuální sleva (%)</option>
+              <option value="fixed">Pevná částka (Kč)</option>
+              <option value="gift">Dárkový poukaz (100% sleva)</option>
+            </select>
+          </label>
+
+          <div id="promoValueWrapper">
+            <label class="event-label">Hodnota slevy
+              <input type="number" id="newPromoValue" class="event-input" placeholder="10">
+            </label>
+          </div>
+
+          <label class="event-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding-bottom: 8px;">
+            <input type="checkbox" id="newPromoOneTime" checked style="accent-color: #ff9900; width: 16px; height: 16px;">
+            Jednorázový kód
+          </label>
+        </div>
+
+        <!-- Výběr balíčků -->
+        <div style="margin-top: 10px;">
+          <span class="event-label" style="display: block; margin-bottom: 8px;">Platí pro balíčky:</span>
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <label class="event-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" class="promo-pkg-cb" value="startup" checked style="accent-color: #ff9900;"> START-UP
+            </label>
+            <label class="event-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" class="promo-pkg-cb" value="mentoring" checked style="accent-color: #ff9900;"> MENTORING
+            </label>
+            <label class="event-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" class="promo-pkg-cb" value="ultimate" checked style="accent-color: #ff9900;"> ULTIMATE
+            </label>
+          </div>
+        </div>
+
+        <button class="event-save-btn" id="promoCreateBtn" onclick="createNewPromoCode()" style="margin-top: 15px;">💾 PŘIDAT KÓD</button>
+
+        <!-- Seznam aktivních kódů -->
+        <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px; overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #888;">
+                <th style="padding: 10px;">KÓD</th>
+                <th style="padding: 10px;">TYP A HODNOTA</th>
+                <th style="padding: 10px;">BALÍČKY</th>
+                <th style="padding: 10px;">POUŽITÍ</th>
+                <th style="padding: 10px;">STAV</th>
+                <th style="padding: 10px; text-align: right;">AKCE</th>
+              </tr>
+            </thead>
+            <tbody id="promoCodesTableBody">
+              <tr>
+                <td colspan="6" style="padding: 15px; text-align: center; color: #666;">Načítám kódy...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="master-controls">
       <button class="master-btn master-btn--close" id="masterClose">▼ UZAVŘÍT VŠE</button>
       <button class="master-btn master-btn--open"  id="masterOpen">▲ OTEVŘÍT VŠE</button>
@@ -208,5 +285,171 @@
   </div>
 
   <script src="admin.js?v=3"></script>
+
+  <!-- Obsluha správy slevových a dárkových kódů -->
+  <script>
+    function handlePromoTypeChange() {
+      const type = document.getElementById("newPromoType").value;
+      const wrapper = document.getElementById("promoValueWrapper");
+      if (wrapper) {
+        wrapper.style.display = type === "gift" ? "none" : "block";
+      }
+    }
+
+    function getAdminAuthHeader() {
+      const inputPass = document.getElementById("lockInput") ? document.getElementById("lockInput").value : "";
+      return inputPass || sessionStorage.getItem("admin_pass") || sessionStorage.getItem("ADMIN_PASS") || window.ADMIN_PASS || "";
+    }
+
+    async function loadPromoCodes() {
+      const tbody = document.getElementById("promoCodesTableBody");
+      if (!tbody) return;
+
+      try {
+        const res = await fetch("/api/codes", {
+          headers: { "x-admin-pass": getAdminAuthHeader() }
+        });
+        if (!res.ok) throw new Error("Chyba autorizace");
+        const codes = await res.json();
+        renderPromoCodesList(codes);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání kódů: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderPromoCodesList(codes) {
+      const tbody = document.getElementById("promoCodesTableBody");
+      if (!codes || codes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #777;">Zatím nejsou vytvořeny žádné slevové ani dárkové kódy.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = codes.map(c => {
+        let typeLabel = "";
+        if (c.type === "percent") typeLabel = `${c.value} %`;
+        else if (c.type === "fixed") typeLabel = `${c.value} Kč`;
+        else if (c.type === "gift") typeLabel = `<span style="color: #ff9900; font-weight: bold;">DÁRKOVÝ (100 %)</span>`;
+
+        const pkgs = (c.packages || []).map(p => p.toUpperCase()).join(", ") || "VŠECHNY";
+        
+        let usage = "";
+        if (c.oneTime) {
+          usage = c.used 
+            ? `<span style="color: #e74c3c;">Uplatněn</span>` 
+            : `<span style="color: #2ecc71;">Jednorázový</span>`;
+        } else {
+          usage = `<span style="color: #3498db;">Neomezený</span>`;
+        }
+
+        const toggleBtn = c.active 
+          ? `<button onclick="togglePromoCodeActive('${c.id}', false)" style="background: transparent; border: 1px solid #444; color: #bbb; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Vypnout</button>`
+          : `<button onclick="togglePromoCodeActive('${c.id}', true)" style="background: rgba(46,204,113,0.15); border: 1px solid #2ecc71; color: #2ecc71; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Aktivovat</button>`;
+
+        return `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 10px; font-weight: bold; color: #ff9900;">${c.code}</td>
+            <td style="padding: 10px;">${typeLabel}</td>
+            <td style="padding: 10px; color: #aaa;">${pkgs}</td>
+            <td style="padding: 10px;">${usage}</td>
+            <td style="padding: 10px;">${c.active ? '<span style="color: #2ecc71;">● Aktivní</span>' : '<span style="color: #666;">○ Vypnut</span>'}</td>
+            <td style="padding: 10px; text-align: right; display: flex; gap: 6px; justify-content: flex-end;">
+              ${toggleBtn}
+              <button onclick="deletePromoCode('${c.id}')" style="background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Smazat</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function createNewPromoCode() {
+      const code = document.getElementById("newPromoCode").value.trim();
+      const type = document.getElementById("newPromoType").value;
+      const value = document.getElementById("newPromoValue").value;
+      const oneTime = document.getElementById("newPromoOneTime").checked;
+
+      const pkgCheckboxes = document.querySelectorAll(".promo-pkg-cb:checked");
+      const packages = Array.from(pkgCheckboxes).map(cb => cb.value);
+
+      if (!code) {
+        alert("Zadej text kódu.");
+        return;
+      }
+      if (type !== "gift" && (!value || Number(value) <= 0)) {
+        alert("Zadej platnou číselnou hodnotu slevy.");
+        return;
+      }
+
+      const payload = { code, type, value, oneTime, packages };
+
+      try {
+        const res = await fetch("/api/codes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-pass": getAdminAuthHeader()
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("Chyba při ukládání kódu.");
+
+        document.getElementById("newPromoCode").value = "";
+        document.getElementById("newPromoValue").value = "";
+        loadPromoCodes();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function togglePromoCodeActive(id, activeState) {
+      try {
+        await fetch("/api/codes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-pass": getAdminAuthHeader()
+          },
+          body: JSON.stringify({ id, active: activeState })
+        });
+        loadPromoCodes();
+      } catch (err) {
+        alert("Chyba při změně stavu: " + err.message);
+      }
+    }
+
+    async function deletePromoCode(id) {
+      if (!confirm("Opravdu smazat tento kód?")) return;
+      try {
+        await fetch("/api/codes", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-pass": getAdminAuthHeader()
+          },
+          body: JSON.stringify({ id })
+        });
+        loadPromoCodes();
+      } catch (err) {
+        alert("Chyba při mazání: " + err.message);
+      }
+    }
+
+    // Automatické načtení kódů při odemčení konzole
+    const consolEl = document.getElementById("consolEl");
+    if (consolEl) {
+      const observer = new MutationObserver(() => {
+        if (!consolEl.hidden) {
+          loadPromoCodes();
+        }
+      });
+      observer.observe(consolEl, { attributes: true, attributeFilter: ["hidden", "style", "class"] });
+    }
+
+    const lockForm = document.getElementById("lockForm");
+    if (lockForm) {
+      lockForm.addEventListener("submit", () => {
+        setTimeout(loadPromoCodes, 400);
+      });
+    }
+  </script>
 </body>
 </html>
