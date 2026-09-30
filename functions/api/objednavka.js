@@ -17,7 +17,7 @@ export async function onRequestPost(context) {
 
     const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
 
-    // Pro nákup dárku nevyžadujeme míry obdarovaného
+    // Pro nákup dárku nevyžadujeme tělesné míry
     const requiredFields = isGift 
       ? REQUIRED_CONTACT 
       : [...REQUIRED_CONTACT, ...REQUIRED_ANALYSIS];
@@ -64,7 +64,7 @@ export async function onRequestPost(context) {
       : '';
 
     const analysisHtml = isGift 
-      ? `<tr><td colspan="2" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-style:italic">Objednáno jako dárek – míry a zdravotní údaje vyplní obdarovaný sám při uplatnění dárkového poukazu na webu.</td></tr>`
+      ? `<tr><td colspan="2" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-style:italic">Objednáno jako dárek – míry a zdravotní údaje vyplní obdarovaný sám při uplatnění voucheru na webu.</td></tr>`
       : `
         <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Věk</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Vek} let</td></tr>
         <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Pohlaví</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Pohlavi}</td></tr>
@@ -126,7 +126,7 @@ export async function onRequestPost(context) {
       </div>
     `;
 
-    // ── 4. Paralelní odeslání obou e-mailů ────────────
+    // ── 4. Odeslání e-mailů ──────────────────────────
     const [resOwner, resClient] = await Promise.all([
       sendEmail(RESEND_KEY, {
         from: FROM_DOMAIN,
