@@ -12,7 +12,7 @@ function fmt(d) { return d.toISOString().split('T')[0]; }
 export async function onRequestGet(context) {
   const token = context.env.CF_API_TOKEN;
   if (!token) {
-    return Response.json({ ok: false, error: 'Chýba CF_API_TOKEN' }, { status: 503 });
+    return Response.json({ ok: false, error: 'Chybí CF_API_TOKEN' }, { status: 503 });
   }
 
   const zoneId = context.env.CF_ZONE_ID || DEFAULT_ZONE_ID;
@@ -21,13 +21,12 @@ export async function onRequestGet(context) {
   const start7 = fmt(new Date(now.getTime() - 6 * 86400000));
   const zf     = `zoneTag:"${zoneId}"`;
 
-  // Všetky dáta zlúčené do jedného jediného GraphQL dopytu (predchádza chybe 429)
   const combinedQuery = `{
     viewer {
       zones(filter: { ${zf} }) {
         r7d: httpRequests1dGroups(limit: 7, filter: { date_geq: "${start7}", date_leq: "${today}" }, orderBy: [date_ASC]) {
           dimensions { date }
-          sum { pageViews }
+          sum { requests }
         }
         rH: httpRequestsAdaptiveGroups(limit: 100, filter: { AND: [{ date_geq: "${today}" }, { date_leq: "${today}" }] }) {
           count
@@ -38,6 +37,10 @@ export async function onRequestGet(context) {
           count
           avg { sampleInterval }
           dimensions { clientRequestPath }
+        }
+        rDev: httpRequestsAdaptiveGroups(limit: 10, filter: { AND: [{ date_geq: "${today}" }, { date_leq: "${today}" }] }) {
+          count
+          dimensions { clientDeviceType }
         }
       }
     }
@@ -55,7 +58,7 @@ export async function onRequestGet(context) {
 
     if (!r.ok) {
       if (r.status === 429) {
-        return Response.json({ ok: false, error: 'Limit Cloudflare API vyčerpaný. Počkajte minútu a skúste znova.' }, { status: 429 });
+        return Response.json({ ok: false, error: 'Limit Cloudflare API vyčerpán. Zkuste to za chvíli.' }, { status: 429 });
       }
       throw new Error('HTTP ' + r.status);
     }
@@ -69,7 +72,7 @@ export async function onRequestGet(context) {
     const byDate = {};
     let total = 0;
     for (const g of (zoneData.r7d || [])) {
-      const v = (g.sum && g.sum.pageViews) || 0;
+      const v = (g.sum && g.sum.requests) || 0;
       const dd = g.dimensions && g.dimensions.date;
       total += v;
       if (dd) byDate[dd] = (byDate[dd] || 0) + v;
@@ -109,6 +112,19 @@ export async function onRequestGet(context) {
       .slice(0, 5)
       .map(e => ({ path: e[0], count: e[1] }));
 
+    // ── Zařízení ────────────────────────────────────────────
+    let devTotal = 0;
+    const devMap = {};
+    for (const g of (zoneData.rDev || [])) {
+      const type = (g.dimensions && g.dimensions.clientDeviceType) || 'Desktop';
+      devMap[type] = (devMap[type] || 0) + g.count;
+      devTotal += g.count;
+    }
+    const devices = Object.entries(devMap).map(([type, cnt]) => ({
+      type,
+      pct: devTotal > 0 ? Math.round((cnt / devTotal) * 100) : 0
+    }));
+
     return Response.json({
       ok: true,
       pageviews: total,
@@ -116,7 +132,7 @@ export async function onRequestGet(context) {
       days,
       hours,
       topPages,
-      devices: [],
+      devices,
       _zone: 'koblas-nutricni.cz'
     }, {
       headers: { 'Cache-Control': 'public, max-age=60' }
