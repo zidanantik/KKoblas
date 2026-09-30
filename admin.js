@@ -28,10 +28,13 @@ function unlock() {
   ENTERED_PASS = sessionStorage.getItem(SESSION_KEY + '_pass') || ENTERED_PASS;
   loadStatus();
   loadAnalytics();
-  loadPromoCodes(); // <-- NAČTENÍ KÓDŮ PO ODEMČENÍ
+  loadPromoCodes();
 }
 
-if (sessionStorage.getItem(SESSION_KEY) === '1') unlock();
+if (sessionStorage.getItem(SESSION_KEY) === '1') {
+  ENTERED_PASS = sessionStorage.getItem(SESSION_KEY + '_pass') || '';
+  unlock();
+}
 
 lockForm.addEventListener('submit', async function (e) {
   e.preventDefault();
@@ -302,11 +305,23 @@ document.getElementById('eventSave').addEventListener('click', async function ()
   await saveStatus();
 });
 
-// ── Promo Codes & Gifts ──────────────────────────
+// ── Slevové a dárkové kódy ───────────────────────
 function handlePromoTypeChange() {
   var type = document.getElementById('newPromoType').value;
   var wrapper = document.getElementById('promoValueWrapper');
   if (wrapper) wrapper.style.display = type === 'gift' ? 'none' : 'block';
+}
+
+function generateRandomCode() {
+  var type = document.getElementById('newPromoType').value;
+  var prefix = type === 'gift' ? 'DAR-' : 'KK-';
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var res = '';
+  for (var i = 0; i < 6; i++) {
+    res += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  var input = document.getElementById('newPromoCode');
+  if (input) input.value = prefix + res;
 }
 
 function getAdminAuthPass() {
@@ -317,11 +332,19 @@ async function loadPromoCodes() {
   var tbody = document.getElementById('promoCodesTableBody');
   if (!tbody) return;
 
+  var pass = getAdminAuthPass();
+  if (!pass) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff9900;">Pro zobrazení kódů zadejte heslo v přihlašovacím okně (případně obnovte stránku s odhlášením).</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">Načítám kódy z Cloudflare KV...</td></tr>';
+
   try {
     var res = await fetch('/api/codes', {
-      headers: { 'x-admin-pass': getAdminAuthPass() }
+      headers: { 'x-admin-pass': pass }
     });
-    if (!res.ok) throw new Error('Chyba autorizace');
+    if (!res.ok) throw new Error('Chyba autorizace (' + res.status + ')');
     var codes = await res.json();
     renderPromoCodesList(codes);
   } catch (err) {
@@ -381,7 +404,7 @@ async function createNewPromoCode() {
   var packages = Array.from(pkgCheckboxes).map(function(cb) { return cb.value; });
 
   if (!code) {
-    alert('Zadej text kódu.');
+    alert('Zadej text kódu nebo klikni na NÁHODNÝ.');
     return;
   }
   if (type !== 'gift' && (!value || Number(value) <= 0)) {
@@ -427,7 +450,7 @@ async function togglePromoCodeActive(id, activeState) {
 }
 
 async function deletePromoCode(id) {
-  if (!confirm('Opravdu smazat tento kód?')) return;
+  if (!confirm('Opravdu trvale smazat tento kód?')) return;
   try {
     await fetch('/api/codes', {
       method: 'DELETE',
