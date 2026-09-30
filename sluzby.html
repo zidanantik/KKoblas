@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
   <!-- Google tag (gtag.js) -->
@@ -12,7 +12,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Služby & ceník – Kryštof Koblas Nutriční poradenství</title>
-  <meta name="description" content="Nutriční poradenství na míru – balíčky Startup, Mentoring a Elite. Přehled služeb, co je zahrnuto a aktuální ceny. Zjisti, který balíček je pro tebe."
+  <meta name="description" content="Nutriční poradenství na míru – balíčky Startup, Mentoring a Elite. Přehled služeb, co je zahrnuto a aktuální ceny. Zjisti, který balíček je pro tebe.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -94,7 +94,7 @@
               <span class="pkg-card__item-title">Individuální plán v systému <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a></span>
               <span class="pkg-card__item-desc">Vytvoříš si bezplatný účet a já se s tebou propojím přes svou licenci. Neplatíš žádné poplatky za platformu.</span>
             </li>
-           <li>
+            <li>
               <span class="pkg-card__item-title">Suplementace s rozumem</span>
               <span class="pkg-card__item-desc">Pouze to, co tvoje tělo skutečně potřebuje (metodika <a href="https://www.kurzyatac.cz/" target="_blank" rel="noopener" class="pkg-anchor">ATAC</a>).</span>
             </li>
@@ -119,6 +119,7 @@
             </div>
             <div class="pkg-btns pkg-btns--normal">
               <a href="objednavka.html?sluzba=startup" class="btn btn--primary btn--block" id="btn-startup-order">Objednat za 6 900 Kč</a>
+              <a href="objednavka.html?sluzba=startup&platba=jednorizove&darek=1" class="pkg-gift-btn">🎁 Koupit jako dárkový poukaz</a>
             </div>
             <div class="pkg-btns pkg-btns--plno">
               <p class="plno-notice">Kapacita je momentálně plná.</p>
@@ -171,6 +172,7 @@
             <div class="pkg-btns pkg-btns--normal">
               <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn btn--primary btn--block" id="btn-mentoring-jed">Koupit jednorázově za 14 700 Kč</a>
               <a href="objednavka.html?sluzba=mentoring&platba=splatky" class="btn btn--outline btn--block" id="btn-mentoring-spl">Chci na splátky – 1. platba 7 500 Kč</a>
+              <a href="objednavka.html?sluzba=mentoring&platba=jednorizove&darek=1" class="pkg-gift-btn">🎁 Koupit jako dárkový poukaz</a>
             </div>
             <div class="pkg-btns pkg-btns--plno">
               <p class="plno-notice">Kapacita je momentálně plná.</p>
@@ -226,6 +228,7 @@
             <div class="pkg-btns pkg-btns--normal">
               <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn btn--primary btn--block" id="btn-ultimate-jed">Koupit jednorázově za 22 300 Kč</a>
               <a href="objednavka.html?sluzba=ultimate&platba=splatky" class="btn btn--outline btn--block" id="btn-ultimate-spl">Chci na splátky – 1. platba 11 900 Kč</a>
+              <a href="objednavka.html?sluzba=ultimate&platba=jednorizove&darek=1" class="pkg-gift-btn">🎁 Koupit jako dárkový poukaz</a>
             </div>
             <div class="pkg-btns pkg-btns--plno">
               <p class="plno-notice">Kapacita je momentálně plná.</p>
@@ -287,12 +290,11 @@
       </div>
     </section>
 
-
-
   </main>
 
   <footer class="site-footer site-footer--rich">
     <div class="footer__inner">
+
       <div class="footer__col">
         <h3 class="footer__col-title">Kontakty</h3>
         <a href="mailto:koblas.nutricni.info@gmail.com" class="footer__contact-link">
@@ -335,18 +337,15 @@
     </div>
   </footer>
 
-
   <script src="script.js"></script>
   <script src="sluzby.js"></script>
   <script>
     (function () {
       function parseKc(str) {
-        // Vrátí číslo: "11 900 Kč (1. splátka)" → 11900
         return parseInt((str || '').replace(/\s/g, '').replace(/Kč.*$/, '')) || 0;
       }
       function fmtKc(n) {
-        // 11900 → "11 900 Kč"
-        return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Kč';
+        return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Kč';
       }
       function set(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
 
@@ -375,12 +374,12 @@
           set('price-mentoring', fmtKc(meJed));
           set('price-ultimate',  fmtKc(ulJed));
 
-         // InBody texty – bez InBody = cena + sleva
+          // InBody texty
           set('inbody-startup',   'Hodnota: ' + fmtKc(suJed + SU_INBODY) + ' (odečteno ' + fmtKc(SU_INBODY) + ' na InBody)');
           set('inbody-mentoring', 'Hodnota: ' + fmtKc(meJed + ME_INBODY) + ' (odečteno ' + fmtKc(ME_INBODY) + ' na InBody)');
           set('inbody-ultimate',  'Hodnota: ' + fmtKc(ulJed + UL_INBODY) + ' (odečteno ' + fmtKc(UL_INBODY) + ' na InBody)');
 
-          // Splátky texty – vlastní text z adminu nebo auto-výpočet
+          // Splátky texty
           set('note-mentoring', me.splatkyNote || ('Nebo splátky: ' + fmtKc(meSpl) + ' (v 1. měs. po slevě jen ' + fmtKc(meSpl - ME_INBODY) + ') + 3× 2 800 Kč.'));
           set('note-ultimate',  ul.splatkyNote || ('Nebo splátky: ' + fmtKc(ulSpl) + ' (po slevě na InBody jen ' + fmtKc(ulSpl - UL_INBODY) + ') + 5× 2 400 Kč.'));
 
@@ -399,4 +398,3 @@
   <!-- End Cloudflare Web Analytics -->
 </body>
 </html>
-
