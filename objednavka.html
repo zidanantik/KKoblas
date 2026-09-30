@@ -267,7 +267,7 @@
               <span class="form-section__num">I</span>
               Kontaktní a fakturační údaje
             </h2>
-            <p class="form-section__note">Nutné pro vystavení faktury a GDPR evidenci.</p>
+            <p class="form-section__note">Nutné pro vystavení dokladu a GDPR evidenci.</p>
 
             <div class="form-grid form-grid--2">
               <div class="form-group">
@@ -384,7 +384,7 @@
                 <span>Souhlasím s <a href="#" class="gdpr-link" data-modal="modal-vop">Všeobecnými obchodními podmínkami</a> a potvrzuji, že jsem se seznámil/a se <a href="#" class="gdpr-link" data-modal="modal-gdpr">Zásadami ochrany osobních údajů</a>. <span class="req">*</span></span>
               </label>
 
-              <!-- Zdravotní souhlas (skryto při dárku) -->
+              <!-- Zdravotní souhlas (skryto při nákupu dárku) -->
               <label class="legal-check legal-check--required" id="checkHealthLabel">
                 <input type="checkbox" id="checkHealth" name="Souhlas_zdravotni_data" required value="ano">
                 <span>Uděluji výslovný souhlas se zpracováním údajů o svém zdravotním stavu (pro analýzu v aplikaci ZOF, vedení záznamů v Notion a interní evidenci poradce). Potvrzuji, že mi zdravotní stav umožňuje změnu návyků. <span class="req">*</span></span>
@@ -395,7 +395,7 @@
                 <span>Prohlašuji, že jsem plnoletý/á nebo jednám se souhlasem zákonného zástupce. <span class="req">*</span></span>
               </label>
 
-              <!-- Anonymní souhlas (skryto při dárku) -->
+              <!-- Anonymní souhlas (skryto při nákupu dárku) -->
               <label class="legal-check" id="checkAnonLabel">
                 <input type="checkbox" id="checkAnon" name="Souhlas_anonymni" value="ano">
                 <span>Souhlasím s anonymním použitím výsledků spolupráce (grafy progresu, anonymizované fotky) pro referenční účely poradce. <em>(Nepovinné)</em></span>
@@ -408,7 +408,7 @@
             <button type="submit" class="btn btn--primary btn--submit" id="submitBtn">
               ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU
             </button>
-            <p class="form-submit__note">Po odeslání tě kontaktuji do 2 pracovních dnů s fakturou a dalšími kroky.</p>
+            <p class="form-submit__note">Po odeslání tě kontaktuji do 2 pracovních dnů s potvrzením a dalšími kroky.</p>
             <p class="form-error" id="formError" hidden>Nepodařilo se odeslat formulář. Zkuste to prosím znovu nebo mi napište na <a href="mailto:koblas.nutricni.info@gmail.com">koblas.nutricni.info@gmail.com</a>.</p>
           </div>
 
@@ -599,105 +599,6 @@
         return '';
       }
 
-      async function applyCode(codeVal) {
-        const codeInput = document.getElementById('promoInput');
-        const priceEl = document.getElementById('orderPrice');
-        const hiddenPrice = document.getElementById('hiddenPrice');
-        const hiddenPromo = document.getElementById('hiddenPromoCode');
-        const hiddenDiscount = document.getElementById('hiddenDiscountInfo');
-
-        const code = (codeVal || (codeInput ? codeInput.value : '')).trim().toUpperCase();
-        if (!code) {
-          showPromoMsg('Zadejte kód voucheru nebo slevy.', 'err');
-          return;
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const pkg = (urlParams.get('sluzba') || '').toLowerCase();
-
-        showPromoMsg('Ověřuji kód...', 'info');
-
-        try {
-          const res = await fetch(`/api/codes?code=${encodeURIComponent(code)}&package=${encodeURIComponent(pkg)}`);
-          const data = await res.json();
-
-          if (!data.valid) {
-            showPromoMsg(data.message || 'Neplatný kód.', 'err');
-            return;
-          }
-
-          if (codeInput) codeInput.value = data.code;
-          if (hiddenPromo) hiddenPromo.value = data.code;
-
-          let baseTxt = getBasePrice();
-          if (!baseTxt) {
-            await new Promise(r => setTimeout(r, 400));
-            baseTxt = getBasePrice();
-          }
-
-          const baseNum = basePriceNumber || parsePrice(baseTxt);
-          let newPriceStr = '';
-          let discountInfo = '';
-
-          if (data.type === 'gift' || (data.type === 'percent' && data.value >= 100)) {
-            newPriceStr = '0 Kč (Uhrazeno poukazem)';
-            discountInfo = 'Dárkový poukaz 100%';
-            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> 0 Kč`;
-            showPromoMsg('✓ Dárkový poukaz byl úspěšně uplatněn (100% sleva).', 'ok');
-          } else if (data.type === 'percent') {
-            const discountAmt = Math.round(baseNum * (data.value / 100));
-            const finalNum = Math.max(0, baseNum - discountAmt);
-            newPriceStr = formatPrice(finalNum);
-            discountInfo = `Sleva ${data.value} % (-${formatPrice(discountAmt)})`;
-            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
-            showPromoMsg(`✓ Sleva ${data.value} % uplatněna (-${formatPrice(discountAmt)}).`, 'ok');
-          } else if (data.type === 'fixed') {
-            const discountAmt = data.value;
-            const finalNum = Math.max(0, baseNum - discountAmt);
-            newPriceStr = formatPrice(finalNum);
-            discountInfo = `Sleva ${formatPrice(discountAmt)}`;
-            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
-            showPromoMsg(`✓ Sleva ${formatPrice(discountAmt)} uplatněna.`, 'ok');
-          }
-
-          if (hiddenPrice) hiddenPrice.value = newPriceStr;
-          if (hiddenDiscount) hiddenDiscount.value = discountInfo;
-
-        } catch (e) {
-          showPromoMsg('Chyba při ověřování kódu.', 'err');
-        }
-      }
-
-      const promoBtn = document.getElementById('promoApplyBtn');
-      const promoInput = document.getElementById('promoInput');
-      if (promoBtn) promoBtn.addEventListener('click', () => applyCode());
-      if (promoInput) {
-        promoInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            applyCode();
-          }
-        });
-      }
-
-      // Auto-uplatnění kódu z parametru v URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlCode = urlParams.get('kod') || urlParams.get('code');
-      if (urlCode) {
-        let attempts = 0;
-        const autoApply = () => {
-          attempts++;
-          const base = getBasePrice();
-          if (base || attempts > 15) {
-            applyCode(urlCode);
-          } else {
-            setTimeout(autoApply, 150);
-          }
-        };
-        setTimeout(autoApply, 200);
-      }
-
-      // ── Dárkový režim (skrytí sekce II i souhlasů) ──
       const giftCheckbox = document.getElementById('giftCheckbox');
       const giftCard = document.getElementById('giftCard');
       const sectionAnalysis = document.getElementById('sectionAnalysis');
@@ -767,6 +668,123 @@
 
       if (giftCheckbox) {
         giftCheckbox.addEventListener('change', toggleGiftMode);
+      }
+
+      async function applyCode(codeVal) {
+        const codeInput = document.getElementById('promoInput');
+        const priceEl = document.getElementById('orderPrice');
+        const hiddenPrice = document.getElementById('hiddenPrice');
+        const hiddenPromo = document.getElementById('hiddenPromoCode');
+        const hiddenDiscount = document.getElementById('hiddenDiscountInfo');
+
+        const code = (codeVal || (codeInput ? codeInput.value : '')).trim().toUpperCase();
+        if (!code) {
+          showPromoMsg('Zadejte kód voucheru nebo slevy.', 'err');
+          return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const pkg = (urlParams.get('sluzba') || '').toLowerCase();
+
+        showPromoMsg('Ověřuji kód...', 'info');
+
+        try {
+          const res = await fetch(`/api/codes?code=${encodeURIComponent(code)}&package=${encodeURIComponent(pkg)}`);
+          const data = await res.json();
+
+          if (!data.valid) {
+            showPromoMsg(data.message || 'Neplatný kód.', 'err');
+            return;
+          }
+
+          if (codeInput) codeInput.value = data.code;
+          if (hiddenPromo) hiddenPromo.value = data.code;
+
+          let baseTxt = getBasePrice();
+          if (!baseTxt) {
+            await new Promise(r => setTimeout(r, 400));
+            baseTxt = getBasePrice();
+          }
+
+          const baseNum = basePriceNumber || parsePrice(baseTxt);
+          let newPriceStr = '';
+          let discountInfo = '';
+
+          // ── KONTROLA: ZDA JDE O DÁRKOVÝ POUKAZ (100% SLEVU) ──
+          const isGiftVoucher = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
+
+          if (isGiftVoucher) {
+            newPriceStr = '0 Kč (Uhrazeno poukazem)';
+            discountInfo = 'Dárkový poukaz 100%';
+            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> 0 Kč`;
+            showPromoMsg('✓ Dárkový poukaz byl úspěšně uplatněn (100% sleva).', 'ok');
+
+            // Pokud jde o uplatnění dárku, obdarovaný již NEMŮŽE kupovat jako dárek:
+            if (giftCard) {
+              giftCard.style.display = 'none'; // úplně skryje box nákupu dárku
+            }
+            if (giftCheckbox && giftCheckbox.checked) {
+              giftCheckbox.checked = false;
+              toggleGiftMode(); // zajistí, že sekce II i souhlasy zůstanou aktivní pro obdarovaného
+            }
+
+          } else if (data.type === 'percent') {
+            const discountAmt = Math.round(baseNum * (data.value / 100));
+            const finalNum = Math.max(0, baseNum - discountAmt);
+            newPriceStr = formatPrice(finalNum);
+            discountInfo = `Sleva ${data.value} % (-${formatPrice(discountAmt)})`;
+            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
+            showPromoMsg(`✓ Sleva ${data.value} % uplatněna (-${formatPrice(discountAmt)}).`, 'ok');
+
+            // Běžnou slevu lze koupit i jako dárek
+            if (giftCard) giftCard.style.display = 'block';
+
+          } else if (data.type === 'fixed') {
+            const discountAmt = data.value;
+            const finalNum = Math.max(0, baseNum - discountAmt);
+            newPriceStr = formatPrice(finalNum);
+            discountInfo = `Sleva ${formatPrice(discountAmt)}`;
+            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
+            showPromoMsg(`✓ Sleva ${formatPrice(discountAmt)} uplatněna.`, 'ok');
+
+            if (giftCard) giftCard.style.display = 'block';
+          }
+
+          if (hiddenPrice) hiddenPrice.value = newPriceStr;
+          if (hiddenDiscount) hiddenDiscount.value = discountInfo;
+
+        } catch (e) {
+          showPromoMsg('Chyba při ověřování kódu.', 'err');
+        }
+      }
+
+      const promoBtn = document.getElementById('promoApplyBtn');
+      const promoInput = document.getElementById('promoInput');
+      if (promoBtn) promoBtn.addEventListener('click', () => applyCode());
+      if (promoInput) {
+        promoInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            applyCode();
+          }
+        });
+      }
+
+      // Auto-uplatnění kódu z parametru v URL (?kod=... nebo ?code=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCode = urlParams.get('kod') || urlParams.get('code');
+      if (urlCode) {
+        let attempts = 0;
+        const autoApply = () => {
+          attempts++;
+          const base = getBasePrice();
+          if (base || attempts > 15) {
+            applyCode(urlCode);
+          } else {
+            setTimeout(autoApply, 150);
+          }
+        };
+        setTimeout(autoApply, 200);
       }
     })();
   </script>
