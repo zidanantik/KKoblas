@@ -14,7 +14,7 @@ var currentStatus = {
   startup: 'volny', mentoring: 'volny', ultimate: 'volny',
   event: { active: false, name: '', popis: '', odkaz: '' },
   prices: {
-    startup:  { jednorizove: '6 900 Kč' },
+    startup:   { jednorizove: '6 900 Kč' },
     mentoring: { jednorizove: '14 700 Kč', splatky: '7 500 Kč (1. splátka)' },
     ultimate:  { jednorizove: '22 300 Kč', splatky: '11 900 Kč (1. splátka)' }
   }
@@ -28,6 +28,7 @@ function unlock() {
   ENTERED_PASS = sessionStorage.getItem(SESSION_KEY + '_pass') || ENTERED_PASS;
   loadStatus();
   loadAnalytics();
+  loadPromoCodes(); // <-- NAČTENÍ KÓDŮ PO ODEMČENÍ
 }
 
 if (sessionStorage.getItem(SESSION_KEY) === '1') unlock();
@@ -142,9 +143,9 @@ function renderEvent() {
   var txt     = document.getElementById('statusText-event');
   var lbl     = document.getElementById('btnLabel-event');
   var panel   = document.getElementById('eventPanel');
-  if (led)   led.className   = 'status-led ' + (isActive ? 'volny' : '');
-  if (txt)   txt.textContent = isActive ? 'AKTIVNÍ' : 'NEAKTIVNÍ';
-  if (lbl)   lbl.textContent = isActive ? 'DEAKTIVOVAT' : 'AKTIVOVAT';
+  if (led)    led.className   = 'status-led ' + (isActive ? 'volny' : '');
+  if (txt)    txt.textContent = isActive ? 'AKTIVNÍ' : 'NEAKTIVNÍ';
+  if (lbl)    lbl.textContent = isActive ? 'DEAKTIVOVAT' : 'AKTIVOVAT';
   if (panel) panel.classList.toggle('event-panel--active', isActive);
   var nameEl  = document.getElementById('eventName');
   var opisEl  = document.getElementById('eventPopis');
@@ -300,3 +301,144 @@ document.getElementById('eventSave').addEventListener('click', async function ()
   };
   await saveStatus();
 });
+
+// ── Promo Codes & Gifts ──────────────────────────
+function handlePromoTypeChange() {
+  var type = document.getElementById('newPromoType').value;
+  var wrapper = document.getElementById('promoValueWrapper');
+  if (wrapper) wrapper.style.display = type === 'gift' ? 'none' : 'block';
+}
+
+function getAdminAuthPass() {
+  return ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
+}
+
+async function loadPromoCodes() {
+  var tbody = document.getElementById('promoCodesTableBody');
+  if (!tbody) return;
+
+  try {
+    var res = await fetch('/api/codes', {
+      headers: { 'x-admin-pass': getAdminAuthPass() }
+    });
+    if (!res.ok) throw new Error('Chyba autorizace');
+    var codes = await res.json();
+    renderPromoCodesList(codes);
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání kódů: ' + err.message + '</td></tr>';
+  }
+}
+
+function renderPromoCodesList(codes) {
+  var tbody = document.getElementById('promoCodesTableBody');
+  if (!codes || codes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #777;">Zatím nejsou vytvořeny žádné slevové ani dárkové kódy.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = codes.map(function(c) {
+    var typeLabel = '';
+    if (c.type === 'percent') typeLabel = c.value + ' %';
+    else if (c.type === 'fixed') typeLabel = c.value + ' Kč';
+    else if (c.type === 'gift') typeLabel = '<span style="color: #ff9900; font-weight: bold;">DÁRKOVÝ (100 %)</span>';
+
+    var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ') || 'VŠECHNY';
+
+    var usage = '';
+    if (c.oneTime) {
+      usage = c.used 
+        ? '<span style="color: #e74c3c;">Uplatněn</span>' 
+        : '<span style="color: #2ecc71;">Jednorázový</span>';
+    } else {
+      usage = '<span style="color: #3498db;">Neomezený</span>';
+    }
+
+    var toggleBtn = c.active 
+      ? '<button onclick="togglePromoCodeActive(\'' + c.id + '\', false)" style="background: transparent; border: 1px solid #444; color: #bbb; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Vypnout</button>'
+      : '<button onclick="togglePromoCodeActive(\'' + c.id + '\', true)" style="background: rgba(46,204,113,0.15); border: 1px solid #2ecc71; color: #2ecc71; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Aktivovat</button>';
+
+    return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">'
+      + '<td style="padding: 10px; font-weight: bold; color: #ff9900;">' + c.code + '</td>'
+      + '<td style="padding: 10px;">' + typeLabel + '</td>'
+      + '<td style="padding: 10px; color: #aaa;">' + pkgs + '</td>'
+      + '<td style="padding: 10px;">' + usage + '</td>'
+      + '<td style="padding: 10px;">' + (c.active ? '<span style="color: #2ecc71;">● Aktivní</span>' : '<span style="color: #666;">○ Vypnut</span>') + '</td>'
+      + '<td style="padding: 10px; text-align: right; display: flex; gap: 6px; justify-content: flex-end;">'
+      + toggleBtn
+      + '<button onclick="deletePromoCode(\'' + c.id + '\')" style="background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Smazat</button>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+async function createNewPromoCode() {
+  var code = document.getElementById('newPromoCode').value.trim();
+  var type = document.getElementById('newPromoType').value;
+  var value = document.getElementById('newPromoValue').value;
+  var oneTime = document.getElementById('newPromoOneTime').checked;
+
+  var pkgCheckboxes = document.querySelectorAll('.promo-pkg-cb:checked');
+  var packages = Array.from(pkgCheckboxes).map(function(cb) { return cb.value; });
+
+  if (!code) {
+    alert('Zadej text kódu.');
+    return;
+  }
+  if (type !== 'gift' && (!value || Number(value) <= 0)) {
+    alert('Zadej platnou číselnou hodnotu slevy.');
+    return;
+  }
+
+  var payload = { code: code, type: type, value: value, oneTime: oneTime, packages: packages };
+
+  try {
+    var res = await fetch('/api/codes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pass': getAdminAuthPass()
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Chyba při ukládání kódu.');
+
+    document.getElementById('newPromoCode').value = '';
+    document.getElementById('newPromoValue').value = '';
+    loadPromoCodes();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function togglePromoCodeActive(id, activeState) {
+  try {
+    await fetch('/api/codes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pass': getAdminAuthPass()
+      },
+      body: JSON.stringify({ id: id, active: activeState })
+    });
+    loadPromoCodes();
+  } catch (err) {
+    alert('Chyba při změně stavu: ' + err.message);
+  }
+}
+
+async function deletePromoCode(id) {
+  if (!confirm('Opravdu smazat tento kód?')) return;
+  try {
+    await fetch('/api/codes', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pass': getAdminAuthPass()
+      },
+      body: JSON.stringify({ id: id })
+    });
+    loadPromoCodes();
+  } catch (err) {
+    alert('Chyba při mazání: ' + err.message);
+  }
+}
