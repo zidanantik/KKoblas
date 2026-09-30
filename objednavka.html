@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
   <!-- Google tag (gtag.js) -->
@@ -12,7 +12,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Objednávka – Kryštof Koblas Nutriční poradenství</title>
-  <meta name="description" content="Objednej si nutriční poradenství u Kryštofa Koblase. Vyplň formulář a do 2 pracovních dnů tě kontaktuji s fakturou a dalšími kroky."
+  <meta name="description" content="Objednej si nutriční poradenství u Kryštofa Koblase. Vyplň formulář a do 2 pracovních dnů tě kontaktuji s fakturou a dalšími kroky.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -21,6 +21,137 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="objednavka.css?v=2">
+
+  <style>
+    /* ── Styly pro promo kód a dárkový režim ── */
+    .promo-box {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .promo-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .promo-input {
+      flex: 1;
+      background: #0d0d0d;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      color: #fff;
+      padding: 10px 14px;
+      font-family: monospace;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .promo-input:focus {
+      border-color: #ff9900;
+    }
+    .promo-btn {
+      background: #181818;
+      border: 1px solid #c88a2c;
+      color: #ff9900;
+      font-family: monospace;
+      font-weight: 600;
+      font-size: 12px;
+      padding: 0 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .promo-btn:hover {
+      background: #ff9900;
+      color: #000;
+    }
+    .promo-msg {
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .promo-msg--ok { color: #2ecc71; }
+    .promo-msg--err { color: #e74c3c; }
+    .promo-msg--info { color: #ff9900; }
+    .price-original-struck {
+      text-decoration: line-through;
+      color: #777;
+      font-size: 0.85em;
+      margin-right: 8px;
+      font-weight: normal;
+    }
+
+    /* Karta pro dárek */
+    .gift-toggle-card {
+      background: rgba(255, 153, 0, 0.04);
+      border: 1px solid rgba(255, 153, 0, 0.22);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 25px 0;
+      transition: border-color 0.2s;
+    }
+    .gift-toggle-card:hover {
+      border-color: rgba(255, 153, 0, 0.4);
+    }
+    .gift-checkbox-label {
+      display: flex;
+      gap: 12px;
+      cursor: pointer;
+      align-items: flex-start;
+    }
+    .gift-checkbox-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
+      accent-color: #ff9900;
+      cursor: pointer;
+    }
+    .gift-checkbox-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .gift-checkbox-text strong {
+      color: #ff9900;
+      font-size: 15px;
+    }
+    .gift-checkbox-text small {
+      color: #999;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Oznámení při nákupu dárku */
+    .gift-info-notice {
+      background: #141414;
+      border: 1px dashed #ff9900;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 25px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .gift-info-notice__icon {
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+    .gift-info-notice__text strong {
+      color: #ff9900;
+      font-size: 15px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .gift-info-notice__text p {
+      color: #bbb;
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.5;
+    }
+  </style>
 </head>
 <body>
 
@@ -71,16 +202,30 @@
             <span class="order-summary__label">K úhradě</span>
             <strong class="order-summary__price" id="orderPrice">—</strong>
           </div>
+
+          <!-- Slevový kód / Dárkový poukaz -->
+          <div class="promo-box">
+            <div class="promo-input-row">
+              <input type="text" id="promoInput" class="promo-input" placeholder="SLEVOVÝ KÓD NEBO VOUCHER" autocomplete="off">
+              <button type="button" id="promoApplyBtn" class="promo-btn">UPLATNIT</button>
+            </div>
+            <div id="promoMessage" class="promo-msg" hidden></div>
+          </div>
         </div>
 
         <form id="orderForm" novalidate>
-          <!-- Web3Forms skrytá pole -->
+          <!-- Web3Forms a systémová skrytá pole -->
           <input type="hidden" name="subject" id="emailSubject" value="Nova objednavka – KKoblas">
           <input type="hidden" name="from_name" value="Web KKoblas">
           <input type="hidden" name="botcheck" value="" style="display:none">
           <input type="hidden" name="Sluzba" id="hiddenSluzba">
           <input type="hidden" name="Platba" id="hiddenPlatba">
           <input type="hidden" name="Cena" id="hiddenPrice">
+
+          <!-- Skrytá pole pro slevy a dárek -->
+          <input type="hidden" name="Pouzity_kod" id="hiddenPromoCode" value="">
+          <input type="hidden" name="Sleva_info" id="hiddenDiscountInfo" value="">
+          <input type="hidden" name="Je_darek" id="hiddenIsGift" value="ne">
 
           <!-- ── I. Kontaktní údaje ─────────────────── -->
           <div class="form-section">
@@ -132,8 +277,28 @@
             </div>
           </div>
 
+          <!-- ── DÁRKOVÝ PŘEPÍNAČ ───────────────────── -->
+          <div class="gift-toggle-card">
+            <label class="gift-checkbox-label">
+              <input type="checkbox" id="giftCheckbox" name="Koupit_jako_darek" value="ano">
+              <div class="gift-checkbox-text">
+                <strong>🎁 Objednávám tuto službu jako dárek pro někoho jiného</strong>
+                <small>Míry a analytické údaje vyplní obdarovaný sám při uplatnění dárkového poukazu. Nyní zadáváte pouze své fakturační údaje pro vystavení voucheru.</small>
+              </div>
+            </label>
+          </div>
+
+          <!-- Oznámení při nákupu jako dárek -->
+          <div class="gift-info-notice" id="giftInfoNotice" hidden>
+            <div class="gift-info-notice__icon">🎁</div>
+            <div class="gift-info-notice__text">
+              <strong>Objednáváte jako dárkový poukaz</strong>
+              <p>Po úhradě objednávky obdržíte elektronický dárkový certifikát s unikátním kódem. Obdarovaný si balíček aktivuje na webu a své údaje pro analýzu zadá sám.</p>
+            </div>
+          </div>
+
           <!-- ── II. Údaje pro analýzu ──────────────── -->
-          <div class="form-section">
+          <div class="form-section" id="sectionAnalysis">
             <h2 class="form-section__title">
               <span class="form-section__num">II</span>
               Údaje pro analýzu
@@ -192,8 +357,8 @@
                 <span>Souhlasím s <a href="#" class="gdpr-link" data-modal="modal-vop">Všeobecnými obchodními podmínkami</a> a potvrzuji, že jsem se seznámil/a se <a href="#" class="gdpr-link" data-modal="modal-gdpr">Zásadami ochrany osobních údajů</a>. <span class="req">*</span></span>
               </label>
 
-              <label class="legal-check legal-check--required">
-                <input type="checkbox" name="Souhlas_zdravotni_data" required value="ano">
+              <label class="legal-check legal-check--required" id="checkHealthLabel">
+                <input type="checkbox" id="checkHealth" name="Souhlas_zdravotni_data" required value="ano">
                 <span>Uděluji výslovný souhlas se zpracováním údajů o svém zdravotním stavu (pro analýzu v aplikaci ZOF, vedení záznamů v Notion a interní evidenci poradce). Potvrzuji, že mi zdravotní stav umožňuje změnu návyků. <span class="req">*</span></span>
               </label>
 
@@ -362,10 +527,213 @@
 
   <script src="script.js"></script>
   <script src="objednavka.js?v=2"></script>
+
+  <!-- ── Skript pro slevové kódy a dárkový režim ── -->
+  <script>
+    (function() {
+      let basePriceText = '';
+      let basePriceNumber = 0;
+
+      function parsePrice(str) {
+        if (!str) return 0;
+        return parseInt(str.replace(/\s+/g, '').replace(/Kč/gi, ''), 10) || 0;
+      }
+
+      function formatPrice(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
+      }
+
+      function showPromoMsg(text, type) {
+        const msgEl = document.getElementById('promoMessage');
+        if (!msgEl) return;
+        msgEl.hidden = false;
+        msgEl.className = 'promo-msg promo-msg--' + type;
+        msgEl.textContent = text;
+      }
+
+      function getBasePrice() {
+        const priceEl = document.getElementById('orderPrice');
+        const hiddenEl = document.getElementById('hiddenPrice');
+        if (basePriceText && basePriceText !== '—') return basePriceText;
+        const txt = (priceEl ? priceEl.textContent : '').trim();
+        if (txt && txt !== '—') {
+          basePriceText = txt;
+          basePriceNumber = parsePrice(txt);
+          return basePriceText;
+        }
+        const val = (hiddenEl ? hiddenEl.value : '').trim();
+        if (val && val !== '—') {
+          basePriceText = val;
+          basePriceNumber = parsePrice(val);
+          return basePriceText;
+        }
+        return '';
+      }
+
+      async function applyCode(codeVal) {
+        const codeInput = document.getElementById('promoInput');
+        const priceEl = document.getElementById('orderPrice');
+        const hiddenPrice = document.getElementById('hiddenPrice');
+        const hiddenPromo = document.getElementById('hiddenPromoCode');
+        const hiddenDiscount = document.getElementById('hiddenDiscountInfo');
+
+        const code = (codeVal || (codeInput ? codeInput.value : '')).trim().toUpperCase();
+        if (!code) {
+          showPromoMsg('Zadejte kód voucheru nebo slevy.', 'err');
+          return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const pkg = (urlParams.get('sluzba') || '').toLowerCase();
+
+        showPromoMsg('Ověřuji kód...', 'info');
+
+        try {
+          const res = await fetch(`/api/codes?code=${encodeURIComponent(code)}&package=${encodeURIComponent(pkg)}`);
+          const data = await res.json();
+
+          if (!data.valid) {
+            showPromoMsg(data.message || 'Neplatný kód.', 'err');
+            return;
+          }
+
+          if (codeInput) codeInput.value = data.code;
+          if (hiddenPromo) hiddenPromo.value = data.code;
+
+          let baseTxt = getBasePrice();
+          if (!baseTxt) {
+            await new Promise(r => setTimeout(r, 400));
+            baseTxt = getBasePrice();
+          }
+
+          const baseNum = basePriceNumber || parsePrice(baseTxt);
+          let newPriceStr = '';
+          let discountInfo = '';
+
+          if (data.type === 'gift' || (data.type === 'percent' && data.value >= 100)) {
+            newPriceStr = '0 Kč (Uhrazeno poukazem)';
+            discountInfo = 'Dárkový poukaz 100%';
+            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> 0 Kč`;
+            showPromoMsg('✓ Dárkový poukaz byl úspěšně uplatněn (100% sleva).', 'ok');
+          } else if (data.type === 'percent') {
+            const discountAmt = Math.round(baseNum * (data.value / 100));
+            const finalNum = Math.max(0, baseNum - discountAmt);
+            newPriceStr = formatPrice(finalNum);
+            discountInfo = `Sleva ${data.value} % (-${formatPrice(discountAmt)})`;
+            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
+            showPromoMsg(`✓ Sleva ${data.value} % uplatněna (-${formatPrice(discountAmt)}).`, 'ok');
+          } else if (data.type === 'fixed') {
+            const discountAmt = data.value;
+            const finalNum = Math.max(0, baseNum - discountAmt);
+            newPriceStr = formatPrice(finalNum);
+            discountInfo = `Sleva ${formatPrice(discountAmt)}`;
+            priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
+            showPromoMsg(`✓ Sleva ${formatPrice(discountAmt)} uplatněna.`, 'ok');
+          }
+
+          if (hiddenPrice) hiddenPrice.value = newPriceStr;
+          if (hiddenDiscount) hiddenDiscount.value = discountInfo;
+
+        } catch (e) {
+          showPromoMsg('Chyba při ověřování kódu.', 'err');
+        }
+      }
+
+      // Event listenery pro kód
+      const promoBtn = document.getElementById('promoApplyBtn');
+      const promoInput = document.getElementById('promoInput');
+      if (promoBtn) promoBtn.addEventListener('click', () => applyCode());
+      if (promoInput) {
+        promoInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            applyCode();
+          }
+        });
+      }
+
+      // Automatické uplatnění kódu z parametru v URL (?kod=... nebo ?code=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCode = urlParams.get('kod') || urlParams.get('code');
+      if (urlCode) {
+        let attempts = 0;
+        const autoApply = () => {
+          attempts++;
+          const base = getBasePrice();
+          if (base || attempts > 15) {
+            applyCode(urlCode);
+          } else {
+            setTimeout(autoApply, 150);
+          }
+        };
+        setTimeout(autoApply, 200);
+      }
+
+      // ── Dárkový režim (skrytí sekce II) ──
+      const giftCheckbox = document.getElementById('giftCheckbox');
+      const sectionAnalysis = document.getElementById('sectionAnalysis');
+      const giftNotice = document.getElementById('giftInfoNotice');
+      const hiddenIsGift = document.getElementById('hiddenIsGift');
+      const checkHealth = document.getElementById('checkHealth');
+      const checkHealthLabel = document.getElementById('checkHealthLabel');
+
+      const analysisInputs = [
+        document.getElementById('fage'),
+        document.getElementById('fgender'),
+        document.getElementById('fheight'),
+        document.getElementById('fweight')
+      ];
+
+      function toggleGiftMode() {
+        if (!giftCheckbox) return;
+        const isGift = giftCheckbox.checked;
+
+        if (isGift) {
+          if (sectionAnalysis) sectionAnalysis.style.display = 'none';
+          if (giftNotice) giftNotice.hidden = false;
+          if (hiddenIsGift) hiddenIsGift.value = 'ano';
+
+          // Vypnout povinnou validaci tělesných mír
+          analysisInputs.forEach(inp => {
+            if (inp) {
+              inp.removeAttribute('required');
+              inp.value = '';
+            }
+          });
+
+          // U dárku kupující neposkytuje své zdravotní údaje
+          if (checkHealth) {
+            checkHealth.removeAttribute('required');
+            checkHealth.checked = true;
+          }
+          if (checkHealthLabel) checkHealthLabel.style.display = 'none';
+
+        } else {
+          if (sectionAnalysis) sectionAnalysis.style.display = 'block';
+          if (giftNotice) giftNotice.hidden = true;
+          if (hiddenIsGift) hiddenIsGift.value = 'ne';
+
+          // Obnovit povinnou validaci
+          analysisInputs.forEach(inp => {
+            if (inp) inp.setAttribute('required', '');
+          });
+
+          if (checkHealth) {
+            checkHealth.setAttribute('required', '');
+            checkHealth.checked = false;
+          }
+          if (checkHealthLabel) checkHealthLabel.style.display = 'flex';
+        }
+      }
+
+      if (giftCheckbox) {
+        giftCheckbox.addEventListener('change', toggleGiftMode);
+      }
+    })();
+  </script>
+
   <!-- Cloudflare Web Analytics -->
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "4e27e2346fde40e68f3f03fac3e2c036"}'></script>
   <!-- End Cloudflare Web Analytics -->
 </body>
 </html>
-
-
