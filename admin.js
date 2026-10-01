@@ -370,18 +370,27 @@ function printVoucherModal(id) {
   var c = loadedCodesCache.find(function(item) { return item.id === id; });
   if (!c) return;
 
-  var typeTitle = c.type === 'gift' ? 'DÁRKOVÝ POUKAZ' : 'SLEVOVÝ VOUCHER';
-  var valueDisplay = c.type === 'gift' ? '100% Uhrazeno' : (c.type === 'percent' ? 'Sleva ' + c.value + ' %' : 'Sleva ' + c.value + ' Kč');
+  var typeTitle = c.type === 'gift' 
+    ? 'DÁRKOVÝ POUKAZ' 
+    : (c.splatky ? 'SLEVOVÝ VOUCHER – SPLÁTKY' : 'SLEVOVÝ VOUCHER');
+
+  var suffix = c.splatky ? ' na 1. splátku' : '';
+  var valueDisplay = c.type === 'gift' 
+    ? '100% Uhrazeno' 
+    : (c.type === 'percent' ? 'Sleva ' + c.value + ' %' + suffix : 'Sleva ' + c.value + ' Kč' + suffix);
   
   var pkgTitlesMap = { startup: 'START-UP', mentoring: 'MENTORING', ultimate: 'ULTIMATE' };
   var pkgsDisplay = '';
   if (!c.packages || c.packages.length === 0 || c.packages.length === 3) {
-    pkgsDisplay = 'VŠECHNY SLUŽBY';
+    pkgsDisplay = c.splatky ? 'MENTORING a ULTIMATE (SPLÁTKY)' : 'VŠECHNY SLUŽBY';
   } else {
     pkgsDisplay = c.packages.map(function(p) { return pkgTitlesMap[p] || p.toUpperCase(); }).join(', ');
+    if (c.splatky) pkgsDisplay += ' – NA SPLÁTKY';
   }
 
   var redeemUrl = 'https://koblas-nutricni.cz/objednavka.html?kod=' + encodeURIComponent(c.code);
+  if (c.splatky) redeemUrl += '&platba=splatky';
+  if (c.packages && c.packages.length === 1) redeemUrl += '&sluzba=' + encodeURIComponent(c.packages[0]);
 
   var printWin = window.open('', '_blank', 'width=900,height=750');
   printWin.document.write(`
@@ -558,7 +567,7 @@ function printVoucherModal(id) {
           </div>
 
           <div class="instructions">
-            Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong>, zvolte odpovídající balíček a v objednávkovém formuláři zadejte tento kód.<br>
+            Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong>, zvolte odpovídající balíček ${c.splatky ? 'a platbu na splátky' : ''} a v objednávkovém formuláři zadejte tento kód.<br>
             Přímý odkaz: <a href="${redeemUrl}">${redeemUrl}</a>
           </div>
         </div>
