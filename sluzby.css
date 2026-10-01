@@ -18,7 +18,7 @@
   color: #E67E22;
 }
 
-/* ── Page hero (Kompaktní, bez zbytečného prázdna) ── */
+/* ── Page hero ──────────────────────────────────── */
 .page-hero {
   position: relative;
   overflow: hidden;
@@ -319,7 +319,7 @@
   color: #ff9900;
 }
 
-/* ── Packages Grid (Všechny karty stejně vysoké) ──── */
+/* ── Packages Grid ──────────────────────────────── */
 .packages__inner {
   position: relative;
   z-index: 1;
@@ -328,7 +328,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  align-items: stretch; /* DŮLEŽITÉ: Karty mají shodnou výšku */
+  align-items: stretch;
 }
 
 /* ── Package card ───────────────────────────────── */
@@ -363,13 +363,13 @@
   transform: translateY(-16px);
 }
 
-/* Stavy karet při uplatnění voucheru / slevy */
+/* Ztlumení karty, pokud pro ni kód neplatí */
 .pkg-card.is-dimmed {
-  opacity: 0.32;
-  filter: grayscale(40%);
+  opacity: 0.45;
+  filter: grayscale(25%);
 }
 .pkg-card.is-dimmed:hover {
-  opacity: 0.75;
+  opacity: 0.9;
   filter: none;
 }
 
@@ -459,7 +459,7 @@
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-/* ── Feature list (Kompaktní v klidu + vysunutí na hover) ── */
+/* ── Feature list (Plynulé rozbalení na hover) ── */
 .pkg-card__list {
   list-style: none;
   display: flex;
@@ -499,6 +499,7 @@
   line-height: 1.35;
 }
 
+/* Popisky jsou v klidu srolované na 0 */
 .pkg-card__item-desc {
   font-size: .81rem;
   color: var(--muted);
@@ -507,12 +508,13 @@
   opacity: 0;
   overflow: hidden;
   margin-top: 0;
-  transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease;
+  transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
 }
 
+/* Rozbalení popisků při najetí na KTEROUKOLIV kartu */
 .pkg-card:hover .pkg-card__item-desc,
 .pkg-card:focus-within .pkg-card__item-desc {
-  max-height: 90px;
+  max-height: 120px;
   opacity: 1;
   margin-top: 4px;
 }
@@ -525,7 +527,6 @@
   }
 }
 
-/* InBody anchor link in list */
 .pkg-anchor {
   color: var(--gold);
   text-decoration: underline;
@@ -535,7 +536,6 @@
 }
 .pkg-anchor:hover { color: var(--gold-light); text-decoration-color: var(--gold-light); }
 
-/* ── InBody discount line ───────────────────────── */
 .pkg-card__price-inbody {
   display: block;
   font-size: .78rem;
@@ -544,12 +544,11 @@
   opacity: .75;
 }
 
-/* ── Card footer (Zarovnáno na spodek každé karty) ─ */
 .pkg-card__footer {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-top: auto; /* DŮLEŽITÉ: Tlačítka sedí u všech karet v jedné rovině */
+  margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,.06);
 }
@@ -586,7 +585,6 @@
   margin-top: 4px;
 }
 
-/* ── Button groups per card ─────────────────────── */
 .pkg-btns {
   display: flex;
   flex-direction: column;
@@ -610,7 +608,6 @@
   border-radius: 8px;
 }
 
-/* ── Dárkové tlačítko (Kompaktní & elegantní) ────── */
 .pkg-gift-btn {
   display: inline-flex;
   align-items: center;
