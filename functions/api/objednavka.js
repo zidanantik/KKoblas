@@ -90,9 +90,16 @@ function initOrder(serviceMap) {
         body: JSON.stringify(payload)
       });
 
-      var result = await response.json();
+      var text = await response.text();
+      var result = {};
+      try {
+        result = JSON.parse(text);
+      } catch (err) {
+        throw new Error('Chyba serveru (' + response.status + '): Server nevrátil platná data.');
+      }
+
       if (response.ok && result.ok) {
-        // ── PŘIČTENÍ POUŽITÍ KÓDU DO KV DATABÁZE (+1) ──
+        // Započtení kódu po úspěšné objednávce (+1)
         var promoCodeVal = (payload.Pouzity_kod || (document.getElementById('hiddenPromoCode') ? document.getElementById('hiddenPromoCode').value : '') || (document.getElementById('promoInput') ? document.getElementById('promoInput').value : '')).trim();
         
         if (promoCodeVal) {
@@ -115,12 +122,15 @@ function initOrder(serviceMap) {
                   + '&email=' + encodeURIComponent(email);
         window.location.href = dest;
       } else {
-        throw new Error(result.error || 'Server error');
+        throw new Error(result.error || ('Chyba odeslání (' + response.status + ')'));
       }
     } catch (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
-      if (errorEl) { errorEl.hidden = false; errorEl.textContent = err.message || 'Chyba odesílání'; }
+      if (errorEl) { 
+        errorEl.hidden = false; 
+        errorEl.textContent = err.message || 'Chyba odesílání'; 
+      }
     }
   });
 }
