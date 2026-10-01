@@ -76,17 +76,15 @@ export async function onRequestPost(context) {
 
     const resendKey = context.env.RESEND_API_KEY;
 
-    // Bezpečná konstrukce odesílatele bez diakritiky v adrese
     let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
     if (!sender.includes('<')) {
       const cleanEmail = sender.includes('@') ? sender : `info@${sender}`;
       sender = `Kryštof Koblas <${cleanEmail}>`;
     }
 
-    // Očištění názvu balíčku na startup / mentoring / ultimate
     const pkgSlug = normalizePkg(client.sluzba || client.sluzba_nazev);
 
-    // 3. Generování voucheru a odeslání e-mailu pro dárkový poukaz
+    // 3. Generování voucheru a odeslání pro dárkový poukaz
     if (client.is_gift) {
       const giftCode = generateGiftCode();
       client.kod_voucheru = giftCode;
@@ -159,7 +157,7 @@ export async function onRequestPost(context) {
       }
 
     } else {
-      // 4. Běžný přímý nákup
+      // 4. Běžný přímý nákup po zaplacení
       if (resendKey && client.kupujici && client.kupujici.email) {
         const packageName = client.sluzba_nazev || 'nutriční program';
 
@@ -169,9 +167,13 @@ export async function onRequestPost(context) {
             <p>Ahoj ${client.kupujici.jmeno},</p>
             <p>tvoje platba za balíček <strong>${packageName}</strong> dorazila v pořádku, díky moc! Oficiálně tak odmáváme startovní čáru a jdeme na to.</p>
             
-            <p>Abychom hned chytili správný rytmus, tady je pár rychlých a důležitých info k tomu, jak budeme fungovat:</p>
+            <div style="background: #fff8eb; border-left: 4px solid #ff9900; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #d35400; margin-top: 0; margin-bottom: 8px;">📋 2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ ONLINE SCHŮZKOU:</h3>
+              <p style="margin: 6px 0;"><strong>1. Zápis jídelníčku:</strong> Měj ready aspoň 3 dny zápisu v aplikaci <a href="https://www.zofapp.cz/" style="color: #ff9900; font-weight: bold;">zofapp.cz</a> (čím víc dní zvládneš zapsat, tím líp pro úvodní analýzu).</p>
+              <p style="margin: 6px 0;"><strong>2. Měření InBody:</strong> Zařiď si prosím ve svém okolí měření na InBody a výsledky mi pošli na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</p>
+            </div>
 
-            <h3 style="color: #ff9900; margin-top: 20px;">📱 JAK BUDEME V KONTAKTU?</h3>
+            <h3 style="color: #ff9900; margin-top: 25px;">📱 JAK BUDEME V KONTAKTU?</h3>
             <ul>
               <li><strong>Prvně ti napíšu na WhatsApp:</strong> Co nejdříve se ti ozvu přímo na WhatsApp (+420 774 143 176), abychom se domluvili na termínu první online schůzky.</li>
               <li><strong>Klidně napiš sám/sama:</strong> Kdybych to náhodou nestihl hned nebo jsi chtěl/a začátek urychlit, klidně mi napiš jako první.</li>
@@ -179,14 +181,11 @@ export async function onRequestPost(context) {
               <li><strong>Spojení v aplikaci ZOF:</strong> Následně se propojíme i přímo v ZOFu.</li>
             </ul>
 
-            <h3 style="color: #ff9900; margin-top: 20px;">⏱️ JAK JE TO S TVÝM ČASEM? (FÉROVÁ DOHODA)</h3>
+            <h3 style="color: #ff9900; margin-top: 25px;">⏱️ JAK JE TO S TVÝM ČASEM? (FÉROVÁ DOHODA)</h3>
             <ul>
               <li><strong>O svůj čas nepřijdeš:</strong> Čas balíčku ti začínám oficiálně počítat až ode dne naší první online schůzky (do té doby spolu ladíme jen podklady a diagnostiku).</li>
               <li><strong>Rušení schůzek:</strong> Když se schůzka předem vykomunikuje a přesune, nic se neděje. Pokud by se ale termíny rušily opakovaně bez omluvy, zaplacený čas začne běžet.</li>
             </ul>
-
-            <h3 style="color: #ff9900; margin-top: 20px;">📊 ANALÝZA DAT (AŤ NEPLÝTVÁME ČASEM)</h3>
-            <p>Od chvíle zaplacení už pracuju na tvých podkladech. Pokud už máš hotové InBody, pošli mi výsledky hned na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</p>
 
             <p style="margin-top: 25px;">Všechno v klidu nastavíme tak, aby tě to bavilo a přineslo reálné výsledky.<br><br>Těším se na spolupráci!<br><strong>Kryštof Koblas</strong></p>
           </div>
