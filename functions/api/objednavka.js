@@ -124,35 +124,23 @@ export async function onRequestPost(context) {
       }
     }
 
-    const slug = context.env.FAKTUROID_SLUG || 'krystofkoblas';
-    const clientId = context.env.FAKTUROID_CLIENT_ID;
-    const clientSecret = context.env.FAKTUROID_CLIENT_SECRET;
+    const slug = 'krystofkoblas';
+    const clientId = '4eec39db77ad7e5dc6da69e17153ffa50c8559d7';
+    const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
     const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
 
-    console.log('STAV PROMENNYCH:', {
-      hasSlug: !!slug,
-      slugValue: slug,
-      hasClientId: !!clientId,
-      hasClientSecret: !!clientSecret,
-      hasResendKey: !!context.env.RESEND_API_KEY
-    });
-
+    console.log('--- TEST FAKTUROID START ---');
     let fakturoidInvoice = null;
 
-    if (clientId && clientSecret) {
-      try {
-        console.log('1. Žádám Fakturoid OAuth token...');
-        const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
-        console.log('2. Hledám/zakládám kontakt...');
-        const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
-        console.log('3. Vystavuji proforma fakturu...');
-        fakturoidInvoice = await createProformaInvoice(slug, fToken, subjectId, body, isGift, userAgent);
-        console.log('ÚSPĚCH! Faktura vytvořena s ID:', fakturoidInvoice.id);
-      } catch (faktErr) {
-        console.error('FAKTUROID CHYBA:', faktErr.message);
-      }
-    } else {
-      console.warn('VAROVÁNÍ: Chybí FAKTUROID_CLIENT_ID nebo FAKTUROID_CLIENT_SECRET!');
+    try {
+      const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
+      console.log('Token získán úspěšně.');
+      const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
+      console.log('Kontakt připraven, ID:', subjectId);
+      fakturoidInvoice = await createProformaInvoice(slug, fToken, subjectId, body, isGift, userAgent);
+      console.log('ÚSPĚCH! Proforma faktura vytvořena, ID:', fakturoidInvoice.id);
+    } catch (faktErr) {
+      console.error('CHYBA V COMMu S FAKTUROIDEM:', faktErr.message);
     }
 
     return new Response(JSON.stringify({ ok: true, invoiceId: fakturoidInvoice?.id || null }), {
