@@ -167,7 +167,7 @@
   background-size: 160px 80px;
 }
 
-/* ── Decentní rozbalovací odkaz na voucher ──────── */
+/* ── Rozbalovací odkaz na voucher ───────────────── */
 .promo-bar-wrap {
   position: relative;
   z-index: 2;
@@ -331,7 +331,7 @@
   align-items: stretch;
 }
 
-/* ── Package card ───────────────────────────────── */
+/* ── Package card (Naprosto stabilní výška) ──────── */
 .pkg-card {
   background: var(--surface);
   border-radius: 24px;
@@ -344,26 +344,19 @@
   position: relative;
   height: 100%;
   box-sizing: border-box;
-  transition: transform .3s ease, box-shadow .3s ease, opacity .4s ease, border-color .3s ease, filter .4s ease;
+  transition: opacity .4s ease, border-color .3s ease, filter .4s ease;
 }
 
 .pkg-card:hover {
-  transform: translateY(-6px);
   box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 30px 70px rgba(0,0,0,.35);
 }
 
 .pkg-card--featured {
   border-color: rgba(201,168,76,.35);
   background: linear-gradient(160deg, #0f1d18 0%, #0a1410 100%);
-  transform: translateY(-10px);
   box-shadow: 0 16px 48px rgba(0,0,0,.5), 0 32px 72px rgba(0,0,0,.4);
 }
 
-.pkg-card--featured:hover {
-  transform: translateY(-16px);
-}
-
-/* Ztlumení karty, pokud pro ni kód neplatí */
 .pkg-card.is-dimmed {
   opacity: 0.45;
   filter: grayscale(25%);
@@ -376,7 +369,6 @@
 .pkg-card.pkg-card--voucher-match {
   border-color: #ff9900 !important;
   box-shadow: 0 0 35px rgba(255, 153, 0, 0.4), 0 20px 60px rgba(0,0,0,0.7) !important;
-  transform: translateY(-16px) !important;
   opacity: 1 !important;
   filter: none !important;
 }
@@ -459,7 +451,7 @@
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-/* ── Feature list (Plynulé rozbalení na hover) ── */
+/* ── Feature list (Plovoucí overlay popisky – tlačítka drží fixně na místě) ── */
 .pkg-card__list {
   list-style: none;
   display: flex;
@@ -499,31 +491,47 @@
   line-height: 1.35;
 }
 
-/* Popisky jsou v klidu srolované na 0 */
+/* Plovoucí popisek (drawer/tooltip) – zabírá 0 místa v rozvržení karty */
 .pkg-card__item-desc {
-  font-size: .81rem;
+  position: absolute;
+  left: 18px;
+  right: 12px;
+  top: calc(100% + 2px);
+  background: rgba(14, 24, 20, 0.96);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .8rem;
   color: var(--muted);
-  line-height: 1.5;
-  max-height: 0;
+  line-height: 1.45;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+  z-index: 30;
   opacity: 0;
-  overflow: hidden;
-  margin-top: 0;
-  transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
 }
 
-/* Rozbalení popisků při najetí na KTEROUKOLIV kartu */
-.pkg-card:hover .pkg-card__item-desc,
-.pkg-card:focus-within .pkg-card__item-desc {
-  max-height: 120px;
+.pkg-card__list li:hover .pkg-card__item-desc {
   opacity: 1;
-  margin-top: 4px;
+  visibility: visible;
+  transform: translateY(0);
 }
 
+/* Na mobilech (kde není myš) se zobrazují klasicky pod názvem */
 @media (hover: none) {
   .pkg-card__item-desc {
-    max-height: none !important;
+    position: static !important;
     opacity: 1 !important;
-    margin-top: 4px !important;
+    visibility: visible !important;
+    transform: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-top: 3px !important;
+    max-height: none !important;
   }
 }
 
@@ -544,6 +552,7 @@
   opacity: .75;
 }
 
+/* Patička karty je pevně ukotvená dole */
 .pkg-card__footer {
   display: flex;
   flex-direction: column;
@@ -912,7 +921,6 @@
     max-width: 520px;
   }
   .pkg-card--featured { transform: none; }
-  .pkg-card--featured:hover { transform: translateY(-6px); }
 
   .info-blocks__inner { grid-template-columns: 1fr; max-width: 520px; }
 
