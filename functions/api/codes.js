@@ -1,8 +1,16 @@
 // functions/api/codes.js
 
+function normalizePkg(str) {
+  if (!str) return '';
+  const s = String(str).toLowerCase();
+  if (s.includes('ultimate')) return 'ultimate';
+  if (s.includes('mentor')) return 'mentoring';
+  if (s.includes('start')) return 'startup';
+  return s.trim();
+}
+
 export async function onRequestGet(context) {
   try {
-    // Bezpečná ochrana: pokud binding chybí, nespadneme, ale vrátíme prázdné kódy
     const store = context.env.STATUS_STORE;
     const raw = store ? await store.get('PROMO_CODES') : null;
     const codes = raw ? JSON.parse(raw) : [];
@@ -10,7 +18,7 @@ export async function onRequestGet(context) {
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
 
-    // Administrace: vrací všechny kódy včetně počítadla
+    // Administrace: vrací všechny kódy
     if (adminPass && adminPass === storedPass) {
       return new Response(JSON.stringify(codes), {
         headers: { 'Content-Type': 'application/json' }
@@ -20,7 +28,7 @@ export async function onRequestGet(context) {
     // Veřejné ověření kódu
     const url = new URL(context.request.url);
     const codeParam = (url.searchParams.get('code') || '').trim().toUpperCase();
-    const pkgParam = (url.searchParams.get('package') || '').trim().toLowerCase();
+    const pkgParam = normalizePkg(url.searchParams.get('package') || url.searchParams.get('sluzba') || '');
     const modeSplatky = url.searchParams.get('splatky') === 'true';
     const modeDarek = url.searchParams.get('darek') === '1' || url.searchParams.get('darek') === 'true';
 
@@ -63,10 +71,11 @@ export async function onRequestGet(context) {
       });
     }
 
-    const allowedPkgs = (found.packages || []).map(p => p.toLowerCase());
+    // Normalizace povolených balíčků
+    const allowedPkgs = (found.packages || []).map(p => normalizePkg(p)).filter(Boolean);
 
     if (pkgParam && allowedPkgs.length > 0 && !allowedPkgs.includes(pkgParam)) {
-      return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na balíček ' + pkgParam.toUpperCase() + '.' }), {
+      return new Response(JSON.stringify({ valid: false, message: 'Tento kód platí pouze pro balíček ' + allowedPkgs.join(', ').toUpperCase() + '.' }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -98,7 +107,7 @@ export async function onRequestPost(context) {
     const raw = store ? await store.get('PROMO_CODES') : null;
     let codes = raw ? JSON.parse(raw) : [];
 
-    // ── 1. VEŘEJNÉ PŘIČTENÍ POUŽITÍ KÓDU PO OBJEDNÁVCE (+1) ──
+    // Uplatnění kódu po dokončení objednávky
     if (body.action === 'redeem' && body.code) {
       const codeUpper = body.code.trim().toUpperCase();
       const target = codes.find(c => c.code && c.code.trim().toUpperCase() === codeUpper);
@@ -120,7 +129,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── 2. ADMINISTRACE (vyžaduje ADMIN_PASS) ──
+    // Administrace
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
 
@@ -131,7 +140,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Přepnutí stavu aktivní/neaktivní
+    // Přepnutí stavu
     if (body.id && body.active !== undefined) {
       const idx = codes.findIndex(c => c.id === body.id);
       if (idx > -1) {
@@ -153,7 +162,7 @@ export async function onRequestPost(context) {
       oneTime: !!body.oneTime,
       splatky: !!body.splatky,
       darekOnly: !!body.darekOnly,
-      packages: (body.packages || []).map(p => p.toLowerCase()),
+      packages: (body.packages || []).map(p => normalizePkg(p)).filter(Boolean),
       active: true,
       used: false,
       usedCount: 0,
