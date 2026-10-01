@@ -97,20 +97,22 @@ export async function onRequestPost(context) {
     const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
     const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
 
-    console.log('--- FAKTUROID OBJEDNÁVKA START ---');
-
     const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
     const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
 
-    // Zpracování ceny a splátek
+    // Výpočet ceny
     const rawPrice = String(body.Cena || '').replace(/[^\d]/g, '');
     const totalPrice = parseInt(rawPrice, 10) || 0;
+    const isZeroPayment = totalPrice === 0;
+
     const totalInstallments = isInstallment ? (parseInt(body.Mesice, 10) || 3) : 1;
     const installmentAmount = isInstallment ? Math.round(totalPrice / totalInstallments) : totalPrice;
 
     let lineName = body.Sluzba_Nazev || body.Sluzba || 'Nutriční balíček';
     if (isGift) {
       lineName += ' (Dárkový poukaz)';
+    } else if (isZeroPayment) {
+      lineName += ' (Uplatněn dárkový poukaz – 100% sleva)';
     } else if (isInstallment) {
       lineName += ' – 1. splátka z ' + totalInstallments;
     }
@@ -128,7 +130,7 @@ export async function onRequestPost(context) {
       ],
       note: isGift 
         ? 'Objednáno jako dárkový poukaz – voucher se odešle po úhradě.' 
-        : (isInstallment ? 'Splátková platba (1/' + totalInstallments + ')' : '')
+        : (isZeroPayment ? 'Uplatněn dárkový poukaz – 100% sleva' : (isInstallment ? 'Splátková platba (1/' + totalInstallments + ')' : ''))
     };
 
     const invoiceRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
@@ -148,28 +150,103 @@ export async function onRequestPost(context) {
     }
 
     const invoiceData = await invoiceRes.json();
-    console.log('ÚSPĚCH! Proforma faktura vytvořena, ID:', invoiceData.id);
 
-    // 2. KROK: Explicitní požadavek na odeslání e-mailu s fakturou přes Fakturoid API
-    const emailRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${invoiceData.id}/message.json`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${fToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': userAgent
-      },
-      body: JSON.stringify({}) // Prázdný objekt, Fakturoid použije výchozí šablonu pro proformy a e-mail klienta
-    });
+    // Pokud je cena 0 Kč (uplatněn dárkový poukaz):
+    // 1. Označíme fakturu ve Fakturoidu jako uhrazenou
+    // 2. Fakturoid NEBUDE posílat výzvu k platbě
+    // 3. Resend rovnou odešle náš uvítací e-mail se všemi instrukcemi
+    if (isZeroPayment) {
+      try {
+        await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${invoiceData.id}/payments.json`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${fToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': userAgent
+          },
+          body: JSON.stringify({ paid_on: new Date().toISOString().split('T')[0] })
+        });
+      } catch (e) {
+        console.error('Chyba při označení 0 Kč faktury jako zaplacené:', e);
+      }
 
-    if (!emailRes.ok) {
-      const emailErrText = await emailRes.text();
-      console.error(`VAROVÁNÍ: Faktura se vytvořila, ale odeslání e-mailu selhalo (${emailRes.status}): ${emailErrText}`);
+      // Odeslání plnohodnotného uvítacího e-mailu obdarovanému
+      const resendKey = context.env.RESEND_API_KEY;
+      if (resendKey && body.Email) {
+        let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
+        if (!sender.includes('<')) {
+          const cleanEmail = sender.includes('@') ? sender : `info@${sender}`;
+          sender = `Kryštof Koblas <${cleanEmail}>`;
+        }
+
+        const packageName = body.Sluzba_Nazev || body.Sluzba || 'nutriční program';
+
+        const welcomeEmailHtml = `
+          <div style="font-family: sans-serif; max-width: 600px; color: #222; line-height: 1.6;">
+            <h2 style="color: #2ecc71;">Poukaz uplatněn! Vítej na palubě 🚀</h2>
+            <p>Ahoj ${body.Jmeno},</p>
+            <p>tvůj dárkový poukaz na balíček <strong>${packageName}</strong> byl úspěšně aktivován! Oficiálně tak odmáváme startovní čáru a jdeme na to.</p>
+            
+            <div style="background: #fff8eb; border-left: 4px solid #ff9900; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #d35400; margin-top: 0; margin-bottom: 8px;">📋 2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ ONLINE SCHŮZKOU:</h3>
+              <p style="margin: 6px 0;"><strong>1. Zápis jídelníčku:</strong> Měj ready aspoň 3 dny zápisu v aplikaci <a href="https://www.zofapp.cz/" style="color: #ff9900; font-weight: bold;">zofapp.cz</a> (čím víc dní zvládneš zapsat, tím líp pro úvodní analýzu).</p>
+              <p style="margin: 6px 0;"><strong>2. Měření InBody:</strong> Zařiď si prosím ve svém okolí měření na InBody a výsledky mi pošli na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</p>
+            </div>
+
+            <h3 style="color: #ff9900; margin-top: 25px;">📱 JAK BUDEME V KONTAKTU?</h3>
+            <ul>
+              <li><strong>Prvně ti napíšu na WhatsApp:</strong> Co nejdříve se ti ozvu přímo na WhatsApp (+420 774 143 176), abychom se domluvili na termínu první online schůzky.</li>
+              <li><strong>Klidně napiš sám/sama:</strong> Kdybych to náhodou nestihl hned nebo jsi chtěl/a začátek urychlit, klidně mi napiš jako první.</li>
+              <li><strong>Čistě WhatsApp zprávy:</strong> Číslo používej primárně pro textové a hlasové zprávy. Každému se věnuji na maximum a jakmile mi to čas dovolí, hned odepisuju.</li>
+              <li><strong>Spojení v aplikaci ZOF:</strong> Následně se propojíme i přímo v ZOFu.</li>
+            </ul>
+
+            <h3 style="color: #ff9900; margin-top: 25px;">⏱️ JAK JE TO S TVÝM ČASEM? (FÉROVÁ DOHODA)</h3>
+            <ul>
+              <li><strong>O svůj čas nepřijdeš:</strong> Čas balíčku ti začínám oficiálně počítat až ode dne naší první online schůzky (do té doby spolu ladíme jen podklady a diagnostiku).</li>
+              <li><strong>Rušení schůzek:</strong> Když se schůzka předem vykomunikuje a přesune, nic se neděje. Pokud by se ale termíny rušily opakovaně bez omluvy, zaplacený čas začne běžet.</li>
+            </ul>
+
+            <p style="margin-top: 25px;">Všechno v klidu nastavíme tak, aby tě to bavilo a přineslo reálné výsledky.<br><br>Těším se na spolupráci!<br><strong>Kryštof Koblas</strong></p>
+          </div>
+        `;
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${resendKey}`, 
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({
+            from: sender,
+            to: [body.Email],
+            subject: `koblas-nutricni.cz | Poukaz na ${packageName} aktivován! Info, co bude dál 🚀`,
+            html: welcomeEmailHtml
+          })
+        });
+      }
+
     } else {
-      console.log('ÚSPĚCH! E-mail s fakturou byl odeslán klientovi.');
+      // Běžná platba > 0 Kč: Fakturoid pošle zálohovou fakturu k úhradě
+      const emailRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${invoiceData.id}/message.json`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${fToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': userAgent
+        },
+        body: JSON.stringify({})
+      });
+
+      if (!emailRes.ok) {
+        const emailErrText = await emailRes.text();
+        console.error(`Odeslání faktury selhalo (${emailRes.status}): ${emailErrText}`);
+      }
     }
 
-    // Uložení klienta do KV úložiště (`CLIENTS`), aby webhook věděl, co spárovat
+    // Uložení klienta do KV
     const store = context.env.STATUS_STORE;
     if (store) {
       const rawClients = await store.get('CLIENTS');
@@ -177,7 +254,9 @@ export async function onRequestPost(context) {
 
       const newClientRecord = {
         fakturoid_id: invoiceData.id,
-        status: 'ceka_na_platbu',
+        status: isZeroPayment ? 'aktivni' : 'ceka_na_platbu',
+        pocita_se: isZeroPayment,
+        datum_platby: isZeroPayment ? new Date().toISOString() : null,
         sluzba: body.Sluzba || '',
         sluzba_nazev: body.Sluzba_Nazev || body.Sluzba || 'Nutriční program',
         is_gift: isGift,
