@@ -331,7 +331,7 @@
   align-items: stretch;
 }
 
-/* ── Package card (Naprosto stabilní výška) ──────── */
+/* ── Package card (Pevná výška, čisté kontejnery) ── */
 .pkg-card {
   background: var(--surface);
   border-radius: 24px;
@@ -451,13 +451,14 @@
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-/* ── Feature list (Plovoucí overlay popisky – tlačítka drží fixně na místě) ── */
+/* ── Feature list (Pevný prostor pro odrážky, žádné překrývání) ── */
 .pkg-card__list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
+  min-height: 220px; /* Zafixuje prostor uvnitř karty, aby se netrhala výška */
 }
 
 .pkg-card__list li {
@@ -491,47 +492,30 @@
   line-height: 1.35;
 }
 
-/* Plovoucí popisek (drawer/tooltip) – zabírá 0 místa v rozvržení karty */
+/* V klidu sbalené, po najetí myši se rozbalí normálně v proudu DOMu (bez absolutní pozice) */
 .pkg-card__item-desc {
-  position: absolute;
-  left: 18px;
-  right: 12px;
-  top: calc(100% + 2px);
-  background: rgba(14, 24, 20, 0.96);
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: .8rem;
+  font-size: .81rem;
   color: var(--muted);
   line-height: 1.45;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-  z-index: 30;
+  max-height: 0;
   opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
-  pointer-events: none;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.2s ease;
 }
 
-.pkg-card__list li:hover .pkg-card__item-desc {
+.pkg-card:hover .pkg-card__item-desc,
+.pkg-card:focus-within .pkg-card__item-desc {
+  max-height: 50px;
   opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  margin-top: 3px;
 }
 
-/* Na mobilech (kde není myš) se zobrazují klasicky pod názvem */
 @media (hover: none) {
   .pkg-card__item-desc {
-    position: static !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    transform: none !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin-top: 3px !important;
     max-height: none !important;
+    opacity: 1 !important;
+    margin-top: 4px !important;
   }
 }
 
@@ -552,7 +536,7 @@
   opacity: .75;
 }
 
-/* Patička karty je pevně ukotvená dole */
+/* Patička je pevně ukotvená dole */
 .pkg-card__footer {
   display: flex;
   flex-direction: column;
