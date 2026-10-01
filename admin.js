@@ -591,6 +591,11 @@ function renderPromoCodesList(codes) {
     else if (c.type === 'fixed') typeLabel = c.value + ' Kč';
     else if (c.type === 'gift') typeLabel = '<span style="color: #ff9900; font-weight: bold;">DÁRKOVÝ (100 %)</span>';
 
+    // Přidání štítku splátek, pokud je kód určen pro splátky
+    if (c.splatky) {
+      typeLabel += ' <span style="background: rgba(52,152,219,0.15); color: #3498db; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 6px;">[SPLÁTKY]</span>';
+    }
+
     var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ') || 'VŠECHNY';
 
     var usage = '';
@@ -633,6 +638,7 @@ async function createNewPromoCode() {
   var type = document.getElementById('newPromoType').value;
   var value = document.getElementById('newPromoValue').value;
   var oneTime = document.getElementById('newPromoOneTime').checked;
+  var splatky = document.getElementById('newPromoSplatky').checked; // Načtení stavu checkboxu pro splátky
 
   var pkgCheckboxes = document.querySelectorAll('.promo-pkg-cb:checked');
   var packages = Array.from(pkgCheckboxes).map(function(cb) { return cb.value; });
@@ -646,7 +652,14 @@ async function createNewPromoCode() {
     return;
   }
 
-  var payload = { code: code, type: type, value: value, oneTime: oneTime, packages: packages };
+  var payload = { 
+    code: code, 
+    type: type, 
+    value: value, 
+    oneTime: oneTime, 
+    splatky: splatky, // Odeslání příznaku splátek na server
+    packages: packages 
+  };
 
   try {
     var res = await fetch('/api/codes', {
@@ -661,6 +674,7 @@ async function createNewPromoCode() {
 
     document.getElementById('newPromoCode').value = '';
     document.getElementById('newPromoValue').value = '';
+    document.getElementById('newPromoSplatky').checked = false; // Reset checkboxu
     loadPromoCodes();
   } catch (err) {
     alert(err.message);
