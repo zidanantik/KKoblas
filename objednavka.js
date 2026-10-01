@@ -1,157 +1,423 @@
-var DEFAULT_PRICES = {
-  startup:   { jednorizove: '6 900 Kč' },
-  mentoring: { jednorizove: '14 700 Kč', splatky: '7 500 Kč (1. splátka)' },
-  ultimate:  { jednorizove: '22 300 Kč', splatky: '11 900 Kč (1. splátka)' }
-};
+// functions/api/objednavka.js
 
-function buildServiceMap(prices, event) {
-  var p = prices || {};
-  var su = p.startup   || DEFAULT_PRICES.startup;
-  var me = p.mentoring || DEFAULT_PRICES.mentoring;
-  var ul = p.ultimate  || DEFAULT_PRICES.ultimate;
-  var map = {
-    startup: {
-      label: 'START-UP – Profi odrazový můstek',
-      jednorizove: { platba: 'Jednorázová platba', price: su.jednorizove || DEFAULT_PRICES.startup.jednorizove },
-      splatky:     { platba: 'Jednorázová platba', price: su.jednorizove || DEFAULT_PRICES.startup.jednorizove }
-    },
-    mentoring: {
-      label: 'MENTORING – Individuální vedení',
-      jednorizove: { platba: 'Jednorázová platba', price: me.jednorizove || DEFAULT_PRICES.mentoring.jednorizove },
-      splatky:     { platba: 'Splátkový kalendář', price: me.splatky     || DEFAULT_PRICES.mentoring.splatky }
-    },
-    ultimate: {
-      label: 'ULTIMATE – Maximální výkon a biohacking',
-      jednorizove: { platba: 'Jednorázová platba', price: ul.jednorizove || DEFAULT_PRICES.ultimate.jednorizove },
-      splatky:     { platba: 'Splátkový kalendář', price: ul.splatky     || DEFAULT_PRICES.ultimate.splatky }
-    }
-  };
-  if (event && event.active && event.name) {
-    map.event = {
-      label: event.name,
-      jednorizove: { platba: 'Jednorázová platba', price: event.cena || '—' }
-    };
-  }
-  return map;
+const REQUIRED_CONTACT = ['Jmeno', 'Email', 'Telefon', 'Ulice', 'Mesto', 'PSC', 'Zeme'];
+const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
+
+// Pomocná funkce pro vytažení čísla z textu ceny (např. "14 700 Kč" -> 14700)
+function parsePrice(str) {
+  if (!str) return 0;
+  const num = String(str).replace(/[^\d]/g, '');
+  return num ? parseInt(num, 10) : 0;
 }
 
-function initOrder(serviceMap) {
-  var params  = new URLSearchParams(location.search);
-  var sluzba  = params.get('sluzba') || 'startup';
-  var platba  = params.get('platba') || 'jednorizove';
+// ── FAKTUROID V3 OAUTH & API ─────────────────────────────────────────────
+async function getFakturoidToken(env) {
+  const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': `KoblasNutricni (${env.FAKTUROID_EMAIL})`
+    },
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: env.FAKTUROID_CLIENT_ID,
+      client_secret: env.FAKTUROID_CLIENT_SECRET
+    })
+  });
 
-  var svc  = serviceMap[sluzba] || serviceMap.startup;
-  var info = svc[platba] || svc.jednorizove;
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Fakturoid auth selhalo (${res.status}): ${err}`);
+  }
 
-  var nameEl   = document.getElementById('orderServiceName');
-  var platbaEl = document.getElementById('orderPlatba');
-  var priceEl  = document.getElementById('orderPrice');
+  const data = await res.json();
+  return data.access_token;
+}
 
-  if (nameEl)   nameEl.textContent   = svc.label;
-  if (platbaEl) platbaEl.textContent = info.platba;
-  if (priceEl)  priceEl.textContent  = info.price;
+async function getOrCreateSubject(token, env, body) {
+  const userAgent = `KoblasNutricni (${env.FAKTUROID_EMAIL})`;
+  const slug = env.FAKTUROID_SLUG;
 
-  var hSluzba = document.getElementById('hiddenSluzba');
-  var hPlatba = document.getElementById('hiddenPlatba');
-  var hPrice  = document.getElementById('hiddenPrice');
-  var hSubj   = document.getElementById('emailSubject');
+  // 1. Zkusíme kontakt vyhledat podle e-mailu
+  try {
+    const searchRes = await fetch(
+      `https://app.fakturoid.cz/api/v3/accounts/${slug}/subjects/search.json?query=${encodeURIComponent(body.Email)}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'User-Agent': userAgent
+        }
+      }
+    );
+    if (searchRes.ok) {
+      const found = await searchRes.json();
+      if (Array.isArray(found) && found.length > 0) {
+        return found[0].id;
+      }
+    }
+  } catch (e) {
+    console.warn('Vyhledání kontaktu selhalo, vytvoříme nový:', e);
+  }
 
-  if (hSluzba) hSluzba.value = svc.label;
-  if (hPlatba) hPlatba.value = info.platba;
-  if (hPrice)  hPrice.value  = info.price;
-  if (hSubj)   hSubj.value   = 'Nová objednávka – ' + svc.label;
+  // 2. Vytvoření nového kontaktu
+  const createRes = await fetch(
+    `https://app.fakturoid.cz/api/v3/accounts/${slug}/subjects.json`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'User-Agent': userAgent,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: body.Jmeno,
+        email: body.Email,
+        phone: body.Telefon,
+        street: body.Ulice,
+        city: body.Mesto,
+        zip: body.PSC,
+        country: body.Zeme || 'CZ',
+        registration_no: body.ICO || null
+      })
+    }
+  );
 
-  var form      = document.getElementById('orderForm');
-  var submitBtn = document.getElementById('submitBtn');
-  var errorEl   = document.getElementById('formError');
+  if (!createRes.ok) {
+    const err = await createRes.text();
+    throw new Error(`Vytvoření kontaktu ve Fakturoidu selhalo: ${err}`);
+  }
 
-  if (!form) return;
+  const newSub = await createRes.json();
+  return newSub.id;
+}
 
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
+async function createProforma(token, env, subjectId, body) {
+  const slug = env.FAKTUROID_SLUG;
+  const userAgent = `KoblasNutricni (${env.FAKTUROID_EMAIL})`;
+  const price = parsePrice(body.Cena);
+  const itemName = `${body.Sluzba || 'Nutriční spolupráce'} (${body.Platba || 'Platba'})`;
 
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
+  const invoiceData = {
+    subject_id: subjectId,
+    document_type: 'proforma',
+    proforma_followup_document: 'final_invoice_paid', // Po úhradě Fakturoid sám vystaví daňový doklad
+    lines: [
+      {
+        name: itemName,
+        quantity: 1,
+        unit_price: price,
+        vat_rate: 0
+      }
+    ]
+  };
+
+  const res = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'User-Agent': userAgent,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(invoiceData)
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Vytvoření proformy selhalo: ${err}`);
+  }
+
+  return await res.json();
+}
+
+// ── HLAVNÍ POST HANDLER ──────────────────────────────────────────────────
+export async function onRequestPost(context) {
+  try {
+    const body = await context.request.json();
+    const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
+    const usedCode = (body.Pouzity_kod || '').trim();
+    const priceNum = parsePrice(body.Cena);
+
+    // Kontrola povinných polí (pro dárkový nákup se míry nevyžadují)
+    const requiredFields = isGift ? REQUIRED_CONTACT : [...REQUIRED_CONTACT, ...REQUIRED_ANALYSIS];
+    for (const field of requiredFields) {
+      if (!body[field] || String(body[field]).trim() === '') {
+        return new Response(JSON.stringify({ ok: false, error: `Chybí povinné pole: ${field}` }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        });
+      }
     }
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Odesílám...';
-    if (errorEl) errorEl.hidden = true;
+    const resendKey = context.env.RESEND_API_KEY;
+    const fromDomain = context.env.FROM_DOMAIN || 'koblas-nutricni.cz';
 
+    // Načteme klienty z KV
+    let clients = [];
     try {
-      var formData = new FormData(form);
-      var payload  = {};
-      formData.forEach(function (val, key) { payload[key] = val; });
+      const rawClients = await context.env.STATUS_STORE.get('CLIENTS');
+      if (rawClients) clients = JSON.parse(rawClients);
+    } catch (e) {
+      console.error('Chyba při čtení CLIENTS z KV:', e);
+    }
 
-      var response = await fetch('/api/objednavka', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      var result = await response.json();
-      if (response.ok && result.ok) {
-        // ── PŘIČTENÍ POUŽITÍ KÓDU DO KV DATABÁZE (+1) ──
-        var promoCodeVal = payload.Pouzity_kod || (document.getElementById('hiddenPromoCode') ? document.getElementById('hiddenPromoCode').value : '');
-        if (promoCodeVal) {
-          try {
-            await fetch('/api/codes', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'redeem', code: promoCodeVal })
-            });
-          } catch (e) {
-            console.warn('Počítadlo kódu nebylo možné aktualizovat:', e);
+    // ───────────────────────────────────────────────────────────────────────
+    // SCÉNÁŘ A: UPLATNĚNÍ 100% DÁRKOVÉHO VOUCHERU (Cena = 0 Kč)
+    // ───────────────────────────────────────────────────────────────────────
+    if (priceNum === 0 && usedCode) {
+      // 1. Označíme kód v PROMO_CODES jako použitý
+      try {
+        const rawCodes = await context.env.STATUS_STORE.get('PROMO_CODES');
+        if (rawCodes) {
+          const codes = JSON.parse(rawCodes);
+          const target = codes.find(c => c.code && c.code.trim().toUpperCase() === usedCode.toUpperCase());
+          if (target) {
+            target.usedCount = (Number(target.usedCount) || 0) + 1;
+            if (target.oneTime) target.used = true;
+            await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
           }
         }
-
-        var name  = form.querySelector('[name="Jmeno"]').value;
-        var email = form.querySelector('[name="Email"]').value;
-        var dest  = 'dekujeme.html?sluzba=' + encodeURIComponent(svc.label)
-                  + '&jmeno=' + encodeURIComponent(name)
-                  + '&email=' + encodeURIComponent(email);
-        window.location.href = dest;
-      } else {
-        throw new Error(result.error || 'Server error');
+      } catch (err) {
+        console.error('Chyba při uplatnění voucheru v PROMO_CODES:', err);
       }
-    } catch (err) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
-      if (errorEl) { errorEl.hidden = false; errorEl.textContent = err.message || 'Chyba odesílání'; }
+
+      // 2. Najdeme existující záznam v CLIENTS podle kódu voucheru
+      const voucherClientIndex = clients.findIndex(c => c.kod_voucheru && c.kod_voucheru.toUpperCase() === usedCode.toUpperCase());
+
+      if (voucherClientIndex > -1) {
+        // Doplníme obdarovaného do existujícího záznamu (KAPACITA SE ZNOVU NEZVYŠUJE!)
+        clients[voucherClientIndex].obdarovany = {
+          jmeno: body.Jmeno,
+          email: body.Email,
+          telefon: body.Telefon,
+          ulice: body.Ulice,
+          mesto: body.Mesto,
+          psc: body.PSC,
+          zeme: body.Zeme,
+          miry: {
+            vek: body.Vek,
+            pohlavi: body.Pohlavi,
+            vyska_cm: body.Vyska_cm,
+            vaha_kg: body.Vaha_kg,
+            obvod_boku_cm: body.Obvod_boku_cm || null,
+            obvod_pasu_cm: body.Obvod_pasu_cm || null,
+            motivace: body.Motivace || null,
+            souhlas_anonymni: body.Souhlas_anonymni === 'ano'
+          }
+        };
+        clients[voucherClientIndex].datum_aktivace = new Date().toISOString();
+        // Pokud byl záznam pozastavený, uplatněním se znovu aktivuje
+        clients[voucherClientIndex].status = 'aktivni';
+        clients[voucherClientIndex].pocita_se = true;
+      } else {
+        // Fallback pro případ, že kód nebyl vygenerován automatem, ale ručně v adminu
+        clients.unshift({
+          id: crypto.randomUUID(),
+          fakturoid_id: null,
+          fakturoid_number: null,
+          sluzba: (body.Sluzba || '').toLowerCase(),
+          sluzba_nazev: body.Sluzba || '',
+          platba: body.Platba || 'Dárkový poukaz',
+          cena: '0 Kč',
+          is_gift: true,
+          status: 'aktivni',
+          pocita_se: true,
+          kod_voucheru: usedCode,
+          kupujici: null,
+          obdarovany: {
+            jmeno: body.Jmeno,
+            email: body.Email,
+            telefon: body.Telefon,
+            ulice: body.Ulice,
+            mesto: body.Mesto,
+            psc: body.PSC,
+            zeme: body.Zeme,
+            miry: {
+              vek: body.Vek,
+              pohlavi: body.Pohlavi,
+              vyska_cm: body.Vyska_cm,
+              vaha_kg: body.Vaha_kg,
+              obvod_boku_cm: body.Obvod_boku_cm || null,
+              obvod_pasu_cm: body.Obvod_pasu_cm || null,
+              motivace: body.Motivace || null,
+              souhlas_anonymni: body.Souhlas_anonymni === 'ano'
+            }
+          },
+          datum_nakupu: null,
+          datum_platby: null,
+          datum_aktivace: new Date().toISOString()
+        });
+      }
+
+      await context.env.STATUS_STORE.put('CLIENTS', JSON.stringify(clients));
+
+      // 3. E-maily pro aktivaci voucheru
+      if (resendKey) {
+        // Poradci
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: `KKoblas Web <info@${fromDomain}>`,
+            to: ['koblas.nutricni.info@gmail.com'],
+            subject: `🎁 Uplatněn dárkový poukaz (${usedCode}) – ${body.Jmeno}`,
+            html: `<h2>Obdarovaný právě aktivoval dárkový poukaz!</h2>
+                   <p><strong>Kód:</strong> ${usedCode}</p>
+                   <p><strong>Jméno klienta:</strong> ${body.Jmeno} (<a href="mailto:${body.Email}">${body.Email}</a>, ${body.Telefon})</p>
+                   <p><strong>Služba:</strong> ${body.Sluzba}</p>
+                   <p>V administraci byl záznam automaticky spárován.</p>`
+          })
+        });
+
+        // Klientovi (obdarovanému)
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: `Kryštof Koblas <info@${fromDomain}>`,
+            to: [body.Email],
+            subject: `Aktivace dárkového poukazu – ${body.Sluzba || 'KKoblas'}`,
+            html: `<div style="font-family: sans-serif; max-width: 600px; color: #222;">
+                     <h2 style="color: #ff9900;">Ahoj ${body.Jmeno},</h2>
+                     <p>tvůj dárkový poukaz na program <strong>${body.Sluzba || 'Nutriční poradenství'}</strong> byl úspěšně aktivován!</p>
+                     <p>Všechny potřebné údaje mám u sebe. Do <strong>2 pracovních dnů</strong> tě budu kontaktovat s detailním plánem a instrukcemi k zahájení spolupráce.</p>
+                     <br><p>Moc se těším na naši spolupráci!<br><strong>Kryštof Koblas</strong></p>
+                   </div>`
+          })
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true, voucherActivated: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      });
     }
-  });
+
+    // ───────────────────────────────────────────────────────────────────────
+    // SCÉNÁŘ B: BĚŽNÝ NÁKUP NEBO NÁKUP DÁRKU (Fakturace přes Fakturoid)
+    // ───────────────────────────────────────────────────────────────────────
+    let proformaData = null;
+
+    if (context.env.FAKTUROID_CLIENT_ID && context.env.FAKTUROID_CLIENT_SECRET) {
+      try {
+        const token = await getFakturoidToken(context.env);
+        const subjectId = await getOrCreateSubject(token, context.env, body);
+        proformaData = await createProforma(token, context.env, subjectId, body);
+      } catch (faktErr) {
+        console.error('Chyba při komunikaci s Fakturoidem:', faktErr);
+      }
+    }
+
+    // Založení záznamu do KV (zatím ve stavu čeká na platbu, NEZAPOČÍTÁVÁ SE DO KAPACITY)
+    const newClientId = crypto.randomUUID();
+    const newClientRecord = {
+      id: newClientId,
+      fakturoid_id: proformaData ? proformaData.id : null,
+      fakturoid_number: proformaData ? proformaData.number : null,
+      variable_symbol: proformaData ? proformaData.variable_symbol : null,
+      public_html_url: proformaData ? proformaData.public_html_url : null,
+      sluzba: (body.Sluzba || '').toLowerCase(),
+      sluzba_nazev: body.Sluzba || '',
+      platba: body.Platba || 'Jednorázová platba',
+      cena: body.Cena || '',
+      is_gift: isGift,
+      status: 'ceka_na_platbu', // aktivuje se až přes webhook po zaplacení!
+      pocita_se: false,
+      kod_voucheru: null,
+      kupujici: {
+        jmeno: body.Jmeno,
+        email: body.Email,
+        telefon: body.Telefon,
+        ulice: body.Ulice,
+        mesto: body.Mesto,
+        psc: body.PSC,
+        zeme: body.Zeme,
+        ico: body.ICO || null
+      },
+      obdarovany: null,
+      miry: isGift ? null : {
+        vek: body.Vek,
+        pohlavi: body.Pohlavi,
+        vyska_cm: body.Vyska_cm,
+        vaha_kg: body.Vaha_kg,
+        obvod_boku_cm: body.Obvod_boku_cm || null,
+        obvod_pasu_cm: body.Obvod_pasu_cm || null,
+        motivace: body.Motivace || null,
+        souhlas_anonymni: body.Souhlas_anonymni === 'ano'
+      },
+      datum_nakupu: new Date().toISOString(),
+      datum_platby: null,
+      datum_aktivace: null
+    };
+
+    clients.unshift(newClientRecord);
+    await context.env.STATUS_STORE.put('CLIENTS', JSON.stringify(clients));
+
+    // Odeslání e-mailů s platebními údaji
+    if (resendKey) {
+      const payLink = proformaData ? proformaData.public_html_url : null;
+      const vs = proformaData ? proformaData.variable_symbol : '—';
+      const num = proformaData ? proformaData.number : '';
+
+      const payHtml = payLink
+        ? `<div style="background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 6px; padding: 18px; margin: 20px 0;">
+             <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: #111;">Platební údaje k zálohové faktuře č. ${num}:</p>
+             <p style="margin: 4px 0; font-size: 14px;"><strong>Částka:</strong> ${body.Cena}</p>
+             <p style="margin: 4px 0; font-size: 14px;"><strong>Variabilní symbol:</strong> ${vs}</p>
+             <p style="margin: 15px 0 0 0;">
+               <a href="${payLink}" style="background: #ff9900; color: #000; font-weight: bold; text-decoration: none; padding: 10px 18px; border-radius: 4px; display: inline-block;">ZOBRAZIT FAKTURU &amp; ZAPLATIT (QR KÓD) →</a>
+             </p>
+           </div>`
+        : '';
+
+      // 1. Notifikace poradci
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: `KKoblas Web <info@${fromDomain}>`,
+          to: ['koblas.nutricni.info@gmail.com'],
+          reply_to: body.Email,
+          subject: `Nová objednávka (${body.Sluzba || 'KKoblas'}) – Čeká na platbu`,
+          html: `<h2>Nová objednávka z webu</h2>
+                 <p><strong>Klient:</strong> ${body.Jmeno} (<a href="mailto:${body.Email}">${body.Email}</a>)</p>
+                 <p><strong>Služba:</strong> ${body.Sluzba} | <strong>Cena:</strong> ${body.Cena}</p>
+                 <p><strong>Typ:</strong> ${isGift ? '🎁 DÁRKOVÝ POUKAZ' : 'Běžný nákup'}</p>
+                 ${payLink ? `<p><strong>Proforma ve Fakturoidu:</strong> <a href="${payLink}">${num}</a> (VS:${vs})</p>` : '<p><em>Faktura ve Fakturoidu nebyla vystavena (zkontrolujte API nastavení).</em></p>'}`
+        })
+      });
+
+      // 2. Potvrzení klientovi s odkazem na platbu
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: `Kryštof Koblas <info@${fromDomain}>`,
+          to: [body.Email],
+          subject: `Potvrzení objednávky a platební údaje – ${body.Sluzba || 'KKoblas'}`,
+          html: `<div style="font-family: sans-serif; max-width: 600px; color: #222; line-height: 1.6;">
+                   <h2 style="color: #ff9900;">Ahoj ${body.Jmeno},</h2>
+                   <p>děkuji za tvou objednávku služby <strong>${body.Sluzba || 'Nutriční poradenství'}</strong>!</p>
+                   ${payHtml}
+                   ${isGift 
+                     ? '<p>🎁 <em>Ihned po přijetí platby ti obratem e-mailem zašlu elektronický dárkový voucher s unikátním kódem pro obdarovaného.</em></p>' 
+                     : '<p>Jakmile dorazí úhrada, ozvu se ti s termínem a instrukcemi pro úvodní konzultaci a analýzu.</p>'}
+                   <br>
+                   <p>S pozdravem,<br><strong>Kryštof Koblas</strong><br>Nutriční poradce</p>
+                 </div>`
+        })
+      });
+    }
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    });
+
+  } catch (err) {
+    console.error('Chyba serveru v objednavka.js:', err);
+    return new Response(JSON.stringify({ ok: false, error: err.message || 'Server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    });
+  }
 }
-
-(function () {
-  fetch('/api/status', { cache: 'no-store' })
-    .then(function (r) { return r.json(); })
-    .then(function (status) { initOrder(buildServiceMap(status.prices, status.event)); })
-    .catch(function () { initOrder(buildServiceMap(null, null)); });
-})();
-
-// ── Modals ────────────────────────────────────────
-(function () {
-  document.querySelectorAll('[data-modal]').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      var modal = document.getElementById(link.dataset.modal);
-      if (modal) modal.hidden = false;
-    });
-  });
-
-  document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-    overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) overlay.hidden = true;
-    });
-    overlay.querySelector('.modal__close').addEventListener('click', function () {
-      overlay.hidden = true;
-    });
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay').forEach(function (o) { o.hidden = true; });
-    }
-  });
-})();
