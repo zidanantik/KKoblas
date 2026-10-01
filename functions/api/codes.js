@@ -19,6 +19,7 @@ export async function onRequestGet(context) {
     const url = new URL(context.request.url);
     const codeParam = (url.searchParams.get('code') || '').trim().toUpperCase();
     const pkgParam = (url.searchParams.get('package') || '').trim().toLowerCase();
+    const modeSplatky = url.searchParams.get('splatky') === 'true';
 
     if (!codeParam) {
       return new Response(JSON.stringify({ valid: false, message: 'Chybí kód.' }), {
@@ -40,21 +41,34 @@ export async function onRequestGet(context) {
       });
     }
 
+    // Validace typu platby (splátky vs. jednorázově), pokud je parametr přítomen
+    if (found.splatky && url.searchParams.has('splatky') && !modeSplatky) {
+      return new Response(JSON.stringify({ valid: false, message: 'Tento kód platí pouze pro platbu na splátky.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    if (!found.splatky && url.searchParams.has('splatky') && modeSplatky) {
+      return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na splátky.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const allowedPkgs = (found.packages || []).map(p => p.toLowerCase());
 
-    // Pokud uživatel rovnou poslal balíček (objednávka) a nepatří tam:
+    // Pokud uživatel poslal balíček a nepatří tam:
     if (pkgParam && allowedPkgs.length > 0 && !allowedPkgs.includes(pkgParam)) {
       return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na balíček ' + pkgParam.toUpperCase() + '.' }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Vrací data včetně povolených balíčků!
+    // Vrací data včetně příznaku splátek a povolených balíčků
     return new Response(JSON.stringify({
       valid: true,
       code: found.code,
       type: found.type,
       value: found.value,
+      splatky: !!found.splatky,
       packages: allowedPkgs
     }), {
       headers: { 'Content-Type': 'application/json' }
@@ -102,6 +116,7 @@ export async function onRequestPost(context) {
       type: body.type || 'percent',
       value: body.type === 'gift' ? 100 : Number(body.value || 0),
       oneTime: !!body.oneTime,
+      splatky: !!body.splatky, // Uložení příznaku pro splátky
       packages: (body.packages || []).map(p => p.toLowerCase()),
       active: true,
       used: false,
