@@ -9,6 +9,15 @@ function generateGiftCode() {
   return 'DAR-' + res;
 }
 
+function normalizePkg(str) {
+  if (!str) return '';
+  const s = String(str).toLowerCase();
+  if (s.includes('ultimate')) return 'ultimate';
+  if (s.includes('mentor')) return 'mentoring';
+  if (s.includes('start')) return 'startup';
+  return s.trim();
+}
+
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
   const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
   const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
@@ -67,12 +76,15 @@ export async function onRequestPost(context) {
 
     const resendKey = context.env.RESEND_API_KEY;
 
-    // Bezpečná konstrukce odesílatele – zabrání vnoření závorek i diakritice v adrese
+    // Bezpečná konstrukce odesílatele bez diakritiky v adrese
     let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
     if (!sender.includes('<')) {
       const cleanEmail = sender.includes('@') ? sender : `info@${sender}`;
       sender = `Kryštof Koblas <${cleanEmail}>`;
     }
+
+    // Očištění názvu balíčku na startup / mentoring / ultimate
+    const pkgSlug = normalizePkg(client.sluzba || client.sluzba_nazev);
 
     // 3. Generování voucheru a odeslání e-mailu pro dárkový poukaz
     if (client.is_gift) {
@@ -93,7 +105,7 @@ export async function onRequestPost(context) {
         oneTime: true,
         splatky: false,
         darekOnly: false,
-        packages: client.sluzba ? [client.sluzba.toLowerCase()] : [],
+        packages: pkgSlug ? [pkgSlug] : [],
         active: true,
         used: false,
         usedCount: 0,
@@ -105,7 +117,7 @@ export async function onRequestPost(context) {
       await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
 
       if (resendKey && client.kupujici && client.kupujici.email) {
-        const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(client.sluzba || '')}&kod=${encodeURIComponent(giftCode)}`;
+        const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
 
         const emailRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -147,7 +159,7 @@ export async function onRequestPost(context) {
       }
 
     } else {
-      // 4. Běžný přímý nákup – uvítací zpráva
+      // 4. Běžný přímý nákup
       if (resendKey && client.kupujici && client.kupujici.email) {
         const packageName = client.sluzba_nazev || 'nutriční program';
 
