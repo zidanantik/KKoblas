@@ -118,6 +118,7 @@ export async function onRequestPost(context) {
     const invoicePayload = {
       subject_id: subjectId,
       document_type: 'proforma',
+      send_email: true, // Řekne Fakturoidu, aby ihned odeslal e-mail klientovi
       lines: [
         {
           name: lineName,
