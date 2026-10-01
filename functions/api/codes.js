@@ -8,7 +8,7 @@ export async function onRequestGet(context) {
     const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
     const codes = raw ? JSON.parse(raw) : [];
 
-    // Administrace: vrací všechny kódy
+    // Administrace: vrací všechny kódy včetně počítadla
     if (adminPass && adminPass === storedPass) {
       return new Response(JSON.stringify(codes), {
         headers: { 'Content-Type': 'application/json' }
@@ -29,7 +29,7 @@ export async function onRequestGet(context) {
       });
     }
 
-    const found = codes.find(c => c.code && c.code.toUpperCase() === codeParam);
+    const found = codes.find(c => c.code && c.code.trim().toUpperCase() === codeParam);
     if (!found || found.active === false) {
       return new Response(JSON.stringify({ valid: false, message: 'Neplatný nebo neaktivní kód.' }), {
         headers: { 'Content-Type': 'application/json' }
@@ -54,7 +54,7 @@ export async function onRequestGet(context) {
       });
     }
 
-    // Validace dárkového kódu (pouze pro nákup dárkového voucheru)
+    // Validace dárkového kódu (pouze pro dárkový voucher)
     if (found.darekOnly && url.searchParams.has('darek') && !modeDarek) {
       return new Response(JSON.stringify({ valid: false, message: 'Tento kód lze uplatnit výhradně na nákup dárkového poukazu.' }), {
         headers: { 'Content-Type': 'application/json' }
@@ -63,14 +63,12 @@ export async function onRequestGet(context) {
 
     const allowedPkgs = (found.packages || []).map(p => p.toLowerCase());
 
-    // Pokud uživatel poslal balíček a nepatří tam:
     if (pkgParam && allowedPkgs.length > 0 && !allowedPkgs.includes(pkgParam)) {
       return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na balíček ' + pkgParam.toUpperCase() + '.' }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Vrací data včetně příznaku splátek, dárku a povolených balíčků
     return new Response(JSON.stringify({
       valid: true,
       code: found.code,
@@ -93,6 +91,31 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   try {
+    const body = await context.request.json();
+    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
+    let codes = raw ? JSON.parse(raw) : [];
+
+    // ── 1. VEŘEJNÉ PŘIČTENÍ POUŽITÍ KÓDU PO OBJEDNÁVCE (+1) ──
+    if (body.action === 'redeem' && body.code) {
+      const codeUpper = body.code.trim().toUpperCase();
+      const target = codes.find(c => c.code && c.code.trim().toUpperCase() === codeUpper);
+      if (target) {
+        target.usedCount = (Number(target.usedCount) || 0) + 1;
+        if (target.oneTime) {
+          target.used = true;
+        }
+        await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+        return new Response(JSON.stringify({ ok: true, usedCount: target.usedCount }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      return new Response(JSON.stringify({ ok: false, error: 'Kód nenalezen' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // ── 2. ADMINISTRACE (vyžaduje ADMIN_PASS) ──
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
 
@@ -102,10 +125,6 @@ export async function onRequestPost(context) {
         headers: { 'Content-Type': 'application/json' }
       });
     }
-
-    const body = await context.request.json();
-    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
-    let codes = raw ? JSON.parse(raw) : [];
 
     // Přepnutí stavu aktivní/neaktivní
     if (body.id && body.active !== undefined) {
@@ -126,10 +145,11 @@ export async function onRequestPost(context) {
       value: body.type === 'gift' ? 100 : Number(body.value || 0),
       oneTime: !!body.oneTime,
       splatky: !!body.splatky,
-      darekOnly: !!body.darekOnly, // Uložení příznaku pouze pro dárkový nákup
+      darekOnly: !!body.darekOnly,
       packages: (body.packages || []).map(p => p.toLowerCase()),
       active: true,
       used: false,
+      usedCount: 0,
       createdAt: new Date().toISOString()
     };
 
