@@ -26,7 +26,7 @@
     radial-gradient(ellipse 60% 80% at 50% 60%, rgba(201,168,76,.12) 0%, transparent 65%),
     radial-gradient(ellipse 55% 70% at 78% 44%, rgba(36,82,68,.45) 0%, transparent 68%),
     var(--cream);
-  padding: 100px 24px 80px;
+  padding: 100px 24px 70px;
   text-align: center;
 }
 
@@ -151,7 +151,7 @@
   background:
     radial-gradient(ellipse 70% 60% at 50% 50%, rgba(15,125,180,.18) 0%, transparent 70%),
     var(--cream);
-  padding: 80px 24px 100px;
+  padding: 60px 24px 100px;
 }
 
 .packages::before {
@@ -165,6 +165,139 @@
   background-size: 160px 80px;
 }
 
+/* ── Promo / Voucher Bar nad službami ────────────── */
+.promo-bar-wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 680px;
+  margin: 0 auto 46px;
+}
+
+.promo-bar {
+  background: rgba(18, 18, 18, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: 14px;
+  padding: 18px 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.promo-bar:focus-within {
+  border-color: rgba(255, 153, 0, 0.6);
+  box-shadow: 0 10px 35px rgba(255, 153, 0, 0.15);
+}
+
+.promo-bar__label {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.05rem;
+  color: var(--heading);
+  letter-spacing: 0.5px;
+}
+
+.promo-bar__inputs {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.promo-bar__input {
+  flex: 1;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  padding: 0 14px;
+  font-family: monospace;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .2s;
+}
+
+.promo-bar__input:focus {
+  border-color: #ff9900;
+  background: rgba(255, 153, 0, 0.02);
+}
+
+.promo-bar__btn {
+  height: 44px;
+  padding: 0 18px;
+  background: #ff9900;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+
+.promo-bar__btn:hover {
+  background: #ffaa22;
+  box-shadow: 0 0 14px rgba(255, 153, 0, 0.35);
+}
+
+.promo-bar__reset {
+  height: 44px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #999;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+
+.promo-bar__reset:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+.promo-bar__status {
+  font-family: monospace;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 1.4;
+}
+.promo-bar__status--ok {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #2ecc71;
+}
+.promo-bar__status--err {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: #e74c3c;
+}
+.promo-bar__status--info {
+  background: rgba(255, 153, 0, 0.1);
+  border: 1px solid rgba(255, 153, 0, 0.3);
+  color: #ff9900;
+}
+
+/* ── Packages Grid ──────────────────────────────── */
 .packages__inner {
   position: relative;
   z-index: 1;
@@ -187,7 +320,7 @@
   border: 1px solid rgba(201,168,76,.12);
   box-shadow: 0 8px 28px rgba(0,0,0,.35), 0 20px 50px rgba(0,0,0,.3);
   position: relative;
-  transition: transform .3s ease, box-shadow .3s ease;
+  transition: transform .3s ease, box-shadow .3s ease, opacity .4s ease, border-color .3s ease, filter .4s ease;
 }
 
 .pkg-card:hover {
@@ -204,6 +337,39 @@
 
 .pkg-card--featured:hover {
   transform: translateY(-18px);
+}
+
+/* ── Stavy karet při uplatnění voucheru / slevy ──── */
+.pkg-card.is-dimmed {
+  opacity: 0.32;
+  filter: grayscale(40%);
+}
+.pkg-card.is-dimmed:hover {
+  opacity: 0.75;
+  filter: none;
+}
+
+.pkg-card.pkg-card--voucher-match {
+  border-color: #ff9900 !important;
+  box-shadow: 0 0 35px rgba(255, 153, 0, 0.4), 0 20px 60px rgba(0,0,0,0.7) !important;
+  transform: translateY(-16px) !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.price-original-struck {
+  text-decoration: line-through;
+  color: #777;
+  font-size: 0.65em;
+  margin-right: 8px;
+  font-family: inherit;
+  font-weight: normal;
+}
+.price-voucher-free {
+  color: #2ecc71 !important;
+}
+.price-discounted {
+  color: #ff9900 !important;
 }
 
 .pkg-card__ribbon {
@@ -269,7 +435,7 @@
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-/* ── Feature list (Kompaktní v klidu + rozbalení popisků při najetí) ── */
+/* ── Feature list (Kompaktní v klidu + vysunutí na hover) ── */
 .pkg-card__list {
   list-style: none;
   display: flex;
@@ -309,7 +475,6 @@
   line-height: 1.35;
 }
 
-/* V klidu jsou dlouhé popisky schované */
 .pkg-card__item-desc {
   font-size: .82rem;
   color: var(--muted);
@@ -321,7 +486,6 @@
   transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease;
 }
 
-/* Při najetí myši na kartu se plynule vysunou */
 .pkg-card:hover .pkg-card__item-desc,
 .pkg-card:focus-within .pkg-card__item-desc {
   max-height: 90px;
@@ -329,7 +493,6 @@
   margin-top: 5px;
 }
 
-/* Na mobilních / dotykových zařízeních bez myši ponechat plně zobrazeno */
 @media (hover: none) {
   .pkg-card__item-desc {
     max-height: none !important;
@@ -531,7 +694,6 @@
   background-size: 160px 80px;
 }
 
-/* edge + bottom fade overlay */
 .food-slider::after {
   content: '';
   position: absolute;
@@ -814,7 +976,6 @@
   animation: plnoPulse 3s ease-in-out infinite;
 }
 
-/* Červený banner přes celou šířku karty */
 .pkg-card.plno::before {
   content: '⛔  KAPACITA PLNÁ  ⛔';
   display: block;
@@ -830,10 +991,8 @@
   text-shadow: 0 1px 4px rgba(0,0,0,.5);
 }
 
-/* Schovat ribbon – překrývá se s bannerem */
 .pkg-card.plno .pkg-card__ribbon { display: none; }
 
-/* Mírné zšednění obsahu karty */
 .pkg-card.plno .pkg-card__name,
 .pkg-card.plno .pkg-card__tagline,
 .pkg-card.plno .pkg-card__desc,
@@ -1061,4 +1220,5 @@
   .food-slider__stage { height: 200px; }
   .food-slider__item { left: 28px; right: 28px; }
   .wl-services { flex-direction: column; gap: 12px; }
+  .promo-bar__inputs { flex-direction: column; }
 }
