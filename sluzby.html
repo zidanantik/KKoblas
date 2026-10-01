@@ -73,10 +73,12 @@
     <!-- ── Packages ──────────────────────────────── -->
     <section class="packages" id="packages">
 
-      <!-- ── Lišta pro uplatnění slevového kódu nebo voucheru ── -->
+      <!-- ── Decentní rozbalovací lišta na kód ── -->
       <div class="promo-bar-wrap">
-        <div class="promo-bar">
-          <span class="promo-bar__label">Máš slevový kód nebo dárkový poukaz?</span>
+        <button type="button" class="promo-toggle-link" id="promoToggleBtn">
+          🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>
+        </button>
+        <div class="promo-bar" id="promoBar" hidden>
           <div class="promo-bar__inputs">
             <input type="text" id="promoCodeInput" class="promo-bar__input" placeholder="ZADEJ KÓD POUKAZU / SLEVY" autocomplete="off" spellcheck="false">
             <button type="button" id="promoApplyBtn" class="promo-bar__btn">UPLATNIT</button>
@@ -364,7 +366,6 @@
       function set(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
       function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
 
-      // Výchozí ceny (zaktualizují se z API)
       var currentPrices = {
         startup:   { jed: 6900 },
         mentoring: { jed: 14700, spl: 7500, note: '' },
@@ -387,7 +388,6 @@
         set('note-mentoring', currentPrices.mentoring.note || ('Nebo splátky: ' + fmtKc(currentPrices.mentoring.spl) + ' (v 1. měs. po slevě jen ' + fmtKc(currentPrices.mentoring.spl - ME_INBODY) + ') + 3× 2 800 Kč.'));
         set('note-ultimate',  currentPrices.ultimate.note || ('Nebo splátky: ' + fmtKc(currentPrices.ultimate.spl) + ' (po slevě na InBody jen ' + fmtKc(currentPrices.ultimate.spl - UL_INBODY) + ') + 5× 2 400 Kč.'));
 
-        // Reset tlačítek a odkazů
         var bSu = document.getElementById('btn-startup-order');
         if (bSu) { bSu.textContent = 'Objednat za ' + fmtKc(currentPrices.startup.jed); bSu.href = 'objednavka.html?sluzba=startup'; }
 
@@ -413,7 +413,6 @@
         });
       }
 
-      // Načtení živých cen z administrace
       fetch('/api/status', { cache: 'no-store' })
         .then(function (r) { return r.json(); })
         .then(function (s) {
@@ -438,10 +437,23 @@
         });
 
       // ── LOGIKA PRO SLEVOVÝ KÓD / VOUCHER ──
+      var promoToggleBtn = document.getElementById('promoToggleBtn');
+      var promoBar = document.getElementById('promoBar');
       var promoInput = document.getElementById('promoCodeInput');
       var promoBtn = document.getElementById('promoApplyBtn');
       var promoReset = document.getElementById('promoResetBtn');
       var promoStatus = document.getElementById('promoBarStatus');
+
+      if (promoToggleBtn && promoBar) {
+        promoToggleBtn.addEventListener('click', function() {
+          var isHidden = promoBar.hidden;
+          promoBar.hidden = !isHidden;
+          promoToggleBtn.innerHTML = isHidden 
+            ? '🎁 Zadej kód poukazu nebo slevy <strong>▴ Zavřít</strong>' 
+            : '🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>';
+          if (isHidden && promoInput) promoInput.focus();
+        });
+      }
 
       function showStatus(text, type) {
         if (!promoStatus) return;
@@ -464,6 +476,11 @@
           return;
         }
 
+        if (promoBar && promoBar.hidden) {
+          promoBar.hidden = false;
+          if (promoToggleBtn) promoToggleBtn.innerHTML = '🎁 Zadej kód poukazu nebo slevy <strong>▴ Zavřít</strong>';
+        }
+
         showStatus('Ověřuji kód...', 'info');
 
         try {
@@ -478,17 +495,15 @@
           if (promoInput) promoInput.value = data.code;
           if (promoReset) promoReset.hidden = false;
 
-          renderBasePrices(); // Vždy začneme z čistého základu
+          renderBasePrices();
 
           var isGift = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
           var allowedPkgs = (data.packages && data.packages.length > 0) ? data.packages : ['startup', 'mentoring', 'ultimate'];
 
           if (isGift) {
-            // ── DÁRKOVÝ POUKAZ (100 %) ──
             var targetPkg = allowedPkgs[0] || 'mentoring';
             var pkgTitles = { startup: 'START-UP', mentoring: 'MENTORING', ultimate: 'ULTIMATE' };
 
-            // Rozsvítit vybranou kartu a ztlumit ostatní
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
               var card = document.getElementById('card-' + s);
               if (s === targetPkg) {
@@ -498,7 +513,6 @@
               }
             });
 
-            // Úprava ceny a tlačítek u obdarovaného balíčku
             var origPrice = currentPrices[targetPkg].jed;
             setHtml('price-' + targetPkg, '<span class="price-original-struck">' + fmtKc(origPrice) + '</span><span class="price-voucher-free">0 Kč</span>');
 
@@ -531,12 +545,10 @@
 
             showStatus('✓ Dárkový poukaz na ' + (pkgTitles[targetPkg] || targetPkg.toUpperCase()) + ' aktivován (100% sleva).', 'ok');
 
-            // Plynulý scroll ke kartě
             var targetEl = document.getElementById('card-' + targetPkg);
             if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
           } else {
-            // ── BĚŽNÁ SLEVA (% nebo Kč) ──
             allowedPkgs.forEach(function(s) {
               var orig = currentPrices[s].jed;
               var discount = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
@@ -592,7 +604,6 @@
         });
       }
 
-      // Automatická aktivace, pokud někdo přijde na sluzby.html?kod=...
       var urlParams = new URLSearchParams(window.location.search);
       var urlCode = urlParams.get('kod') || urlParams.get('code');
       if (urlCode) {
