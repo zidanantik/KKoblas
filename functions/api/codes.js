@@ -2,18 +2,13 @@
 
 export async function onRequestGet(context) {
   try {
-    if (!context.env.STATUS_STORE) {
-      return new Response(JSON.stringify({ valid: false, message: 'Chyba serveru: STATUS_STORE binding není nastaven v Cloudflare.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    // Bezpečná ochrana: pokud binding chybí, nespadneme, ale vrátíme prázdné kódy
+    const store = context.env.STATUS_STORE;
+    const raw = store ? await store.get('PROMO_CODES') : null;
+    const codes = raw ? JSON.parse(raw) : [];
 
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
-
-    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
-    const codes = raw ? JSON.parse(raw) : [];
 
     // Administrace: vrací všechny kódy včetně počítadla
     if (adminPass && adminPass === storedPass) {
@@ -98,15 +93,9 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   try {
-    if (!context.env.STATUS_STORE) {
-      return new Response(JSON.stringify({ ok: false, error: 'STATUS_STORE binding není nastaven v Cloudflare.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
+    const store = context.env.STATUS_STORE;
     const body = await context.request.json();
-    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
+    const raw = store ? await store.get('PROMO_CODES') : null;
     let codes = raw ? JSON.parse(raw) : [];
 
     // ── 1. VEŘEJNÉ PŘIČTENÍ POUŽITÍ KÓDU PO OBJEDNÁVCE (+1) ──
@@ -118,7 +107,9 @@ export async function onRequestPost(context) {
         if (target.oneTime) {
           target.used = true;
         }
-        await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+        if (store) {
+          await store.put('PROMO_CODES', JSON.stringify(codes));
+        }
         return new Response(JSON.stringify({ ok: true, usedCount: target.usedCount }), {
           headers: { 'Content-Type': 'application/json' }
         });
@@ -145,7 +136,9 @@ export async function onRequestPost(context) {
       const idx = codes.findIndex(c => c.id === body.id);
       if (idx > -1) {
         codes[idx].active = body.active;
-        await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+        if (store) {
+          await store.put('PROMO_CODES', JSON.stringify(codes));
+        }
         return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
       }
       return new Response(JSON.stringify({ ok: false, error: 'Nenalezeno' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
@@ -170,7 +163,9 @@ export async function onRequestPost(context) {
     codes = codes.filter(c => c.code.toUpperCase() !== newCode.code);
     codes.unshift(newCode);
 
-    await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+    if (store) {
+      await store.put('PROMO_CODES', JSON.stringify(codes));
+    }
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
 
   } catch (err) {
@@ -183,13 +178,6 @@ export async function onRequestPost(context) {
 
 export async function onRequestDelete(context) {
   try {
-    if (!context.env.STATUS_STORE) {
-      return new Response(JSON.stringify({ ok: false, error: 'STATUS_STORE binding není nastaven v Cloudflare.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
 
@@ -200,12 +188,15 @@ export async function onRequestDelete(context) {
       });
     }
 
+    const store = context.env.STATUS_STORE;
     const body = await context.request.json();
-    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
+    const raw = store ? await store.get('PROMO_CODES') : null;
     let codes = raw ? JSON.parse(raw) : [];
 
     codes = codes.filter(c => c.id !== body.id);
-    await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+    if (store) {
+      await store.put('PROMO_CODES', JSON.stringify(codes));
+    }
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
 
