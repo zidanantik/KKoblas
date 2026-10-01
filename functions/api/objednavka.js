@@ -118,7 +118,6 @@ export async function onRequestPost(context) {
     const invoicePayload = {
       subject_id: subjectId,
       document_type: 'proforma',
-      send_email: true, // Řekne Fakturoidu, aby ihned odeslal e-mail klientovi
       lines: [
         {
           name: lineName,
@@ -150,6 +149,25 @@ export async function onRequestPost(context) {
 
     const invoiceData = await invoiceRes.json();
     console.log('ÚSPĚCH! Proforma faktura vytvořena, ID:', invoiceData.id);
+
+    // 2. KROK: Explicitní požadavek na odeslání e-mailu s fakturou přes Fakturoid API
+    const emailRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${invoiceData.id}/message.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${fToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': userAgent
+      },
+      body: JSON.stringify({}) // Prázdný objekt, Fakturoid použije výchozí šablonu pro proformy a e-mail klienta
+    });
+
+    if (!emailRes.ok) {
+      const emailErrText = await emailRes.text();
+      console.error(`VAROVÁNÍ: Faktura se vytvořila, ale odeslání e-mailu selhalo (${emailRes.status}): ${emailErrText}`);
+    } else {
+      console.log('ÚSPĚCH! E-mail s fakturou byl odeslán klientovi.');
+    }
 
     // Uložení klienta do KV úložiště (`CLIENTS`), aby webhook věděl, co spárovat
     const store = context.env.STATUS_STORE;
