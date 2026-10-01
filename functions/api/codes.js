@@ -1,119 +1,152 @@
 // functions/api/codes.js
 
-// 1. GET: Načítanie všetkých kódov (pre admin) ALEBO overenie jedného kódu (pre objednávku)
 export async function onRequestGet(context) {
-  const { request, env } = context;
-  const url = new URL(request.url);
-  const adminPass = request.headers.get("x-admin-pass");
+  try {
+    const adminPass = context.request.headers.get('x-admin-pass');
+    const storedPass = context.env.ADMIN_PASS;
 
-  // A) Volanie z Admin panelu (overené heslom ADMIN_PASS)
-  if (adminPass && adminPass === env.ADMIN_PASS) {
-    const raw = await env.STATUS_STORE.get("PROMO_CODES");
+    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
     const codes = raw ? JSON.parse(raw) : [];
-    return new Response(JSON.stringify(codes), {
-      headers: { "Content-Type": "application/json" }
-    });
-  }
 
-  // B) Verejné volanie z objednávky (overenie jedného zadaného kódu)
-  const codeQuery = url.searchParams.get("code");
-  const packageQuery = url.searchParams.get("package"); // napr. "startup", "mentoring", "ultimate"
-
-  if (!codeQuery) {
-    return new Response(JSON.stringify({ error: "Chýba kód." }), { status: 400 });
-  }
-
-  const raw = await env.STATUS_STORE.get("PROMO_CODES");
-  const codes = raw ? JSON.parse(raw) : [];
-  const found = codes.find(c => c.code.toUpperCase() === codeQuery.trim().toUpperCase());
-
-  if (!found || !found.active) {
-    return new Response(JSON.stringify({ valid: false, message: "Kód neexistuje alebo už nie je aktívny." }), {
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-
-  if (found.oneTime && found.used) {
-    return new Response(JSON.stringify({ valid: false, message: "Tento jednorazový kód už bol uplatnený." }), {
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-
-  if (packageQuery && found.packages && found.packages.length > 0) {
-    const isApplicable = found.packages.includes(packageQuery.toLowerCase());
-    if (!isApplicable) {
-      return new Response(JSON.stringify({ valid: false, message: "Tento kód nie je možné uplatniť na vybraný balíček." }), {
-        headers: { "Content-Type": "application/json" }
+    // Administrace: vrací všechny kódy
+    if (adminPass && adminPass === storedPass) {
+      return new Response(JSON.stringify(codes), {
+        headers: { 'Content-Type': 'application/json' }
       });
     }
-  }
 
-  return new Response(JSON.stringify({
-    valid: true,
-    code: found.code,
-    type: found.type, // "percent" | "fixed" | "gift"
-    value: found.value,
-    isGift: found.type === "gift"
-  }), {
-    headers: { "Content-Type": "application/json" }
-  });
-}
+    // Veřejné ověření kódu
+    const url = new URL(context.request.url);
+    const codeParam = (url.searchParams.get('code') || '').trim().toUpperCase();
+    const pkgParam = (url.searchParams.get('package') || '').trim().toLowerCase();
 
-// 2. POST: Uloženie alebo aktualizácia kódu z adminu
-export async function onRequestPost(context) {
-  const { request, env } = context;
-  const adminPass = request.headers.get("x-admin-pass");
+    if (!codeParam) {
+      return new Response(JSON.stringify({ valid: false, message: 'Chybí kód.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
-  if (!adminPass || adminPass !== env.ADMIN_PASS) {
-    return new Response(JSON.stringify({ error: "Neautorizovaný prístup." }), { status: 401 });
-  }
+    const found = codes.find(c => c.code && c.code.toUpperCase() === codeParam);
+    if (!found || found.active === false) {
+      return new Response(JSON.stringify({ valid: false, message: 'Neplatný nebo neaktivní kód.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
-  const payload = await request.json();
-  const raw = await env.STATUS_STORE.get("PROMO_CODES");
-  let codes = raw ? JSON.parse(raw) : [];
+    if (found.oneTime && found.used) {
+      return new Response(JSON.stringify({ valid: false, message: 'Tento kód již byl uplatněn.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
-  const existingIndex = codes.findIndex(c => c.id === payload.id || c.code.toUpperCase() === payload.code.trim().toUpperCase());
+    const allowedPkgs = (found.packages || []).map(p => p.toLowerCase());
 
-  if (existingIndex > -1) {
-    codes[existingIndex] = { ...codes[existingIndex], ...payload };
-  } else {
-    codes.push({
-      id: Date.now().toString(),
-      code: payload.code.trim().toUpperCase(),
-      type: payload.type || "percent",
-      value: payload.type === "gift" ? 100 : Number(payload.value) || 0,
-      packages: payload.packages || ["startup", "mentoring", "ultimate"],
-      oneTime: Boolean(payload.oneTime),
-      used: false,
-      active: true,
-      createdAt: new Date().toISOString()
+    // Pokud uživatel rovnou poslal balíček (objednávka) a nepatří tam:
+    if (pkgParam && allowedPkgs.length > 0 && !allowedPkgs.includes(pkgParam)) {
+      return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na balíček ' + pkgParam.toUpperCase() + '.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Vrací data včetně povolených balíčků!
+    return new Response(JSON.stringify({
+      valid: true,
+      code: found.code,
+      type: found.type,
+      value: found.value,
+      packages: allowedPkgs
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ valid: false, message: 'Chyba serveru: ' + err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
-
-  await env.STATUS_STORE.put("PROMO_CODES", JSON.stringify(codes));
-
-  return new Response(JSON.stringify({ success: true, codes }), {
-    headers: { "Content-Type": "application/json" }
-  });
 }
 
-// 3. DELETE: Zmazanie kódu z databázy
-export async function onRequestDelete(context) {
-  const { request, env } = context;
-  const adminPass = request.headers.get("x-admin-pass");
+export async function onRequestPost(context) {
+  try {
+    const adminPass = context.request.headers.get('x-admin-pass');
+    const storedPass = context.env.ADMIN_PASS;
 
-  if (!adminPass || adminPass !== env.ADMIN_PASS) {
-    return new Response(JSON.stringify({ error: "Neautorizovaný prístup." }), { status: 401 });
+    if (!adminPass || adminPass !== storedPass) {
+      return new Response(JSON.stringify({ ok: false, error: 'Neautorizováno' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const body = await context.request.json();
+    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
+    let codes = raw ? JSON.parse(raw) : [];
+
+    // Přepnutí stavu aktivní/neaktivní
+    if (body.id && body.active !== undefined) {
+      const idx = codes.findIndex(c => c.id === body.id);
+      if (idx > -1) {
+        codes[idx].active = body.active;
+        await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+        return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ ok: false, error: 'Nenalezeno' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Vytvoření / aktualizace kódu
+    const newCode = {
+      id: crypto.randomUUID(),
+      code: (body.code || '').trim().toUpperCase(),
+      type: body.type || 'percent',
+      value: body.type === 'gift' ? 100 : Number(body.value || 0),
+      oneTime: !!body.oneTime,
+      packages: (body.packages || []).map(p => p.toLowerCase()),
+      active: true,
+      used: false,
+      createdAt: new Date().toISOString()
+    };
+
+    codes = codes.filter(c => c.code.toUpperCase() !== newCode.code);
+    codes.unshift(newCode);
+
+    await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+    return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ ok: false, error: err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
+}
 
-  const { id } = await request.json();
-  const raw = await env.STATUS_STORE.get("PROMO_CODES");
-  let codes = raw ? JSON.parse(raw) : [];
+export async function onRequestDelete(context) {
+  try {
+    const adminPass = context.request.headers.get('x-admin-pass');
+    const storedPass = context.env.ADMIN_PASS;
 
-  codes = codes.filter(c => c.id !== id);
-  await env.STATUS_STORE.put("PROMO_CODES", JSON.stringify(codes));
+    if (!adminPass || adminPass !== storedPass) {
+      return new Response(JSON.stringify({ ok: false, error: 'Neautorizováno' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
-  return new Response(JSON.stringify({ success: true, codes }), {
-    headers: { "Content-Type": "application/json" }
-  });
+    const body = await context.request.json();
+    const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
+    let codes = raw ? JSON.parse(raw) : [];
+
+    codes = codes.filter(c => c.id !== body.id);
+    await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+
+    return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ ok: false, error: err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }
