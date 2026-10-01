@@ -1,24 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Objednávka služby | Kryštof Koblas – Nutriční poradce</title>
-  <meta name="description" content="Závazná objednávka nutričního poradenství a analýzy. Vyplňte své údaje a zahajte spolupráci s akreditovaným poradcem.">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-  <!-- Google Fonts & Styly -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="objednavka.css">
-
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HGD6YWD9V1"></script>
   <script>
@@ -27,251 +9,555 @@
     gtag('js', new Date());
     gtag('config', 'G-HGD6YWD9V1');
   </script>
-</head>
-<body class="order-page">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Objednávka – Kryštof Koblas Nutriční poradenství</title>
+  <meta name="description" content="Objednej si nutriční poradenství u Kryštofa Koblase. Vyplň formulář a do 2 pracovních dnů tě kontaktuji s fakturou a dalšími kroky.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/webp" href="LOGO nové.webp">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="objednavka.css?v=2">
 
-  <!-- Navigace -->
-  <header class="header">
+  <style>
+    /* ── Oprava rozestupů a zamezení překrývání textů ── */
+    .form-section {
+      margin-bottom: 35px !important;
+      position: relative;
+    }
+    .form-section__title {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      margin-bottom: 8px !important;
+      line-height: 1.3 !important;
+    }
+    .form-section__note {
+      position: static !important;
+      display: block !important;
+      clear: both !important;
+      margin-top: 0 !important;
+      margin-bottom: 24px !important;
+      color: #888 !important;
+      font-size: 13.5px !important;
+      line-height: 1.4 !important;
+    }
+
+    /* ── Slevový kód v souhrnu objednávky ── */
+    .promo-section {
+      margin-top: 18px;
+    }
+    .promo-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .promo-input {
+      flex: 1;
+      height: 46px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      color: #fff;
+      padding: 0 16px;
+      font-family: monospace;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      outline: none;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+    .promo-input:focus {
+      border-color: #ff9900;
+      background: rgba(255, 153, 0, 0.02);
+      box-shadow: 0 0 10px rgba(255, 153, 0, 0.15);
+    }
+    .promo-btn {
+      height: 46px;
+      background: #181818;
+      border: 1px solid #c88a2c;
+      color: #ff9900;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 0 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .promo-btn:hover {
+      background: #ff9900;
+      color: #000;
+      box-shadow: 0 0 12px rgba(255, 153, 0, 0.35);
+    }
+    .promo-msg {
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+    .promo-msg--ok {
+      background: rgba(46, 204, 113, 0.1);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+      color: #2ecc71;
+    }
+    .promo-msg--err {
+      background: rgba(231, 76, 60, 0.1);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      color: #e74c3c;
+    }
+    .promo-msg--info {
+      background: rgba(255, 153, 0, 0.1);
+      border: 1px solid rgba(255, 153, 0, 0.3);
+      color: #ff9900;
+    }
+    .price-original-struck {
+      text-decoration: line-through;
+      color: #666;
+      font-size: 0.85em;
+      margin-right: 10px;
+      font-weight: normal;
+    }
+
+    /* ── Dárkový banner s přerušovanou linkou ── */
+    .gift-banner-card {
+      margin-top: 24px;
+      background: rgba(18, 18, 18, 0.95);
+      border: 1px dashed #ff9900;
+      border-radius: 8px;
+      padding: 18px 22px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .gift-banner-card:hover {
+      background: rgba(255, 153, 0, 0.04);
+      box-shadow: 0 0 15px rgba(255, 153, 0, 0.15);
+    }
+    .gift-banner-card.is-active {
+      background: rgba(255, 153, 0, 0.07);
+      border-color: #ffaa22;
+      box-shadow: 0 0 20px rgba(255, 153, 0, 0.25);
+    }
+    .gift-banner-label {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      cursor: pointer;
+      margin: 0;
+    }
+    .gift-banner-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #ff9900;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .gift-banner-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .gift-banner-title {
+      color: #ff9900;
+      font-size: 15px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .gift-banner-text {
+      color: #bbb;
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
     <div class="header__inner">
-      <a href="index.html" class="brand">
-        <img src="LOGO nové.webp" alt="Kryštof Koblas Logo" class="brand__logo">
+      <a href="index.html" class="header__logo">
+        <img src="logotxt.webp" alt="KKoblas logo">
       </a>
-      <nav class="nav">
-        <a href="index.html" class="nav__link">Home</a>
-        <a href="omne.html" class="nav__link">O mně</a>
-        <a href="jakpracuji.html" class="nav__link">Jak pracuji</a>
-        <a href="sluzby.html" class="nav__link">Služby</a>
-        <a href="faq.html" class="nav__link">FAQ</a>
-        <a href="kontakt.html" class="nav__link">Kontakt</a>
+      <button class="header__toggle" aria-expanded="false" aria-label="Menu">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="header__nav" aria-label="Hlavní navigace">
+        <ul class="nav__list">
+          <li><a class="nav__link" href="index.html#home">Home</a></li>
+          <li><a class="nav__link" href="omne.html">O mně</a></li>
+          <li><a class="nav__link" href="jakpracuji.html">Jak pracuji</a></li>
+          <li><a class="nav__link" href="sluzby.html">Služby</a></li>
+          <li><a class="nav__link" href="kontakt.html">Kontakt</a></li>
+          <li><a class="nav__link" href="faq.html">FAQ</a></li>
+        </ul>
       </nav>
     </div>
   </header>
 
-  <main class="order-main">
-    <div class="order-container">
-      
-      <div class="order-header-box">
-        <h1 class="order-title">Objednávka služby</h1>
-        <p class="order-subtitle">Krok ke změně návyků, formy a dlouhodobého zdraví.</p>
+  <main>
+    <section class="order-page">
+      <div class="order-page__inner">
+
+        <div class="order-page__header">
+          <a href="sluzby.html" class="back-link">← Zpět na služby</a>
+          <span class="eyebrow">Objednávka</span>
+          <h1 class="order-page__title">Pojďme to rozjet</h1>
+        </div>
+
+        <!-- Shrnutí objednávky -->
+        <div class="order-summary">
+          <div class="order-summary__row">
+            <span class="order-summary__label">Služba</span>
+            <strong class="order-summary__val" id="orderServiceName">—</strong>
+          </div>
+          <div class="order-summary__divider"></div>
+          <div class="order-summary__row">
+            <span class="order-summary__label">Způsob platby</span>
+            <strong class="order-summary__val" id="orderPlatba">—</strong>
+          </div>
+          <div class="order-summary__divider"></div>
+          <div class="order-summary__row order-summary__row--price">
+            <span class="order-summary__label">K úhradě</span>
+            <strong class="order-summary__price" id="orderPrice">—</strong>
+          </div>
+
+          <!-- Dělící linka -->
+          <div class="order-summary__divider"></div>
+
+          <!-- Slevový kód / Dárkový poukaz -->
+          <div class="promo-section">
+            <div class="promo-input-row">
+              <input type="text" id="promoInput" class="promo-input" placeholder="SLEVOVÝ KÓD NEBO VOUCHER" autocomplete="off">
+              <button type="button" id="promoApplyBtn" class="promo-btn">UPLATNIT</button>
+            </div>
+            <div id="promoMessage" class="promo-msg" hidden></div>
+          </div>
+        </div>
+
+        <form id="orderForm" novalidate>
+          <!-- Web3Forms a systémová skrytá pole -->
+          <input type="hidden" name="subject" id="emailSubject" value="Nova objednavka – KKoblas">
+          <input type="hidden" name="from_name" value="Web KKoblas">
+          <input type="hidden" name="botcheck" value="" style="display:none">
+          <input type="hidden" name="Sluzba" id="hiddenSluzba">
+          <input type="hidden" name="Platba" id="hiddenPlatba">
+          <input type="hidden" name="Cena" id="hiddenPrice">
+
+          <!-- Skrytá pole pro kód a dárek -->
+          <input type="hidden" name="Pouzity_kod" id="hiddenPromoCode" value="">
+          <input type="hidden" name="Sleva_info" id="hiddenDiscountInfo" value="">
+          <input type="hidden" name="Je_darek" id="hiddenIsGift" value="ne">
+
+          <!-- ── I. Kontaktní údaje ─────────────────── -->
+          <div class="form-section">
+            <h2 class="form-section__title">
+              <span class="form-section__num">I</span>
+              Kontaktní a fakturační údaje
+            </h2>
+            <p class="form-section__note">Nutné pro vystavení dokladu a GDPR evidenci.</p>
+
+            <div class="form-grid form-grid--2">
+              <div class="form-group">
+                <label for="fname">Jméno a příjmení <span class="req">*</span></label>
+                <input type="text" id="fname" name="Jmeno" required placeholder="Jan Novák" autocomplete="name">
+              </div>
+              <div class="form-group">
+                <label for="femail">E-mail <span class="req">*</span></label>
+                <input type="email" id="femail" name="Email" required placeholder="jan@email.cz" autocomplete="email">
+              </div>
+              <div class="form-group">
+                <label for="fphone">Telefonní číslo <span class="req">*</span></label>
+                <input type="tel" id="fphone" name="Telefon" required placeholder="+420 777 000 000" autocomplete="tel">
+                <span class="form-hint">Nutné pro WhatsApp / rychlou domluvu.</span>
+              </div>
+              <div class="form-group">
+                <label for="fstreet">Ulice a č. p. <span class="req">*</span></label>
+                <input type="text" id="fstreet" name="Ulice" required placeholder="Hlavní 123" autocomplete="street-address">
+              </div>
+              <div class="form-group">
+                <label for="fcity">Město <span class="req">*</span></label>
+                <input type="text" id="fcity" name="Mesto" required placeholder="Praha" autocomplete="address-level2">
+              </div>
+              <div class="form-group">
+                <label for="fzip">PSČ <span class="req">*</span></label>
+                <input type="text" id="fzip" name="PSC" required placeholder="110 00" autocomplete="postal-code">
+              </div>
+              <div class="form-group">
+                <label for="fcountry">Země <span class="req">*</span></label>
+                <select id="fcountry" name="Zeme" required autocomplete="country-name">
+                  <option value="">Vyberte zemi</option>
+                  <option value="Ceska republika" selected>Česká republika</option>
+                  <option value="Slovensko">Slovensko</option>
+                  <option value="Jina">Jiná</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="fico">IČO / DIČ <span class="form-hint-inline">(pro firmy)</span></label>
+                <input type="text" id="fico" name="ICO" placeholder="12345678">
+              </div>
+            </div>
+
+            <!-- Dárkový box v designu s přerušovanou linkou -->
+            <div class="gift-banner-card" id="giftCard">
+              <label class="gift-banner-label">
+                <input type="checkbox" id="giftCheckbox" name="Koupit_jako_darek" value="ano">
+                <div class="gift-banner-icon">🎁</div>
+                <div class="gift-banner-content">
+                  <strong class="gift-banner-title">Objednat jako dárkový poukaz</strong>
+                  <p class="gift-banner-text">Po úhradě objednávky obdržíte elektronický dárkový certifikát s unikátním kódem. Obdarovaný si balíček aktivuje na webu a své údaje pro analýzu zadá sám.</p>
+                </div>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- ── II. Údaje pro analýzu ──────────────── -->
+          <div class="form-section" id="sectionAnalysis">
+            <h2 class="form-section__title">
+              <span class="form-section__num">II</span>
+              Údaje pro analýzu
+            </h2>
+            <p class="form-section__note">Slouží k sestavení individuálního plánu.</p>
+
+            <div class="form-grid form-grid--3">
+              <div class="form-group">
+                <label for="fage">Věk <span class="req">*</span></label>
+                <input type="number" id="fage" name="Vek" required placeholder="28">
+              </div>
+              <div class="form-group">
+                <label for="fgender">Pohlaví <span class="req">*</span></label>
+                <select id="fgender" name="Pohlavi" required>
+                  <option value="">Vyberte</option>
+                  <option value="Muz">Muž</option>
+                  <option value="Zena">Žena</option>
+                  <option disabled>──────────</option>
+                  <option value="Jine">Jiné</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="fheight">Výška (cm) <span class="req">*</span></label>
+                <input type="number" id="fheight" name="Vyska_cm" required placeholder="175">
+              </div>
+              <div class="form-group">
+                <label for="fweight">Váha (kg) <span class="req">*</span></label>
+                <input type="number" id="fweight" name="Vaha_kg" required placeholder="80">
+              </div>
+              <div class="form-group">
+                <label for="fhips">Obvod boků (cm) <span class="form-hint-inline">(vhodné)</span></label>
+                <input type="number" id="fhips" name="Obvod_boku_cm" placeholder="95">
+              </div>
+              <div class="form-group">
+                <label for="fwaist">Obvod pasu (cm) <span class="form-hint-inline">(vhodné)</span></label>
+                <input type="number" id="fwaist" name="Obvod_pasu_cm" placeholder="80">
+              </div>
+            </div>
+
+            <div class="form-group form-group--full">
+              <label for="fmotivation">Proč chceš životní změnu? <span class="form-hint-inline">(nepovinné)</span></label>
+              <textarea id="fmotivation" name="Motivace" rows="4" placeholder="Napiš mi krátce, co tě přivedlo, co tě trápí a čeho chceš dosáhnout..."></textarea>
+            </div>
+          </div>
+
+          <!-- ── III. Právní blok ───────────────────── -->
+          <div class="form-section form-section--legal">
+            <h2 class="form-section__title">
+              <span class="form-section__num">III</span>
+              Právní prohlášení
+            </h2>
+
+            <div class="legal-checks">
+              <label class="legal-check legal-check--required">
+                <input type="checkbox" name="Souhlas_VOP_GDPR" required value="ano">
+                <span>Souhlasím s <a href="#" class="gdpr-link" data-modal="modal-vop">Všeobecnými obchodními podmínkami</a> a potvrzuji, že jsem se seznámil/a se <a href="#" class="gdpr-link" data-modal="modal-gdpr">Zásadami ochrany osobních údajů</a>. <span class="req">*</span></span>
+              </label>
+
+              <!-- Zdravotní souhlas (skryto při nákupu dárku) -->
+              <label class="legal-check legal-check--required" id="checkHealthLabel">
+                <input type="checkbox" id="checkHealth" name="Souhlas_zdravotni_data" required value="ano">
+                <span>Uděluji výslovný souhlas se zpracováním údajů o svém zdravotním stavu (pro analýzu v aplikaci ZOF, vedení záznamů v Notion a interní evidenci poradce). Potvrzuji, že mi zdravotní stav umožňuje změnu návyků. <span class="req">*</span></span>
+              </label>
+
+              <label class="legal-check legal-check--required">
+                <input type="checkbox" name="Prohlaseni_plnoletost" required value="ano">
+                <span>Prohlašuji, že jsem plnoletý/á nebo jednám se souhlasem zákonného zástupce. <span class="req">*</span></span>
+              </label>
+
+              <!-- Anonymní souhlas (skryto při nákupu dárku) -->
+              <label class="legal-check" id="checkAnonLabel">
+                <input type="checkbox" id="checkAnon" name="Souhlas_anonymni" value="ano">
+                <span>Souhlasím s anonymním použitím výsledků spolupráce (grafy progresu, anonymizované fotky) pro referenční účely poradce. <em>(Nepovinné)</em></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- ── Submit ─────────────────────────────── -->
+          <div class="form-submit">
+            <button type="submit" class="btn btn--primary btn--submit" id="submitBtn">
+              ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU
+            </button>
+            <p class="form-submit__note">Po odeslání tě kontaktuji do 2 pracovních dnů s potvrzením a dalšími kroky.</p>
+            <p class="form-error" id="formError" hidden>Nepodařilo se odeslat formulář. Zkuste to prosím znovu nebo mi napište na <a href="mailto:koblas.nutricni.info@gmail.com">koblas.nutricni.info@gmail.com</a>.</p>
+          </div>
+
+        </form>
       </div>
-
-      <!-- Souhrn vybrané služby -->
-      <div class="order-summary-card">
-        <div class="order-summary-row">
-          <span class="order-summary-label">Vybraný program:</span>
-          <span class="order-summary-val" id="orderServiceName">Načítám...</span>
-        </div>
-        <div class="order-summary-row">
-          <span class="order-summary-label">Forma úhrady:</span>
-          <span class="order-summary-val" id="orderPlatba">Jednorázová platba</span>
-        </div>
-        <div class="order-summary-row order-summary-row--price">
-          <span class="order-summary-label">Cena k úhradě:</span>
-          <span class="order-summary-val price-highlight" id="orderPrice">—</span>
-        </div>
-
-        <!-- Lišta pro uplatnění slevového kódu -->
-        <div class="order-promo-box">
-          <div class="order-promo-input-wrap">
-            <input type="text" id="promoInput" placeholder="Máš slevový kód nebo voucher?" autocomplete="off" spellcheck="false">
-            <button type="button" id="promoApplyBtn">UPLATNIT</button>
-          </div>
-          <div id="promoMessage" class="promo-msg" hidden></div>
-        </div>
-      </div>
-
-      <!-- Objednávkový formulář -->
-      <form id="orderForm" class="order-form" novalidate>
-        
-        <!-- Skrytá systémová pole -->
-        <input type="hidden" name="Sluzba" id="hiddenSluzba" value="">
-        <input type="hidden" name="Platba" id="hiddenPlatba" value="">
-        <input type="hidden" name="Cena" id="hiddenPrice" value="">
-        <input type="hidden" name="Pouzity_kod" id="hiddenPromoCode" value="">
-        <input type="hidden" name="Sleva_info" id="hiddenDiscountInfo" value="">
-        <input type="hidden" name="Je_darek" id="hiddenIsGift" value="ne">
-        <input type="hidden" name="subject" id="emailSubject" value="Nová objednávka z webu">
-
-        <!-- SEKCE I: Kontaktní a fakturační údaje -->
-        <div class="form-section">
-          <h2 class="form-section-title"><span>I</span> Kontaktní a fakturační údaje</h2>
-          
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="fjmeno">Jméno a příjmení *</label>
-              <input type="text" id="fjmeno" name="Jmeno" placeholder="Jan Novák" required>
-            </div>
-            <div class="form-group">
-              <label for="femail">E-mail *</label>
-              <input type="email" id="femail" name="Email" placeholder="jan@email.cz" required>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="ftelefon">Telefonní číslo *</label>
-              <input type="tel" id="ftelefon" name="Telefon" placeholder="+420 777 000 000" required>
-              <small class="form-note">Nutné pro WhatsApp / rychlou domluvu.</small>
-            </div>
-            <div class="form-group">
-              <label for="fulice">Ulice a č. p. *</label>
-              <input type="text" id="fulice" name="Ulice" placeholder="Hlavní 123" required>
-            </div>
-          </div>
-
-          <div class="form-grid form-grid--3">
-            <div class="form-group">
-              <label for="fmesto">Město *</label>
-              <input type="text" id="fmesto" name="Mesto" placeholder="Praha" required>
-            </div>
-            <div class="form-group">
-              <label for="fpsc">PSČ *</label>
-              <input type="text" id="fpsc" name="PSC" placeholder="110 00" required>
-            </div>
-            <div class="form-group">
-              <label for="fzeme">Země *</label>
-              <select id="fzeme" name="Zeme" required>
-                <option value="Česká republika" selected>Česká republika</option>
-                <option value="Slovenská republika">Slovenská republika</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="fico">IČO / DIČ (pro firmy)</label>
-            <input type="text" id="fico" name="ICO" placeholder="12345678">
-          </div>
-
-          <!-- DÁRKOVÝ REŽIM (u splátek se automaticky skryje) -->
-          <div class="gift-box" id="giftCard">
-            <label class="gift-box-inner" for="giftCheckbox">
-              <input type="checkbox" id="giftCheckbox" name="Koupit_jako_darek" value="ano">
-              <span class="gift-box-icon">🎁</span>
-              <span class="gift-box-content">
-                <span class="gift-box-title">Objednat jako dárkový poukaz</span>
-                <span class="gift-box-desc">Po úhradě objednávky obdržíte elektronický dárkový certifikát s unikátním kódem. Obdarovaný si balíček aktivuje na webu a své údaje pro analýzu zadá sám.</span>
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <!-- SEKCE II: Údaje pro analýzu (skrývá se při nákupu jako dárek) -->
-        <div class="form-section" id="sectionAnalysis">
-          <h2 class="form-section-title"><span>II</span> Údaje pro analýzu</h2>
-          
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="fage">Věk *</label>
-              <input type="number" id="fage" name="Vek" placeholder="Např. 30" min="15" max="100" required>
-            </div>
-            <div class="form-group">
-              <label for="fgender">Pohlaví *</label>
-              <select id="fgender" name="Pohlavi" required>
-                <option value="" disabled selected>Zvol pohlaví</option>
-                <option value="Muž">Muž</option>
-                <option value="Žena">Žena</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="fheight">Výška v cm *</label>
-              <input type="number" id="fheight" name="Vyska_cm" placeholder="Např. 175" min="100" max="230" required>
-            </div>
-            <div class="form-group">
-              <label for="fweight">Aktuální váha v kg *</label>
-              <input type="number" id="fweight" name="Vaha_kg" placeholder="Např. 78" min="35" max="250" step="0.1" required>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="fhip">Obvod boků v cm (volitelné)</label>
-              <input type="number" id="fhip" name="Obvod_boku_cm" placeholder="Měřeno v nejširším místě">
-            </div>
-            <div class="form-group">
-              <label for="fwaist">Obvod pasu v cm (volitelné)</label>
-              <input type="number" id="fwaist" name="Obvod_pasu_cm" placeholder="Měřeno v nejužším místě">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="fgoal">Co je tvým hlavním cílem nebo motivací?</label>
-            <textarea id="fgoal" name="Motivace" rows="3" placeholder="Redukce tuku, nabrání svalů, energie při sportu, optimalizace trávení..."></textarea>
-          </div>
-        </div>
-
-        <!-- SEKCE III: Právní prohlášení -->
-        <div class="form-section">
-          <h2 class="form-section-title"><span>III</span> Právní prohlášení</h2>
-          
-          <div class="form-checkboxes">
-            <label class="form-checkbox-label">
-              <input type="checkbox" required>
-              <span>Souhlasím s <a href="#" data-modal="modal-vop">Všeobecnými obchodními podmínkami</a> a potvrzuji, že jsem se seznámil/a se <a href="#" data-modal="modal-gdpr">Zásadami ochrany osobních údajů</a>. *</span>
-            </label>
-
-            <label class="form-checkbox-label" id="checkHealthLabel">
-              <input type="checkbox" id="checkHealth" required>
-              <span>Uděluji výslovný souhlas se zpracováním údajů o svém zdravotním stavu (pro analýzu v aplikaci ZOF, vedení záznamů v Notion a interní evidenci poradce). Potvrzuji, že mi zdravotní stav umožňuje změnu návyků. *</span>
-            </label>
-
-            <label class="form-checkbox-label">
-              <input type="checkbox" required>
-              <span>Prohlašuji, že jsem plnoletý/á nebo jednám se souhlasem zákonného zástupce. *</span>
-            </label>
-
-            <label class="form-checkbox-label" id="checkAnonLabel">
-              <input type="checkbox" id="checkAnon" name="Souhlas_anonymni" value="ano">
-              <span>Souhlasím s anonymním použitím výsledků spolupráce (grafy progresu, anonymizované fotky) pro referenční účely poradce. (Nepovinné)</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Odesílací tlačítko -->
-        <div class="form-submit-wrap">
-          <button type="submit" id="submitBtn" class="btn-submit">ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU</button>
-          <p class="submit-note">Po odeslání tě kontaktuji do 2 pracovních dnů s potvrzením a dalšími kroky.</p>
-          <div id="formError" class="form-error" hidden></div>
-        </div>
-
-      </form>
-    </div>
+    </section>
   </main>
 
-  <!-- Modální okno VOP -->
-  <div class="modal-overlay" id="modal-vop" hidden>
-    <div class="modal-box">
-      <button type="button" class="modal__close" aria-label="Zavřít">&times;</button>
-      <h2>Všeobecné obchodní podmínky</h2>
-      <div class="modal-content">
-        <p>Tyto obchodní podmínky upravují smluvní vztahy mezi poskytovatelem nutričního poradenství Kryštofem Koblasem a klientem.</p>
-        <p>1. Úvodní ustanovení: Poskytovatel poskytuje poradenství v oblasti životosprávy, výživy a pohybové aktivity na základě akreditace.</p>
-        <p>2. Objednávka a uzavření smlouvy: Odesláním formuláře klient činí závaznou objednávku vybraného balíčku.</p>
-        <p>3. Platební podmínky: Služba je hrazena na základě vystavené faktury jednorázově či dle dohodnutého splátkového kalendáře.</p>
-        <p>Kompletní znění naleznete také na stránce <a href="podminky.html" target="_blank">podmínky</a>.</p>
+  <footer class="site-footer site-footer--rich">
+    <div class="footer__inner">
+
+      <div class="footer__col">
+        <h3 class="footer__col-title">Kontakty</h3>
+        <a href="mailto:koblas.nutricni.info@gmail.com" class="footer__contact-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          koblas.nutricni.info@gmail.com
+        </a>
+        <p class="footer__contact-note">Pro dotazy ohledně spolupráce nebo individuální řešení.</p>
+      </div>
+
+      <div class="footer__col">
+        <h3 class="footer__col-title">Užitečný obsah</h3>
+
+        <div class="footer__resource">
+          <div class="footer__resource-icons">
+            <a href="https://www.instagram.com/krystofkoblas" target="_blank" rel="noopener" class="footer__icon-pill footer__icon-pill--ig" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+            </a>
+            <a href="https://tiktok.com/@krytof.koblas" target="_blank" rel="noopener" class="footer__icon-pill footer__icon-pill--tt" aria-label="TikTok">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.25 8.25 0 0 0 4.83 1.56V6.78a4.85 4.85 0 0 1-1.06-.09z"/></svg>
+            </a>
+          </div>
+          <div>
+            <span class="footer__resource-title">Videa (Instagram &amp; TikTok)</span>
+            <span class="footer__resource-desc">Aktuální videa o stravování a mýtech ve výživě. Stejný obsah, tvoje volba.</span>
+          </div>
+        </div>
+
+        <div class="footer__resource">
+          <div class="footer__resource-icons">
+            <a href="https://www.strava.com/athletes/113330887" target="_blank" rel="noopener" class="footer__icon-pill footer__icon-pill--strava" aria-label="Strava">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            </a>
+          </div>
+          <div>
+            <a href="https://www.strava.com/athletes/113330887" target="_blank" rel="noopener" class="footer__resource-title footer__resource-title--link">Strava</a>
+            <span class="footer__resource-desc">Podívej se, jak se hýbu já a najdi inspiraci.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer__bottom">
+        <span>© 2026 Kryštof Koblas – Nutriční poradenství</span>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ── Modal VOP ─────────────────────────── -->
+  <div class="modal-overlay" id="modal-vop" role="dialog" aria-modal="true" aria-label="Všeobecné obchodní podmínky" hidden>
+    <div class="modal">
+      <button class="modal__close" aria-label="Zavřít">&times;</button>
+      <div class="modal__body">
+        <h2 class="modal__title">Všeobecné obchodní podmínky</h2>
+
+        <h3>1. Úvodní ustanovení a identifikace</h3>
+        <p>Tyto obchodní podmínky upravují práva a povinnosti mezi poskytovatelem a klientem v rámci nutričního poradenství. Smluvní vztah se uzavírá jako nepojmenovaná smlouva podle § 1746 odst. 2 zákona č. 89/2012 Sb., občanský zákoník.</p>
+        <ul>
+          <li><strong>Poskytovatel:</strong> Kryštof Koblas</li>
+          <li><strong>IČO:</strong> 24599221</li>
+          <li><strong>Sídlo:</strong> Pionýrů 727, Uničov 783 91</li>
+          <li><strong>Web:</strong> koblas-nutricni.cz</li>
+          <li><strong>E-mail:</strong> koblas.nutricni@gmail.com</li>
+        </ul>
+
+        <h3>2. Vznik spolupráce a způsob plnění</h3>
+        <p><strong>2.1. Uzavření smlouvy:</strong> Smluvní vztah vzniká v okamžiku připsání platby na účet poskytovatele. Tímto okamžikem klient stvrzuje, že se seznámil s těmito VOP a souhlasí s nimi.</p>
+        <p><strong>2.2. Komunikace:</strong> Probíhá elektronicky skrze WhatsApp, e-mail nebo Zoom. Poskytovatel kontaktuje klienta do 10 pracovních dnů od přijetí platby.</p>
+        <p><strong>2.3. Součinnost klienta:</strong> Pro úspěšnou analýzu je klient povinen využívat aplikaci ZOF pro záznam stravy po dobu minimálně 3 dnů. Klient je povinen poskytovat pravdivé informace i mimo tuto aplikaci, například v dotaznících či při konzultacích.</p>
+        <p><strong>2.4. Evidence:</strong> Klient bere na vědomí, že poskytovatel vede dokumentaci jak v systému ZOF, tak v aplikaci Notion a ve vlastních zabezpečených souborech, jako jsou analýzy a protokoly.</p>
+
+        <h3>3. Platební podmínky a odstoupení</h3>
+        <p><strong>3.1. Platba:</strong> Služba je hrazena předem. Při prodlení se splátkou může poskytovatel pozastavit přístup ke službám i do aplikace ZOF.</p>
+        <p><strong>3.2. Odstoupení:</strong> Vzhledem k tomu, že se jedná o dodávku digitálního obsahu a služeb upravených podle přání klienta, nemá klient právo na odstoupení od smlouvy po zahájení plnění dle § 1837 občanského zákoníku. Za zahájení plnění se považuje první analýza dat nebo propojení v aplikaci ZOF.</p>
+
+        <h3>4. Ochrana osobních údajů (GDPR)</h3>
+        <p><strong>4.1. Správce a data:</strong> Poskytovatel zpracovává identifikační údaje a citlivé údaje o zdravotním stavu, kam spadají hmotnost, anamnéza, krevní výsledky a případná fotodokumentace progresu.</p>
+        <p><strong>4.2. Zpracovatelé:</strong> Klient výslovně souhlasí s tím, že jeho data jsou zpracovávána v aplikaci ZOF (poskytovatel Život s dietou s.r.o.). Data jsou dále zpracovávána v aplikaci Notion (poskytovatel Notion Labs, Inc.). Údaje jsou uloženy také v zabezpečeném úložišti poskytovatele pro účely interní analýzy a archivace dokumentů.</p>
+        <p><strong>4.3. Právní základ:</strong> Zpracování citlivých údajů o zdraví probíhá na základě výslovného souhlasu, který klient uděluje úhradou služby a poskytnutím těchto dat. Data jsou poskytována vložením do ZOF či zasláním e-mailem.</p>
+        <p><strong>4.4. Práva:</strong> Klient má právo na přístup k údajům, jejich opravu či výmaz, pokud to neodporuje zákonným archivačním povinnostem.</p>
+
+        <h3>5. Výhrada odpovědnosti a disclaimer</h3>
+        <p><strong>5.1. Nejedná se o zdravotní službu:</strong> Služby poskytovatele nejsou zdravotní službou ve smyslu zákona č. 372/2011 Sb. o zdravotních službách.</p>
+        <p><strong>5.2. Vlastní odpovědnost:</strong> Klient jedná na vlastní odpovědnost a poskytnutá doporučení nenahrazují léčbu stanovenou lékařem. Poskytovatel neodpovídá za škody na zdraví vzniklé zamlčením informací klientem nebo nesprávným pochopením doporučení.</p>
+        <p><strong>5.3. Nezletilí:</strong> V případě spolupráce s nezletilým klientem nese plnou odpovědnost za dodržování doporučení a sledování zdravotního stavu jeho zákonný zástupce.</p>
+
+        <h3>6. Závěrečná ustanovení</h3>
+        <p><strong>6.1. Platnost:</strong> Tyto VOP jsou platné od 28. 3. 2026.</p>
+        <p><strong>6.2. Spory:</strong> Případné spory se řeší přednostně smírnou cestou, případně u věcně příslušného soudu ČR.</p>
       </div>
     </div>
   </div>
 
-  <!-- Modální okno GDPR -->
-  <div class="modal-overlay" id="modal-gdpr" hidden>
-    <div class="modal-box">
-      <button type="button" class="modal__close" aria-label="Zavřít">&times;</button>
-      <h2>Zásady ochrany osobních údajů (GDPR)</h2>
-      <div class="modal-content">
-        <p>Správcem osobních údajů je Kryštof Koblas. Údaje zadané v tomto formuláři slouží výhradně pro plnění smlouvy, fakturaci a zpracování nutričních plánů a analýz.</p>
-        <p>Údaje o zdravotním stavu jsou zpracovávány pouze s Vaším výslovným souhlasem pro potřeby individuálního nutričního plánu (v aplikaci ZOF a Notion).</p>
-        <p>Kompletní informace o Vašich právech naleznete na stránce <a href="gdpr.html" target="_blank">Zásady GDPR</a>.</p>
+  <!-- ── Modal GDPR ────────────────────────── -->
+  <div class="modal-overlay" id="modal-gdpr" role="dialog" aria-modal="true" aria-label="Zásady zpracování osobních údajů" hidden>
+    <div class="modal">
+      <button class="modal__close" aria-label="Zavřít">&times;</button>
+      <div class="modal__body">
+        <h2 class="modal__title">Zásady zpracování osobních údajů</h2>
+
+        <h3>1. Kdo je správce?</h3>
+        <ul>
+          <li><strong>Kryštof Koblas</strong></li>
+          <li><strong>IČO:</strong> 24599221</li>
+          <li><strong>Sídlo:</strong> Pionýrů 727, Uničov 783 91</li>
+          <li><strong>Kontakt:</strong> koblas.nutricni@gmail.com</li>
+        </ul>
+
+        <h3>2. Jaká data zpracovávám?</h3>
+        <p>Abych ti mohl sestavit funkční plán, pracuji s těmito údaji:</p>
+        <p><strong>Běžné údaje:</strong> Jméno, adresa, e-mail, telefon (pro fakturaci a kontakt).</p>
+        <p><strong>Citlivé údaje (Zdraví):</strong> Věk, pohlaví, váha, výška, obvody těla, alergie, stravovací návyky, krevní výsledky nebo fotky progresu. Tato data zpracovávám pouze na základě tvého výslovného souhlasu.</p>
+
+        <h3>3. Kdo další má k datům přístup? (Zpracovatelé)</h3>
+        <p>Tvá data neprodávám. Pro provoz ale používám tyto prověřené služby:</p>
+        <ul>
+          <li><strong>ZOF (Život s dietou s.r.o.):</strong> Aplikace, kam si zapisuješ stravu a kde tvořím plány.</li>
+          <li><strong>Notion (Notion Labs, Inc.):</strong> Nástroj pro vedení klientské dokumentace, zápisy z konzultací a evidenci tvého progresu.</li>
+          <li><strong>Fakturoid s.r.o.:</strong> Fakturační systém, který vidí tvé jméno a e-mail.</li>
+          <li><strong>Vlastní úložiště:</strong> Zabezpečené digitální prostředí pro dotazníky a PDF analýzy.</li>
+        </ul>
+
+        <h3>4. Jak dlouho data uchovávám?</h3>
+        <ul>
+          <li>Po dobu trvání naší spolupráce.</li>
+          <li>Po jejím skončení po dobu 5 let (kvůli archivaci faktur a případným reklamacím).</li>
+        </ul>
+
+        <h3>5. Tvá práva</h3>
+        <p>Můžeš mě kdykoliv požádat o výpis dat, která o tobě mám, o jejich opravu nebo výmaz (pokud to neodporuje zákonu o účetnictví). Souhlas se zpracováním zdravotních dat můžeš kdykoliv odvolat – v tom případě ale nebudu moci v poradenství pokračovat.</p>
       </div>
     </div>
   </div>
 
-  <!-- Skripty -->
-  <script src="objednavka.js"></script>
+  <script src="script.js"></script>
+  <script src="objednavka.js?v=2"></script>
 
-  <!-- ── Skript pro slevové kódy a dárkový režim (s automatickým vypnutím dárku u splátek) ── -->
+  <!-- ── Skript pro slevové kódy a dárkový režim ── -->
   <script>
     (function() {
       let basePriceText = '';
@@ -318,16 +604,6 @@
       const sectionAnalysis = document.getElementById('sectionAnalysis');
       const hiddenIsGift = document.getElementById('hiddenIsGift');
 
-      // ── KONTROLA SPLÁTEK: U splátek natvrdo zakázat a skrýt dárkový poukaz ──
-      const urlParams = new URLSearchParams(window.location.search);
-      const isSplatky = urlParams.get('platba') === 'splatky';
-
-      if (isSplatky && giftCard) {
-        giftCard.style.display = 'none';
-        if (giftCheckbox) giftCheckbox.checked = false;
-        if (hiddenIsGift) hiddenIsGift.value = 'ne';
-      }
-
       const checkHealth = document.getElementById('checkHealth');
       const checkHealthLabel = document.getElementById('checkHealthLabel');
       const checkAnon = document.getElementById('checkAnon');
@@ -341,7 +617,7 @@
       ];
 
       function toggleGiftMode() {
-        if (!giftCheckbox || isSplatky) return;
+        if (!giftCheckbox) return;
         const isGift = giftCheckbox.checked;
 
         if (giftCard) {
@@ -349,6 +625,7 @@
         }
 
         if (isGift) {
+          // KUPUJÍCÍ DÁRKU
           if (sectionAnalysis) sectionAnalysis.style.display = 'none';
           if (hiddenIsGift) hiddenIsGift.value = 'ano';
 
@@ -359,15 +636,19 @@
             }
           });
 
+          // Skrýt zdravotní data (kupující je nevyplňuje)
           if (checkHealth) {
             checkHealth.removeAttribute('required');
             checkHealth.checked = true;
           }
           if (checkHealthLabel) checkHealthLabel.style.display = 'none';
+
+          // Skrýt anonymní výsledky (kupující žádné nemá)
           if (checkAnon) checkAnon.checked = false;
           if (checkAnonLabel) checkAnonLabel.style.display = 'none';
 
         } else {
+          // BĚŽNÝ KLIENT / OBDAROVANÝ
           if (sectionAnalysis) sectionAnalysis.style.display = 'block';
           if (hiddenIsGift) hiddenIsGift.value = 'ne';
 
@@ -380,11 +661,12 @@
             checkHealth.checked = false;
           }
           if (checkHealthLabel) checkHealthLabel.style.display = 'flex';
+
           if (checkAnonLabel) checkAnonLabel.style.display = 'flex';
         }
       }
 
-      if (giftCheckbox && !isSplatky) {
+      if (giftCheckbox) {
         giftCheckbox.addEventListener('change', toggleGiftMode);
       }
 
@@ -401,13 +683,13 @@
           return;
         }
 
+        const urlParams = new URLSearchParams(window.location.search);
         const pkg = (urlParams.get('sluzba') || '').toLowerCase();
-        const modeDarek = giftCheckbox && giftCheckbox.checked;
 
         showPromoMsg('Ověřuji kód...', 'info');
 
         try {
-          const res = await fetch(`/api/codes?code=${encodeURIComponent(code)}&package=${encodeURIComponent(pkg)}&splatky=${isSplatky}&darek=${modeDarek}`);
+          const res = await fetch(`/api/codes?code=${encodeURIComponent(code)}&package=${encodeURIComponent(pkg)}`);
           const data = await res.json();
 
           if (!data.valid) {
@@ -428,6 +710,7 @@
           let newPriceStr = '';
           let discountInfo = '';
 
+          // ── KONTROLA: ZDA JDE O DÁRKOVÝ POUKAZ (100% SLEVU) ──
           const isGiftVoucher = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
 
           if (isGiftVoucher) {
@@ -436,7 +719,10 @@
             priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> 0 Kč`;
             showPromoMsg('✓ Dárkový poukaz byl úspěšně uplatněn (100% sleva).', 'ok');
 
-            if (giftCard) giftCard.style.display = 'none';
+            // Pokud jde o uplatnění dárku, obdarovaný již NEMŮŽE kupovat jako dárek:
+            if (giftCard) {
+              giftCard.style.display = 'none';
+            }
             if (giftCheckbox && giftCheckbox.checked) {
               giftCheckbox.checked = false;
               toggleGiftMode();
@@ -450,7 +736,7 @@
             priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
             showPromoMsg(`✓ Sleva ${data.value} % uplatněna (-${formatPrice(discountAmt)}).`, 'ok');
 
-            if (giftCard && !isSplatky) giftCard.style.display = 'block';
+            if (giftCard) giftCard.style.display = 'block';
 
           } else if (data.type === 'fixed') {
             const discountAmt = data.value;
@@ -460,7 +746,7 @@
             priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
             showPromoMsg(`✓ Sleva ${formatPrice(discountAmt)} uplatněna.`, 'ok');
 
-            if (giftCard && !isSplatky) giftCard.style.display = 'block';
+            if (giftCard) giftCard.style.display = 'block';
           }
 
           if (hiddenPrice) hiddenPrice.value = newPriceStr;
@@ -483,7 +769,8 @@
         });
       }
 
-      // Auto-uplatnění kódu z parametru v URL
+      // Auto-uplatnění kódu z parametru v URL (?kod=... nebo ?code=...)
+      const urlParams = new URLSearchParams(window.location.search);
       const urlCode = urlParams.get('kod') || urlParams.get('code');
       if (urlCode) {
         let attempts = 0;
@@ -499,8 +786,8 @@
         setTimeout(autoApply, 200);
       }
 
-      // Automatická aktivace dárkového režimu z URL (pouze pokud nejde o splátky)
-      if (!isSplatky && (urlParams.get('darek') === '1' || urlParams.get('darek') === 'ano')) {
+      // Automatická aktivace dárkového režimu z URL (?darek=1 nebo ?darek=ano)
+      if (urlParams.get('darek') === '1' || urlParams.get('darek') === 'ano') {
         if (giftCheckbox) {
           giftCheckbox.checked = true;
           toggleGiftMode();
@@ -508,5 +795,9 @@
       }
     })();
   </script>
+
+  <!-- Cloudflare Web Analytics -->
+  <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "4e27e2346fde40e68f3f03fac3e2c036"}'></script>
+  <!-- End Cloudflare Web Analytics -->
 </body>
 </html>
