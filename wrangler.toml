@@ -1,0 +1,6 @@
+name = "kkoblas"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "STATUS_STORE"
+id = "status-store"
