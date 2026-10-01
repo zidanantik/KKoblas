@@ -1,5 +1,5 @@
 var DEFAULT_PRICES = {
-  startup:  { jednorizove: '6 900 Kč' },
+  startup:   { jednorizove: '6 900 Kč' },
   mentoring: { jednorizove: '14 700 Kč', splatky: '7 500 Kč (1. splátka)' },
   ultimate:  { jednorizove: '22 300 Kč', splatky: '11 900 Kč (1. splátka)' }
 };
@@ -92,6 +92,20 @@ function initOrder(serviceMap) {
 
       var result = await response.json();
       if (response.ok && result.ok) {
+        // ── PŘIČTENÍ POUŽITÍ KÓDU DO KV DATABÁZE (+1) ──
+        var promoCodeVal = payload.Pouzity_kod || (document.getElementById('hiddenPromoCode') ? document.getElementById('hiddenPromoCode').value : '');
+        if (promoCodeVal) {
+          try {
+            await fetch('/api/codes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'redeem', code: promoCodeVal })
+            });
+          } catch (e) {
+            console.warn('Počítadlo kódu nebylo možné aktualizovat:', e);
+          }
+        }
+
         var name  = form.querySelector('[name="Jmeno"]').value;
         var email = form.querySelector('[name="Email"]').value;
         var dest  = 'dekujeme.html?sluzba=' + encodeURIComponent(svc.label)
