@@ -9,13 +9,34 @@ function generateGiftCode() {
   return 'DAR-' + res;
 }
 
+// Pomocná funkce pro získání Fakturoid tokenu (pro automatické vytváření dalších splátek)
+async function getFakturoidToken(clientId, clientSecret, userAgent) {
+  const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
+  const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': userAgent
+    },
+    body: JSON.stringify({ grant_type: 'client_credentials' })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OAuth selhal (${res.status}): ${errText}`);
+  }
+  const data = await res.json();
+  return data.access_token;
+}
+
 export async function onRequestPost(context) {
   try {
     const payload = await context.request.json();
     const eventName = payload.event_name || payload.event;
     const invoice = (payload.body && payload.body.invoice) || payload.invoice || payload;
 
-    // Zajímá nás událost zaplacení faktury / proformy
     if (eventName !== 'invoice_paid') {
       return new Response(JSON.stringify({ ignored: true, event: eventName }), { status: 200 });
     }
@@ -29,7 +50,6 @@ export async function onRequestPost(context) {
     const rawClients = await context.env.STATUS_STORE.get('CLIENTS');
     let clients = rawClients ? JSON.parse(rawClients) : [];
 
-    // Najdeme klienta podle Fakturoid ID
     const clientIndex = clients.findIndex(c => c.fakturoid_id === invoiceId);
     if (clientIndex === -1) {
       return new Response(JSON.stringify({ ok: true, message: 'Klient nenalezen (není z webu)' }), { status: 200 });
@@ -37,12 +57,11 @@ export async function onRequestPost(context) {
 
     const client = clients[clientIndex];
 
-    // Pokud už byl dříve aktivován, nic znovu neprovádíme (idempotence)
-    if (client.status === 'aktivni') {
+    if (client.status === 'aktivni' && !client.is_installment_pending) {
       return new Response(JSON.stringify({ ok: true, message: 'Klient již je aktivní' }), { status: 200 });
     }
 
-    // 2. AKTIVACE KLIENTA (+1 do kapacity)
+    // 2. AKTIVACE KLIENTA
     client.status = 'aktivni';
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
@@ -55,7 +74,6 @@ export async function onRequestPost(context) {
       const giftCode = generateGiftCode();
       client.kod_voucheru = giftCode;
 
-      // Uložíme nový kód do PROMO_CODES
       const rawCodes = await context.env.STATUS_STORE.get('PROMO_CODES');
       let codes = rawCodes ? JSON.parse(rawCodes) : [];
 
@@ -77,7 +95,6 @@ export async function onRequestPost(context) {
       codes.unshift(newPromo);
       await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
 
-      // Odešleme dárkový e-mail kupujícímu
       if (resendKey && client.kupujici && client.kupujici.email) {
         const redeemUrl = `https://${fromDomain}/objednavka.html?sluzba=${encodeURIComponent(client.sluzba)}&kod=${encodeURIComponent(giftCode)}`;
 
@@ -113,31 +130,99 @@ export async function onRequestPost(context) {
       }
 
     } else {
-      // 4. BĚŽNÝ NÁKUP -> UVÍTACÍ E-MAIL KLIENTOVI
+      // 4. BĚŽNÝ NÁKUP -> ODESLÁNÍ NAŠEHO NOVÉHO PROMYŠLENÉHO E-MAILU
       if (resendKey && client.kupujici && client.kupujici.email) {
+        const packageName = client.sluzba_nazev || 'nutriční program';
+
+        const emailHtml = `
+          <div style="font-family: sans-serif; max-width: 600px; color: #222; line-height: 1.6;">
+            <h2 style="color: #2ecc71;">Platba dorazila! Info, co bude dál 🚀</h2>
+            <p>Ahoj ${client.kupujici.jmeno},</p>
+            <p>tvoje platba za balíček <strong>${packageName}</strong> dorazila v pořádku, díky moc! Oficiálně tak odmáváme startovní čáru a jdeme na to.</p>
+            
+            <p>Abychom hned chytili správný rytmus, tady je pár rychlých a důležitých info k tomu, jak budeme fungovat:</p>
+
+            <h3 style="color: #ff9900; margin-top: 20px;">📱 JAK BUDEME V KONTAKTU?</h3>
+            <ul>
+              <li><strong>Prvně ti napíšu na WhatsApp:</strong> Co nejdříve se ti ozvu přímo na WhatsApp (+420 774 143 176), abychom se domluvili na termínu první online schůzky.</li>
+              <li><strong>Klidně napiš sám/sama:</strong> Kdybych to náhodou nestihl hned nebo jsi chtěl/a začátek urychlit, klidně mi napiš jako první.</li>
+              <li><strong>Čistě WhatsApp zprávy:</strong> Číslo používej primárně pro textové a hlasové zprávy. Každému se věnuji na maximum a jakmile mi to čas dovolí, hned odepisuju.</li>
+              <li><strong>Spojení v aplikaci ZOF:</strong> Následně se propojíme i přímo v ZOFu.</li>
+            </ul>
+
+            <h3 style="color: #ff9900; margin-top: 20px;">⏱️ JAK JE TO S TVÝM ČASEM? (FÉROVÁ DOHODA)</h3>
+            <ul>
+              <li><strong>O svůj čas nepřijdeš:</strong> Čas balíčku ti začínám oficiálně počítat až ode dne naší první online schůzky (do té doby spolu ladíme jen podklady a diagnostiku).</li>
+              <li><strong>Rušení schůzek:</strong> Když se schůzka předem vykomunikuje a přesune, nic se neděje. Pokud by se ale termíny rušily opakovaně bez omluvy, zaplacený čas začne běžet.</li>
+            </ul>
+
+            <h3 style="color: #ff9900; margin-top: 20px;">📊 ANALÝZA DAT (AŤ NEPLÝTVÁME ČASEM)</h3>
+            <p>Od chvíle zaplacení už pracuju na tvých podkladech. Pokud už máš hotové InBody, pošli mi výsledky hned na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</p>
+
+            <p style="margin-top: 25px;">Všechno v klidu nastavíme tak, aby tě to bavilo a přineslo reálné výsledky.<br><br>Těším se na spolupráci!<br><strong>Kryštof Koblas</strong></p>
+          </div>
+        `;
+
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: `Kryštof Koblas <info@${fromDomain}>`,
             to: [client.kupujici.email],
-            subject: `Platba přijata – Vítej v programu ${client.sluzba_nazev || ''}!`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; color: #222; line-height: 1.6;">
-                <h2 style="color: #2ecc71;">Platba byla v pořádku připsána!</h2>
-                <p>Ahoj ${client.kupujici.jmeno},</p>
-                <p>tvoje úhrada za program <strong>${client.sluzba_nazev || 'Nutriční spolupráce'}</strong> dorazila. Tímto je tvé místo oficiálně rezervováno.</p>
-                <p>Během zítřka tě budu osobně kontaktovat ohledně domluvy úvodního termínu a dalších kroků.</p>
-                <br>
-                <p>Těším se na společné výsledky!<br><strong>Kryštof Koblas</strong></p>
-              </div>
-            `
+            subject: `koblas-nutricni.cz | Platba za ${packageName} dorazila! Info, co bude dál 🚀`,
+            html: emailHtml
           })
         });
       }
     }
 
-    // Uložíme aktualizovaný seznam klientů do KV
+    // 5. AUTOMATICKÉ VYTVOŘENÍ DALŠÍ SPLÁTKY (pokud jde o splátkový program a zbývají splátky)
+    if (client.is_installment && client.current_installment < client.total_installments) {
+      try {
+        const slug = 'krystofkoblas';
+        const clientId = '4eec39db77ad7e5dc6da69e17153ffa50c8559d7';
+        const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
+        const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
+
+        const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
+        
+        const nextInstallmentNum = client.current_installment + 1;
+        const dueDate = new Date();
+        dueDate.setMonth(dueDate.getMonth() + 1); // Splatnost za 1 měsíc od zaplacení předchozí
+
+        const invoicePayload = {
+          subject_id: invoice.subject_id,
+          document_type: 'proforma',
+          due_date: dueDate.toISOString().split('T')[0],
+          lines: [
+            {
+              name: `${client.sluzba_nazev || 'Nutriční balíček'} – ${nextInstallmentNum}. splátka z ${client.total_installments}`,
+              quantity: 1,
+              unit_price: client.installment_amount || 0,
+              unit_name: 'ks'
+            }
+          ],
+          note: `Automatická splátka (${nextInstallmentNum}/${client.total_installments})`
+        };
+
+        await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${fToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': userAgent
+          },
+          body: JSON.stringify(invoicePayload)
+        });
+
+        client.current_installment = nextInstallmentNum;
+      } catch (splatkaErr) {
+        console.error('Chyba při generování další splátky:', splatkaErr);
+      }
+    }
+
+    // Uložíme aktualizovaný stav klientů do KV
     await context.env.STATUS_STORE.put('CLIENTS', JSON.stringify(clients));
 
     return new Response(JSON.stringify({ ok: true, activated: true }), {
