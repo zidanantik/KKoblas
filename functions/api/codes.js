@@ -2,6 +2,13 @@
 
 export async function onRequestGet(context) {
   try {
+    if (!context.env.STATUS_STORE) {
+      return new Response(JSON.stringify({ valid: false, message: 'Chyba serveru: STATUS_STORE binding není nastaven v Cloudflare.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
 
@@ -91,6 +98,13 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   try {
+    if (!context.env.STATUS_STORE) {
+      return new Response(JSON.stringify({ ok: false, error: 'STATUS_STORE binding není nastaven v Cloudflare.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const body = await context.request.json();
     const raw = await context.env.STATUS_STORE.get('PROMO_CODES');
     let codes = raw ? JSON.parse(raw) : [];
@@ -169,6 +183,13 @@ export async function onRequestPost(context) {
 
 export async function onRequestDelete(context) {
   try {
+    if (!context.env.STATUS_STORE) {
+      return new Response(JSON.stringify({ ok: false, error: 'STATUS_STORE binding není nastaven v Cloudflare.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
 
