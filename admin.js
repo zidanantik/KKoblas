@@ -185,7 +185,7 @@ async function setAll(val) {
 document.getElementById('masterClose').addEventListener('click', function () { setAll('uzavreny'); });
 document.getElementById('masterOpen').addEventListener('click',  function () { setAll('volny'); });
 
-// ── Event save ───────────────────────────────────
+// ── Event toggle ─────────────────────────────────
 document.getElementById('btn-event').addEventListener('click', async function () {
   var ev = currentStatus.event || {};
   currentStatus.event = Object.assign({}, ev, { active: !ev.active });
@@ -670,16 +670,21 @@ function renderPromoCodesList(codes) {
 
     var printBtn = '<button onclick="printVoucherModal(\'' + c.id + '\')" title="Tisk / PDF voucher" style="background: #151515; border: 1px solid #c88a2c; color: #ff9900; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">🖨 TISK</button>';
 
-    // Doplňující info: kdo zakoupil nebo kdy byl vytvořen
+    // Přesné formátování data a času vygenerování
+    var timeStr = '';
+    if (c.createdAt) {
+      var d = new Date(c.createdAt);
+      if (!isNaN(d.getTime())) {
+        timeStr = d.toLocaleDateString('cs-CZ') + ' v ' + d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+      }
+    }
+
     var extraInfo = '';
     if (c.note) {
-      extraInfo = '<div style="font-size: 10px; color: #aaa; margin-top: 3px;">Koupil: ' + c.note + '</div>';
-    } else if (c.createdAt) {
-      var d = new Date(c.createdAt);
-      var formattedDate = !isNaN(d.getTime()) ? d.toLocaleDateString('cs-CZ') : '';
-      if (formattedDate) {
-        extraInfo = '<div style="font-size: 10px; color: #666; margin-top: 3px;">Vytvořeno: ' + formattedDate + '</div>';
-      }
+      extraInfo += '<div style="font-size: 10px; color: #ff9900; margin-top: 3px;">Koupil: <strong>' + c.note + '</strong></div>';
+    }
+    if (timeStr) {
+      extraInfo += '<div style="font-size: 10px; color: #888; margin-top: 2px;">Vytvořeno: ' + timeStr + '</div>';
     }
 
     return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">'
