@@ -902,3 +902,57 @@
   .food-slider__item { left: 28px; right: 28px; }
   .promo-bar__inputs { flex-direction: column; }
 }
+/* ── Levý panel s nadpisem a karty vedle sebe ────── */
+.packages-layout {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.packages-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: sticky;
+  top: 100px;
+}
+
+.packages-main-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 3.2vw, 2.6rem);
+  color: var(--heading);
+  margin: 0 0 10px 0;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.packages-main-lead {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+  text-align: left;
+}
+
+/* Přizpůsobení pro menší obrazovky a mobily */
+@media (max-width: 1050px) {
+  .packages-layout {
+    grid-template-columns: 1fr;
+  }
+  .packages-sidebar {
+    position: static;
+    max-width: 600px;
+    margin: 0 auto 30px;
+    text-align: center;
+  }
+  .packages-main-title,
+  .packages-main-lead {
+    text-align: center;
+  }
+  .promo-bar-wrap {
+    align-items: center !important;
+  }
+}
