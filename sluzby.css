@@ -331,7 +331,7 @@
   align-items: stretch;
 }
 
-/* ── Package card (Pevná výška, čisté kontejnery) ── */
+/* ── Package card ───────────────────────────────── */
 .pkg-card {
   background: var(--surface);
   border-radius: 24px;
@@ -451,19 +451,19 @@
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-/* ── Feature list (Pevný prostor pro odrážky, žádné překrývání) ── */
+/* ── Feature list (Trvale viditelné, kompaktní a čisté bez mezer) ── */
 .pkg-card__list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
-  min-height: 220px; /* Zafixuje prostor uvnitř karty, aby se netrhala výška */
 }
 
 .pkg-card__list li {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   padding-left: 18px;
   position: relative;
 }
@@ -472,7 +472,7 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 7px;
+  top: 6px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -492,31 +492,12 @@
   line-height: 1.35;
 }
 
-/* V klidu sbalené, po najetí myši se rozbalí normálně v proudu DOMu (bez absolutní pozice) */
+/* Popisky jsou trvale viditelné a perfektně zarovnané */
 .pkg-card__item-desc {
-  font-size: .81rem;
+  font-size: .8rem;
   color: var(--muted);
   line-height: 1.45;
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
   margin-top: 0;
-  transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.2s ease;
-}
-
-.pkg-card:hover .pkg-card__item-desc,
-.pkg-card:focus-within .pkg-card__item-desc {
-  max-height: 50px;
-  opacity: 1;
-  margin-top: 3px;
-}
-
-@media (hover: none) {
-  .pkg-card__item-desc {
-    max-height: none !important;
-    opacity: 1 !important;
-    margin-top: 4px !important;
-  }
 }
 
 .pkg-anchor {
