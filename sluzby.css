@@ -18,7 +18,7 @@
   color: #E67E22;
 }
 
-/* ── Page hero ──────────────────────────────────── */
+/* ── Page hero (Kompaktní, bez obřího prázdna) ───── */
 .page-hero {
   position: relative;
   overflow: hidden;
@@ -26,7 +26,7 @@
     radial-gradient(ellipse 60% 80% at 50% 60%, rgba(201,168,76,.12) 0%, transparent 65%),
     radial-gradient(ellipse 55% 70% at 78% 44%, rgba(36,82,68,.45) 0%, transparent 68%),
     var(--cream);
-  padding: 100px 24px 70px;
+  padding: 44px 24px 12px;
   text-align: center;
 }
 
@@ -49,21 +49,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
 }
 
 .page-hero__title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  font-size: clamp(2.2rem, 4.5vw, 3.2rem);
   line-height: 1.08;
   color: var(--heading);
 }
 
 .page-hero__lead {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   color: var(--muted);
   max-width: 52ch;
-  line-height: 1.75;
+  line-height: 1.6;
 }
 
 /* ── Event banner ───────────────────────────────── */
@@ -75,7 +75,7 @@
     var(--surface);
   border-top: 2px solid rgba(201,168,76,.5);
   border-bottom: 2px solid rgba(201,168,76,.5);
-  padding: 56px 24px;
+  padding: 36px 24px;
 }
 
 .event-banner::before {
@@ -97,7 +97,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   text-align: center;
 }
 
@@ -131,7 +131,7 @@
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--gold);
-  margin-top: 12px;
+  margin-top: 10px;
   margin-bottom: 0;
 }
 
@@ -139,7 +139,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .event-banner__btn { margin-top: 0; }
@@ -151,7 +151,7 @@
   background:
     radial-gradient(ellipse 70% 60% at 50% 50%, rgba(15,125,180,.18) 0%, transparent 70%),
     var(--cream);
-  padding: 60px 24px 100px;
+  padding: 16px 24px 80px;
 }
 
 .packages::before {
@@ -165,55 +165,76 @@
   background-size: 160px 80px;
 }
 
-/* ── Promo / Voucher Bar nad službami ────────────── */
+/* ── Kompaktní rozbalovací lišta na voucher ─────── */
 .promo-bar-wrap {
   position: relative;
   z-index: 2;
-  max-width: 680px;
-  margin: 0 auto 46px;
+  max-width: 600px;
+  margin: 0 auto 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.promo-toggle-link {
+  background: transparent;
+  border: none;
+  color: #bbb;
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.promo-toggle-link strong {
+  color: #ff9900;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.promo-toggle-link:hover {
+  color: #fff;
+  background: rgba(255, 153, 0, 0.08);
 }
 
 .promo-bar {
-  background: rgba(18, 18, 18, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(201, 168, 76, 0.25);
-  border-radius: 14px;
-  padding: 18px 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  width: 100%;
+  margin-top: 10px;
+  background: rgba(18, 18, 18, 0.95);
+  border: 1px solid rgba(255, 153, 0, 0.35);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  text-align: center;
-  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
-.promo-bar:focus-within {
-  border-color: rgba(255, 153, 0, 0.6);
-  box-shadow: 0 10px 35px rgba(255, 153, 0, 0.15);
-}
-
-.promo-bar__label {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.05rem;
-  color: var(--heading);
-  letter-spacing: 0.5px;
+.promo-bar[hidden] {
+  display: none !important;
 }
 
 .promo-bar__inputs {
   display: flex;
   gap: 8px;
   width: 100%;
-  max-width: 480px;
 }
 
 .promo-bar__input {
   flex: 1;
-  height: 44px;
+  height: 40px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  border-radius: 6px;
   color: #fff;
   padding: 0 14px;
   font-family: monospace;
@@ -231,14 +252,14 @@
 }
 
 .promo-bar__btn {
-  height: 44px;
-  padding: 0 18px;
+  height: 40px;
+  padding: 0 16px;
   background: #ff9900;
   color: #000;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   font-family: monospace;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
@@ -252,12 +273,12 @@
 }
 
 .promo-bar__reset {
-  height: 44px;
-  padding: 0 14px;
+  height: 40px;
+  padding: 0 12px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #999;
-  border-radius: 8px;
+  border-radius: 6px;
   font-family: monospace;
   font-size: 11px;
   cursor: pointer;
@@ -273,10 +294,9 @@
 .promo-bar__status {
   font-family: monospace;
   font-size: 12px;
-  padding: 8px 14px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 5px;
   width: 100%;
-  max-width: 480px;
   box-sizing: border-box;
   text-align: center;
   line-height: 1.4;
@@ -313,10 +333,10 @@
 .pkg-card {
   background: var(--surface);
   border-radius: 24px;
-  padding: 36px 32px 32px;
+  padding: 34px 30px 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   border: 1px solid rgba(201,168,76,.12);
   box-shadow: 0 8px 28px rgba(0,0,0,.35), 0 20px 50px rgba(0,0,0,.3);
   position: relative;
@@ -339,7 +359,7 @@
   transform: translateY(-18px);
 }
 
-/* ── Stavy karet při uplatnění voucheru / slevy ──── */
+/* Stavy karet při uplatnění voucheru / slevy */
 .pkg-card.is-dimmed {
   opacity: 0.32;
   filter: grayscale(40%);
@@ -577,7 +597,7 @@
 .pkg-card__footer {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   padding-top: 8px;
   border-top: 1px solid rgba(255,255,255,.06);
 }
@@ -646,7 +666,7 @@
   gap: 8px;
   width: 100%;
   margin-top: 2px;
-  padding: 11px 18px;
+  padding: 10px 18px;
   background: rgba(255, 153, 0, 0.04);
   border: 1px dashed rgba(255, 153, 0, 0.35);
   border-radius: 999px;
@@ -1213,7 +1233,7 @@
 }
 
 @media (max-width: 600px) {
-  .page-hero { padding: 72px 20px 56px; }
+  .page-hero { padding: 40px 20px 10px; }
   .pkg-card { padding: 28px 20px 24px; }
   .info-card { padding: 28px 20px; }
   .food-slider { padding: 28px 0 48px; }
