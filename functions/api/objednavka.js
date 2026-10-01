@@ -73,47 +73,11 @@ async function getOrCreateSubject(slug, token, body, userAgent) {
   return created.id;
 }
 
-async function createProformaInvoice(slug, token, subjectId, body, isGift, userAgent) {
-  const rawPrice = String(body.Cena || '').replace(/[^\d]/g, '');
-  const priceAmount = parseInt(rawPrice, 10) || 0;
-
-  const invoicePayload = {
-    subject_id: subjectId,
-    document_type: 'proforma',
-    lines: [
-      {
-        name: isGift ? `${body.Sluzba || 'Nutriční balíček'} (Dárkový poukaz)` : (body.Sluzba || 'Nutriční balíček'),
-        quantity: 1,
-        unit_price: priceAmount,
-        unit_name: 'ks'
-      }
-    ],
-    note: isGift ? 'Objednáno jako dárkový poukaz – voucher se odešle po úhradě.' : ''
-  };
-
-  const invoiceRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'User-Agent': userAgent
-    },
-    body: JSON.stringify(invoicePayload)
-  });
-
-  if (!invoiceRes.ok) {
-    const errText = await invoiceRes.text();
-    throw new Error(`Faktura selhala (${invoiceRes.status}): ${errText}`);
-  }
-
-  return await invoiceRes.json();
-}
-
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
     const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
+    const isInstallment = body.Splatky === true || body.Splatky === 'true';
 
     const requiredFields = isGift
       ? REQUIRED_CONTACT
@@ -133,21 +97,88 @@ export async function onRequestPost(context) {
     const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
     const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
 
-    console.log('--- TEST FAKTUROID START ---');
-    let fakturoidInvoice = null;
+    console.log('--- FAKTUROID OBJEDNÁVKA START ---');
 
-    try {
-      const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
-      console.log('Token získán úspěšně.');
-      const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
-      console.log('Kontakt připraven, ID:', subjectId);
-      fakturoidInvoice = await createProformaInvoice(slug, fToken, subjectId, body, isGift, userAgent);
-      console.log('ÚSPĚCH! Proforma faktura vytvořena, ID:', fakturoidInvoice.id);
-    } catch (faktErr) {
-      console.error('CHYBA V COMMu S FAKTUROIDEM:', faktErr.message);
+    const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
+    const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
+
+    // Zpracování ceny a splátek
+    const rawPrice = String(body.Cena || '').replace(/[^\d]/g, '');
+    const totalPrice = parseInt(rawPrice, 10) || 0;
+    const totalInstallments = isInstallment ? (parseInt(body.Mesice, 10) || 3) : 1;
+    const installmentAmount = isInstallment ? Math.round(totalPrice / totalInstallments) : totalPrice;
+
+    let lineName = body.Sluzba_Nazev || body.Sluzba || 'Nutriční balíček';
+    if (isGift) {
+      lineName += ' (Dárkový poukaz)';
+    } else if (isInstallment) {
+      lineName += ' – 1. splátka z ' + totalInstallments;
     }
 
-    return new Response(JSON.stringify({ ok: true, invoiceId: fakturoidInvoice?.id || null }), {
+    const invoicePayload = {
+      subject_id: subjectId,
+      document_type: 'proforma',
+      lines: [
+        {
+          name: lineName,
+          quantity: 1,
+          unit_price: installmentAmount,
+          unit_name: 'ks'
+        }
+      ],
+      note: isGift 
+        ? 'Objednáno jako dárkový poukaz – voucher se odešle po úhradě.' 
+        : (isInstallment ? 'Splátková platba (1/' + totalInstallments + ')' : '')
+    };
+
+    const invoiceRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${fToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': userAgent
+      },
+      body: JSON.stringify(invoicePayload)
+    });
+
+    if (!invoiceRes.ok) {
+      const errText = await invoiceRes.text();
+      throw new Error(`Faktura selhala (${invoiceRes.status}): ${errText}`);
+    }
+
+    const invoiceData = await invoiceRes.json();
+    console.log('ÚSPĚCH! Proforma faktura vytvořena, ID:', invoiceData.id);
+
+    // Uložení klienta do KV úložiště (`CLIENTS`), aby webhook věděl, co spárovat
+    const store = context.env.STATUS_STORE;
+    if (store) {
+      const rawClients = await store.get('CLIENTS');
+      let clients = rawClients ? JSON.parse(rawClients) : [];
+
+      const newClientRecord = {
+        fakturoid_id: invoiceData.id,
+        status: 'ceka_na_platbu',
+        sluzba: body.Sluzba || '',
+        sluzba_nazev: body.Sluzba_Nazev || body.Sluzba || 'Nutriční program',
+        is_gift: isGift,
+        is_installment: isInstallment,
+        total_installments: totalInstallments,
+        current_installment: 1,
+        installment_amount: installmentAmount,
+        kupujici: {
+          jmeno: body.Jmeno,
+          email: body.Email,
+          telefon: body.Telefon
+        },
+        created_at: new Date().toISOString()
+      };
+
+      clients.unshift(newClientRecord);
+      await store.put('CLIENTS', JSON.stringify(clients));
+    }
+
+    return new Response(JSON.stringify({ ok: true, invoiceId: invoiceData.id }), {
       status: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
     });
