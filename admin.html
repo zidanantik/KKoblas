@@ -195,7 +195,7 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
           <label class="event-label">Kód voucheru / slevy
             <div style="display: flex; gap: 6px; margin-top: 4px;">
-              <input type="text" id="newPromoCode" class="event-input" placeholder="např. KKSLEVA10" style="text-transform: uppercase; margin-top: 0; flex: 1;">
+              <input type="text" id="newPromoCode" class="event-input" placeholder="např. SPLATKY10" style="text-transform: uppercase; margin-top: 0; flex: 1;">
               <button type="button" onclick="generateRandomCode()" style="background: #151515; border: 1px solid #444; color: #ff9900; font-family: monospace; font-size: 10px; padding: 0 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; height: 38px;">🎲 NÁHODNÝ</button>
             </div>
           </label>
@@ -214,10 +214,16 @@
             </label>
           </div>
 
-          <label class="event-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding-bottom: 8px;">
-            <input type="checkbox" id="newPromoOneTime" checked style="accent-color: #ff9900; width: 16px; height: 16px;">
-            Jednorázový kód
-          </label>
+          <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; padding-bottom: 4px;">
+            <label class="event-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+              <input type="checkbox" id="newPromoOneTime" checked style="accent-color: #ff9900; width: 16px; height: 16px;">
+              Jednorázový kód
+            </label>
+            <label class="event-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+              <input type="checkbox" id="newPromoSplatky" style="accent-color: #ff9900; width: 16px; height: 16px;">
+              Platí jen pro splátky (1. platba)
+            </label>
+          </div>
         </div>
 
         <!-- Výběr balíčků -->
