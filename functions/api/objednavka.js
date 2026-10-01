@@ -5,11 +5,12 @@ const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
 
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
   const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
-  const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token', {
+  const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${credentials}`,
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'User-Agent': userAgent
     },
     body: JSON.stringify({ grant_type: 'client_credentials' })
@@ -29,6 +30,7 @@ async function getOrCreateSubject(slug, token, body, userAgent) {
     {
       headers: {
         'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
         'User-Agent': userAgent
       }
     }
@@ -56,6 +58,7 @@ async function getOrCreateSubject(slug, token, body, userAgent) {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'User-Agent': userAgent
     },
     body: JSON.stringify(subjectPayload)
@@ -93,6 +96,7 @@ async function createProformaInvoice(slug, token, subjectId, body, isGift, userA
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'User-Agent': userAgent
     },
     body: JSON.stringify(invoicePayload)
