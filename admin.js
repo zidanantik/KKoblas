@@ -98,7 +98,6 @@ async function saveStatus() {
   }
 }
 
-// ── Deploy bar ────────────────────────────────────
 function setDeploy(msg, state) {
   deployBar.hidden = false;
   deployMsg.textContent = msg;
@@ -656,13 +655,17 @@ function renderPromoCodesList(codes) {
     var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ');
     if (!pkgs) pkgs = 'VŠECHNY';
 
+    // ── VÝPIS POČTU POUŽITÍ ──
+    var count = Number(c.usedCount || 0);
+    if (!c.usedCount && c.used) count = 1;
+
     var usage = '';
     if (c.oneTime) {
       usage = c.used 
-        ? '<span style="color: #e74c3c;">Uplatněn</span>' 
-        : '<span style="color: #2ecc71;">Jednorázový</span>';
+        ? '<span style="color: #e74c3c; font-weight: bold;">Uplatněn (' + count + '×)</span>' 
+        : '<span style="color: #2ecc71;">Jednorázový (0×)</span>';
     } else {
-      usage = '<span style="color: #3498db;">Neomezený</span>';
+      usage = '<span style="color: #3498db;">Neomezený</span> <strong style="color: #ff9900; margin-left: 4px;">(' + count + '×)</strong>';
     }
 
     var toggleBtn = c.active 
@@ -707,7 +710,6 @@ async function createNewPromoCode() {
     return;
   }
 
-  // Ochrana: musí být vybrán alespoň jeden balíček
   if (packages.length === 0) {
     alert('Musíš vybrat alespoň jeden balíček, pro který má kód platit.');
     return;
@@ -725,7 +727,8 @@ async function createNewPromoCode() {
     oneTime: oneTime, 
     splatky: splatky, 
     darekOnly: darekOnly,
-    packages: packages 
+    packages: packages,
+    usedCount: 0 // Výchozí počítadlo
   };
 
   try {
@@ -748,7 +751,6 @@ async function createNewPromoCode() {
     var darekEl = document.getElementById('newPromoDarekOnly');
     if (darekEl) darekEl.checked = false;
 
-    // Resetování stavu checkboxu pro startup
     var suCb = document.querySelector('.promo-pkg-cb[value="startup"]');
     if (suCb) {
       suCb.disabled = false;
