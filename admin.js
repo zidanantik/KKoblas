@@ -322,6 +322,29 @@ function generateRandomCode() {
   if (input) input.value = prefix + res;
 }
 
+// Propojení checkboxu splátek s balíčkem START-UP (Start-up nemá splátky)
+var promoSplatkyCheckbox = document.getElementById('newPromoSplatky');
+if (promoSplatkyCheckbox) {
+  promoSplatkyCheckbox.addEventListener('change', function () {
+    var suCb = document.querySelector('.promo-pkg-cb[value="startup"]');
+    if (!suCb) return;
+    if (this.checked) {
+      suCb.checked = false;
+      suCb.disabled = true;
+      if (suCb.parentElement) {
+        suCb.parentElement.style.opacity = '0.35';
+        suCb.parentElement.style.pointerEvents = 'none';
+      }
+    } else {
+      suCb.disabled = false;
+      if (suCb.parentElement) {
+        suCb.parentElement.style.opacity = '1';
+        suCb.parentElement.style.pointerEvents = 'auto';
+      }
+    }
+  });
+}
+
 function getAdminAuthPass() {
   return ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
 }
@@ -591,12 +614,12 @@ function renderPromoCodesList(codes) {
     else if (c.type === 'fixed') typeLabel = c.value + ' Kč';
     else if (c.type === 'gift') typeLabel = '<span style="color: #ff9900; font-weight: bold;">DÁRKOVÝ (100 %)</span>';
 
-    // Přidání štítku splátek, pokud je kód určen pro splátky
     if (c.splatky) {
       typeLabel += ' <span style="background: rgba(52,152,219,0.15); color: #3498db; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 6px;">[SPLÁTKY]</span>';
     }
 
-    var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ') || 'VŠECHNY';
+    var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ');
+    if (!pkgs) pkgs = 'VŠECHNY';
 
     var usage = '';
     if (c.oneTime) {
@@ -638,7 +661,7 @@ async function createNewPromoCode() {
   var type = document.getElementById('newPromoType').value;
   var value = document.getElementById('newPromoValue').value;
   var oneTime = document.getElementById('newPromoOneTime').checked;
-  var splatky = document.getElementById('newPromoSplatky').checked; // Načtení stavu checkboxu pro splátky
+  var splatky = document.getElementById('newPromoSplatky') ? document.getElementById('newPromoSplatky').checked : false;
 
   var pkgCheckboxes = document.querySelectorAll('.promo-pkg-cb:checked');
   var packages = Array.from(pkgCheckboxes).map(function(cb) { return cb.value; });
@@ -647,6 +670,13 @@ async function createNewPromoCode() {
     alert('Zadej text kódu nebo klikni na NÁHODNÝ.');
     return;
   }
+
+  // Ochrana: musí být vybrán alespoň jeden balíček
+  if (packages.length === 0) {
+    alert('Musíš vybrat alespoň jeden balíček, pro který má kód platit.');
+    return;
+  }
+
   if (type !== 'gift' && (!value || Number(value) <= 0)) {
     alert('Zadej platnou číselnou hodnotu slevy.');
     return;
@@ -657,7 +687,7 @@ async function createNewPromoCode() {
     type: type, 
     value: value, 
     oneTime: oneTime, 
-    splatky: splatky, // Odeslání příznaku splátek na server
+    splatky: splatky, 
     packages: packages 
   };
 
@@ -674,7 +704,20 @@ async function createNewPromoCode() {
 
     document.getElementById('newPromoCode').value = '';
     document.getElementById('newPromoValue').value = '';
-    document.getElementById('newPromoSplatky').checked = false; // Reset checkboxu
+    
+    var splatkyEl = document.getElementById('newPromoSplatky');
+    if (splatkyEl) splatkyEl.checked = false;
+
+    // Resetování stavu checkboxu pro startup
+    var suCb = document.querySelector('.promo-pkg-cb[value="startup"]');
+    if (suCb) {
+      suCb.disabled = false;
+      if (suCb.parentElement) {
+        suCb.parentElement.style.opacity = '1';
+        suCb.parentElement.style.pointerEvents = 'auto';
+      }
+    }
+
     loadPromoCodes();
   } catch (err) {
     alert(err.message);
