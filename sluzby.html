@@ -47,14 +47,6 @@
 
   <main>
 
-    <!-- ── Page hero ────────────────────────────── -->
-    <section class="page-hero">
-      <div class="page-hero__inner">
-        <h1 class="page-hero__title">Služby & ceník</h1>
-        <p class="page-hero__lead">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
-      </div>
-    </section>
-
     <!-- ── Speciální event ───────────────────────── -->
     <div class="event-banner" id="eventBanner" hidden>
       <div class="event-banner__inner">
@@ -70,9 +62,15 @@
     </div>
 
     <!-- ── Packages ──────────────────────────────── -->
-    <section class="packages" id="packages">
+    <section class="packages" id="packages" style="padding-top: 36px;">
 
-      <!-- ── Decentní rozbalovací lišta na kód ── -->
+      <!-- Kompaktní nadpis přesunutý přímo sem nahoru -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: clamp(2rem, 4vw, 2.8rem); color: var(--heading); margin: 0 0 6px 0; line-height: 1.1;">Služby & ceník</h1>
+        <p style="font-size: 0.92rem; color: var(--muted); max-width: 52ch; margin: 0 auto; line-height: 1.5;">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
+      </div>
+
+      <!-- ── Rozbalovací lišta na kód ── -->
       <div class="promo-bar-wrap">
         <button type="button" class="promo-toggle-link" id="promoToggleBtn">
           🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>
@@ -324,7 +322,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
             </a>
             <a href="https://tiktok.com/@krytof.koblas" target="_blank" rel="noopener" class="footer__icon-pill footer__icon-pill--tt" aria-label="TikTok">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.25 8.25 0 0 0 4.83 1.56V6.78a4.85 4.85 0 0 1-1.06-.09z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.25 8.25 0 0 0 4.83 1.56V6.78a4.85 4.85 0 0 1-1.06-.09z"/></svg>
             </a>
           </div>
           <div>
@@ -487,18 +485,14 @@
           if (promoInput) promoInput.value = data.code;
           if (promoReset) promoReset.hidden = false;
 
-          renderBasePrices(); // Vždy resetujeme do základu
+          renderBasePrices();
 
           var isGift = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
-          
-          // DŮLEŽITÉ: Pouze balíčky, pro které je kód skutečně určen!
           var rawPkgs = Array.isArray(data.packages) ? data.packages.map(function(p){ return p.toLowerCase(); }) : [];
           var allowedPkgs = (rawPkgs.length > 0) ? rawPkgs : ['startup', 'mentoring', 'ultimate'];
-
           var pkgTitles = { startup: 'START-UP', mentoring: 'MENTORING', ultimate: 'ULTIMATE' };
 
           if (isGift) {
-            // ── DÁRKOVÝ POUKAZ (100 %) ──
             var targetPkg = allowedPkgs[0] || 'mentoring';
 
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
@@ -546,11 +540,9 @@
             if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
           } else {
-            // ── BĚŽNÁ SLEVA (% nebo Kč) ──
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
               var card = document.getElementById('card-' + s);
 
-              // Pokud je služba v povolených balíčcích:
               if (allowedPkgs.includes(s)) {
                 var orig = currentPrices[s].jed;
                 var discount = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
@@ -586,7 +578,6 @@
                 if (g) g.href = 'objednavka.html?sluzba=' + s + '&platba=jednorizove&darek=1&kod=' + encodeURIComponent(data.code);
 
               } else {
-                // TATO SLUŽBA NENÍ VE SLEVĚ: Necháme původní cenu a KÓD DO NÍ NEPŘIDÁVÁME!
                 if (card) card.classList.add('is-dimmed');
                 var orig = currentPrices[s].jed;
                 setHtml('price-' + s, fmtKc(orig) + ' <small style="display:block;font-size:11px;color:#888;font-weight:normal;font-family:sans-serif;margin-top:4px;">(Kód na tento balíček neplatí)</small>');
@@ -597,7 +588,6 @@
             var namesList = allowedPkgs.map(function(p){ return pkgTitles[p] || p.toUpperCase(); }).join(' a ');
             showStatus('✓ Sleva ' + discountLabel + ' započtena pro: ' + namesList + '.', 'ok');
 
-            // Plynulý scroll dolů na služby, aby zákazník hned viděl přepočet
             var firstCard = document.getElementById('card-' + allowedPkgs[0]) || document.getElementById('packages');
             if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
