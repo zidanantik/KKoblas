@@ -143,9 +143,9 @@ function renderEvent() {
   var txt      = document.getElementById('statusText-event');
   var lbl      = document.getElementById('btnLabel-event');
   var panel    = document.getElementById('eventPanel');
-  if (led)    led.className   = 'status-led ' + (isActive ? 'volny' : '');
-  if (txt)    txt.textContent = isActive ? 'AKTIVNÍ' : 'NEAKTIVNÍ';
-  if (lbl)    lbl.textContent = isActive ? 'DEAKTIVOVAT' : 'AKTIVOVAT';
+  if (led)   led.className   = 'status-led ' + (isActive ? 'volny' : '');
+  if (txt)   txt.textContent = isActive ? 'AKTIVNÍ' : 'NEAKTIVNÍ';
+  if (lbl)   lbl.textContent = isActive ? 'DEAKTIVOVAT' : 'AKTIVOVAT';
   if (panel) panel.classList.toggle('event-panel--active', isActive);
   var nameEl  = document.getElementById('eventName');
   var opisEl  = document.getElementById('eventPopis');
@@ -185,7 +185,7 @@ async function setAll(val) {
 document.getElementById('masterClose').addEventListener('click', function () { setAll('uzavreny'); });
 document.getElementById('masterOpen').addEventListener('click',  function () { setAll('volny'); });
 
-// ── Event toggle ─────────────────────────────────
+// ── Event save ───────────────────────────────────
 document.getElementById('btn-event').addEventListener('click', async function () {
   var ev = currentStatus.event || {};
   currentStatus.event = Object.assign({}, ev, { active: !ev.active });
@@ -321,7 +321,6 @@ function generateRandomCode() {
   if (input) input.value = prefix + res;
 }
 
-// Propojení checkboxů splátek a dárku (vzájemné vyloučení + vypnutí Start-upu u splátek)
 var promoSplatkyCheckbox = document.getElementById('newPromoSplatky');
 var promoDarekOnlyCheckbox = document.getElementById('newPromoDarekOnly');
 
@@ -386,7 +385,7 @@ function copyCodeToClipboard(code, btn) {
   });
 }
 
-// ── Tisk a výběr šablon (Rollup menu) ─────────────
+// ── Tisk a výběr šablon ───────────────────────────
 function printVoucherModal(id) {
   var c = loadedCodesCache.find(function(item) { return item.id === id; });
   if (!c) return;
@@ -488,7 +487,6 @@ function printVoucherModal(id) {
           font-family: monospace;
         }
 
-        /* ── ŠABLONA 1: Dark Gold (Prémiová tmavá) ── */
         .tpl-dark-gold {
           width: 740px;
           background: #141414;
@@ -509,7 +507,6 @@ function printVoucherModal(id) {
         .tpl-dark-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
         .tpl-dark-gold a { color: #ff9900; }
 
-        /* ── ŠABLONA 2: Clean Minimal (Světlý úsporný tisk) ── */
         .tpl-clean-white {
           width: 740px;
           background: #ffffff;
@@ -529,7 +526,6 @@ function printVoucherModal(id) {
         .tpl-clean-white .instructions { margin-top: 20px; font-size: 12px; color: #555; border-top: 1px solid #ddd; padding-top: 18px; line-height: 1.6; }
         .tpl-clean-white a { color: #111; font-weight: bold; }
 
-        /* ── ŠABLONA 3: Sport Energy (Fitness styl) ── */
         .tpl-sport-energy {
           width: 740px;
           background: linear-gradient(135deg, #0f0f0f 0%, #1b1b1b 100%);
@@ -655,7 +651,7 @@ function renderPromoCodesList(codes) {
     var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ');
     if (!pkgs) pkgs = 'VŠECHNY';
 
-    // ── VÝPIS POČTU POUŽITÍ ──
+    // Výpis počtu použití
     var count = Number(c.usedCount || 0);
     if (!c.usedCount && c.used) count = 1;
 
@@ -674,12 +670,25 @@ function renderPromoCodesList(codes) {
 
     var printBtn = '<button onclick="printVoucherModal(\'' + c.id + '\')" title="Tisk / PDF voucher" style="background: #151515; border: 1px solid #c88a2c; color: #ff9900; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">🖨 TISK</button>';
 
+    // Doplňující info: kdo zakoupil nebo kdy byl vytvořen
+    var extraInfo = '';
+    if (c.note) {
+      extraInfo = '<div style="font-size: 10px; color: #aaa; margin-top: 3px;">Koupil: ' + c.note + '</div>';
+    } else if (c.createdAt) {
+      var d = new Date(c.createdAt);
+      var formattedDate = !isNaN(d.getTime()) ? d.toLocaleDateString('cs-CZ') : '';
+      if (formattedDate) {
+        extraInfo = '<div style="font-size: 10px; color: #666; margin-top: 3px;">Vytvořeno: ' + formattedDate + '</div>';
+      }
+    }
+
     return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">'
       + '<td style="padding: 10px;">'
       +   '<div style="display: flex; align-items: center; gap: 8px;">'
       +     '<span style="font-weight: bold; color: #ff9900;">' + c.code + '</span>'
       +     '<button onclick="copyCodeToClipboard(\'' + c.code + '\', this)" title="Kopírovat do schránky" style="background: transparent; border: 1px solid #444; color: #ff9900; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 10px;">📋</button>'
       +   '</div>'
+      +   extraInfo
       + '</td>'
       + '<td style="padding: 10px;">' + typeLabel + '</td>'
       + '<td style="padding: 10px; color: #aaa;">' + pkgs + '</td>'
@@ -726,9 +735,9 @@ async function createNewPromoCode() {
     value: value, 
     oneTime: oneTime, 
     splatky: splatky, 
-    darekOnly: darekOnly,
+    darekOnly: darekOnly, 
     packages: packages,
-    usedCount: 0 // Výchozí počítadlo
+    usedCount: 0
   };
 
   try {
