@@ -3,151 +3,208 @@
 const REQUIRED_CONTACT = ['Jmeno', 'Email', 'Telefon', 'Ulice', 'Mesto', 'PSC', 'Zeme'];
 const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
 
+async function getFakturoidToken(clientId, clientSecret, userAgent) {
+  const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
+  const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': userAgent
+    },
+    body: JSON.stringify({ grant_type: 'client_credentials' })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OAuth selhal (${res.status}): ${errText}`);
+  }
+  const data = await res.json();
+  return data.access_token;
+}
+
+async function getOrCreateSubject(slug, token, body, userAgent) {
+  const searchRes = await fetch(
+    `https://app.fakturoid.cz/api/v3/accounts/${slug}/subjects.json?query=${encodeURIComponent(body.Email)}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'User-Agent': userAgent
+      }
+    }
+  );
+
+  if (searchRes.ok) {
+    const existing = await searchRes.json();
+    const match = existing.find(s => s.email && s.email.toLowerCase() === body.Email.toLowerCase());
+    if (match) return match.id;
+  }
+
+  const subjectPayload = {
+    name: body.Jmeno,
+    email: body.Email,
+    phone: body.Telefon,
+    street: body.Ulice,
+    city: body.Mesto,
+    zip: body.PSC,
+    country: body.Zeme || 'CZ'
+  };
+  if (body.ICO) subjectPayload.registration_no = body.ICO;
+
+  const createRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/subjects.json`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': userAgent
+    },
+    body: JSON.stringify(subjectPayload)
+  });
+
+  if (!createRes.ok) {
+    const errText = await createRes.text();
+    throw new Error(`Kontakt selhal (${createRes.status}): ${errText}`);
+  }
+
+  const created = await createRes.json();
+  return created.id;
+}
+
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
     const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
+    const isInstallment = body.Splatky === true || body.Splatky === 'true';
 
-    // Pro nákup dárku nevyžadujeme tělesné míry
     const requiredFields = isGift
       ? REQUIRED_CONTACT
       : [...REQUIRED_CONTACT, ...REQUIRED_ANALYSIS];
 
     for (const field of requiredFields) {
       if (!body[field] || String(body[field]).trim() === '') {
-        return new Response(JSON.stringify({ ok: false, error: `Chybí povinné pole: ${field}` }), {
+        return new Response(JSON.stringify({ ok: false, error: `Chybí pole: ${field}` }), {
           status: 400,
           headers: { 'Content-Type': 'application/json; charset=utf-8' }
         });
       }
     }
 
-    // Automatické přičtení použití kódu do Cloudflare KV
-    const usedCode = (body.Pouzity_kod || '').trim();
-    if (usedCode && context.env.STATUS_STORE) {
-      try {
-        const rawCodes = await context.env.STATUS_STORE.get('PROMO_CODES');
-        if (rawCodes) {
-          const codes = JSON.parse(rawCodes);
-          const target = codes.find(c => c.code && c.code.trim().toUpperCase() === usedCode.toUpperCase());
-          if (target) {
-            target.usedCount = (Number(target.usedCount) || 0) + 1;
-            if (target.oneTime) target.used = true;
-            await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
-          }
+    const slug = 'krystofkoblas';
+    const clientId = '4eec39db77ad7e5dc6da69e17153ffa50c8559d7';
+    const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
+    const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
+
+    console.log('--- FAKTUROID OBJEDNÁVKA START ---');
+
+    const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
+    const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
+
+    // Zpracování ceny a splátek
+    const rawPrice = String(body.Cena || '').replace(/[^\d]/g, '');
+    const totalPrice = parseInt(rawPrice, 10) || 0;
+    const totalInstallments = isInstallment ? (parseInt(body.Mesice, 10) || 3) : 1;
+    const installmentAmount = isInstallment ? Math.round(totalPrice / totalInstallments) : totalPrice;
+
+    let lineName = body.Sluzba_Nazev || body.Sluzba || 'Nutriční balíček';
+    if (isGift) {
+      lineName += ' (Dárkový poukaz)';
+    } else if (isInstallment) {
+      lineName += ' – 1. splátka z ' + totalInstallments;
+    }
+
+    const invoicePayload = {
+      subject_id: subjectId,
+      document_type: 'proforma',
+      lines: [
+        {
+          name: lineName,
+          quantity: 1,
+          unit_price: installmentAmount,
+          unit_name: 'ks'
         }
-      } catch (kvErr) {
-        console.error('Chyba při aktualizaci kódu v KV:', kvErr);
-      }
+      ],
+      note: isGift 
+        ? 'Objednáno jako dárkový poukaz – voucher se odešle po úhradě.' 
+        : (isInstallment ? 'Splátková platba (1/' + totalInstallments + ')' : '')
+    };
+
+    const invoiceRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${fToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': userAgent
+      },
+      body: JSON.stringify(invoicePayload)
+    });
+
+    if (!invoiceRes.ok) {
+      const errText = await invoiceRes.text();
+      throw new Error(`Faktura selhala (${invoiceRes.status}): ${errText}`);
     }
 
-    const icoHtml = body.ICO
-      ? `<tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">IČO / DIČ</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.ICO}</td></tr>`
-      : '';
+    const invoiceData = await invoiceRes.json();
+    console.log('ÚSPĚCH! Proforma faktura vytvořena, ID:', invoiceData.id);
 
-    const promoHtml = usedCode
-      ? `<tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Slevový kód</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><strong>${usedCode}</strong> (${body.Sleva_info || 'Sleva'})</td></tr>`
-      : '';
+    // 2. KROK: Explicitní požadavek na odeslání e-mailu s fakturou přes Fakturoid API
+    const emailRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${invoiceData.id}/message.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${fToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': userAgent
+      },
+      body: JSON.stringify({}) // Prázdný objekt, Fakturoid použije výchozí šablonu pro proformy a e-mail klienta
+    });
 
-    const analysisHtml = isGift
-      ? '<tr><td colspan="2" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-style:italic">Objednáno jako dárek – míry a zdravotní údaje vyplní obdarovaný sám při uplatnění voucheru na webu.</td></tr>'
-      : `
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Věk</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Vek} let</td></tr>
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Pohlaví</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Pohlavi}</td></tr>
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Výška</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Vyska_cm} cm</td></tr>
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Váha</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Vaha_kg} kg</td></tr>
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Obvod boků</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Obvod_boku_cm || '—'} cm</td></tr>
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Obvod pasu</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Obvod_pasu_cm || '—'} cm</td></tr>
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Motivace</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Motivace || '—'}</td></tr>
-        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Anonymní reference</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Souhlas_anonymni === 'ano' ? 'Ano' : 'Ne'}</td></tr>
-      `;
-
-    const emailHtmlAdmin = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #111;">
-        <h2 style="color: #ff9900; border-bottom: 2px solid #ff9900; padding-bottom: 8px;">Nová objednávka z webu</h2>
-        
-        <h3 style="margin-top: 20px;">Vybraný balíček</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;width:40%;">Služba</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><strong>${body.Sluzba || 'Neuvedeno'}</strong></td></tr>
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Způsob platby</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Platba || 'Jednorázová platba'}</td></tr>
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Cena</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><strong>${body.Cena || 'Neuvedeno'}</strong></td></tr>
-          ${promoHtml}
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Dárkový režim</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${isGift ? '🎁 ANO (Dárkový poukaz)' : 'Běžná objednávka pro sebe'}</td></tr>
-        </table>
-
-        <h3 style="margin-top: 24px;">Kontaktní a fakturační údaje</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;width:40%;">Jméno</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Jmeno}</td></tr>
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">E-mail</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><a href="mailto:${body.Email}">${body.Email}</a></td></tr>
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Telefon</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><a href="tel:${body.Telefon}">${body.Telefon}</a></td></tr>
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Ulice a č.p.</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Ulice}</td></tr>
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Město a PSČ</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Mesto}, ${body.PSC}</td></tr>
-          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Země</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Zeme}</td></tr>
-          ${icoHtml}
-        </table>
-
-        <h3 style="margin-top: 24px;">Údaje pro analýzu</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          ${analysisHtml}
-        </table>
-      </div>
-    `;
-
-    const emailHtmlClient = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #222; line-height: 1.6;">
-        <h2 style="color: #ff9900;">Ahoj ${body.Jmeno},</h2>
-        <p>děkuji za tvou objednávku služby <strong>${body.Sluzba || 'Nutriční poradenství'}</strong>!</p>
-        <p>Tvá žádost byla úspěšně přijata. Do <strong>2 pracovních dnů</strong> tě budu kontaktovat s fakturou a dalšími instrukcemi ohledně zahájení naší spolupráce.</p>
-        ${isGift ? '<p>🎁 <em>Jelikož jsi balíček objednal/a jako dárkový poukaz, po úhradě ti zašlu elektronický certifikát s unikátním kódem pro obdarovaného.</em></p>' : ''}
-        <br>
-        <p>S pozdravem,<br><strong>Kryštof Koblas</strong><br>Nutriční poradce<br><a href="https://koblas-nutricni.cz" style="color: #ff9900;">koblas-nutricni.cz</a></p>
-      </div>
-    `;
-
-    // Odeslání e-mailů přes Resend API
-    const resendKey = context.env.RESEND_API_KEY;
-    const fromDomain = context.env.FROM_DOMAIN || 'koblas-nutricni.cz';
-
-    if (resendKey) {
-      // 1. Notifikace poradci
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: `KKoblas Web <info@${fromDomain}>`,
-          to: ['koblas.nutricni.info@gmail.com'],
-          reply_to: body.Email,
-          subject: body.subject || `Nová objednávka – ${body.Sluzba || 'KKoblas'}`,
-          html: emailHtmlAdmin
-        })
-      });
-
-      // 2. Potvrzení klientovi
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: `Kryštof Koblas <info@${fromDomain}>`,
-          to: [body.Email],
-          subject: `Přijetí objednávky – ${body.Sluzba || 'KKoblas'}`,
-          html: emailHtmlClient
-        })
-      });
+    if (!emailRes.ok) {
+      const emailErrText = await emailRes.text();
+      console.error(`VAROVÁNÍ: Faktura se vytvořila, ale odeslání e-mailu selhalo (${emailRes.status}): ${emailErrText}`);
+    } else {
+      console.log('ÚSPĚCH! E-mail s fakturou byl odeslán klientovi.');
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    // Uložení klienta do KV úložiště (`CLIENTS`), aby webhook věděl, co spárovat
+    const store = context.env.STATUS_STORE;
+    if (store) {
+      const rawClients = await store.get('CLIENTS');
+      let clients = rawClients ? JSON.parse(rawClients) : [];
+
+      const newClientRecord = {
+        fakturoid_id: invoiceData.id,
+        status: 'ceka_na_platbu',
+        sluzba: body.Sluzba || '',
+        sluzba_nazev: body.Sluzba_Nazev || body.Sluzba || 'Nutriční program',
+        is_gift: isGift,
+        is_installment: isInstallment,
+        total_installments: totalInstallments,
+        current_installment: 1,
+        installment_amount: installmentAmount,
+        kupujici: {
+          jmeno: body.Jmeno,
+          email: body.Email,
+          telefon: body.Telefon
+        },
+        created_at: new Date().toISOString()
+      };
+
+      clients.unshift(newClientRecord);
+      await store.put('CLIENTS', JSON.stringify(clients));
+    }
+
+    return new Response(JSON.stringify({ ok: true, invoiceId: invoiceData.id }), {
       status: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ ok: false, error: err.message || 'Server error' }), {
+    console.error('HLAVNÍ CHYBA:', err.message);
+    return new Response(JSON.stringify({ ok: false, error: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
     });
