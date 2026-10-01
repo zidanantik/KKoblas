@@ -18,56 +18,6 @@
   color: #E67E22;
 }
 
-/* ── Page hero ──────────────────────────────────── */
-.page-hero {
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 60% 80% at 50% 60%, rgba(201,168,76,.12) 0%, transparent 65%),
-    radial-gradient(ellipse 55% 70% at 78% 44%, rgba(36,82,68,.45) 0%, transparent 68%),
-    var(--cream);
-  padding: 36px 24px 8px;
-  text-align: center;
-}
-
-.page-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='80'%3E%3Cg fill='none' stroke='%234dae8c' stroke-linecap='round'%3E%3Cpath d='M0,12 C40,1 120,23 160,12' stroke-width='0.9' opacity='0.08'/%3E%3Cpath d='M0,38 C40,31 120,45 160,38' stroke-width='0.7' opacity='0.05'/%3E%3Cpath d='M0,62 C40,52 120,72 160,62' stroke-width='0.9' opacity='0.08'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 160px 80px;
-}
-
-.page-hero__inner {
-  position: relative;
-  z-index: 1;
-  max-width: 720px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-hero__title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.08;
-  color: var(--heading);
-  margin: 0;
-}
-
-.page-hero__lead {
-  font-size: 0.95rem;
-  color: var(--muted);
-  max-width: 52ch;
-  line-height: 1.55;
-  margin: 0;
-}
-
 /* ── Event banner ───────────────────────────────── */
 .event-banner {
   position: relative;
@@ -78,6 +28,7 @@
   border-top: 2px solid rgba(201,168,76,.5);
   border-bottom: 2px solid rgba(201,168,76,.5);
   padding: 30px 24px;
+  margin-bottom: 30px;
 }
 
 .event-banner::before {
@@ -146,14 +97,14 @@
 
 .event-banner__btn { margin-top: 0; }
 
-/* ── Packages section ───────────────────────────── */
+/* ── Packages section (4sloupcový grid: Vlevo nadpis, vpravo 3 karty) ── */
 .packages {
   position: relative;
   overflow: hidden;
   background:
     radial-gradient(ellipse 70% 60% at 50% 50%, rgba(15,125,180,.18) 0%, transparent 70%),
     var(--cream);
-  padding: 14px 24px 80px;
+  padding: 40px 24px 80px;
 }
 
 .packages::before {
@@ -167,15 +118,47 @@
   background-size: 160px 80px;
 }
 
+.packages-grid-pro {
+  position: relative;
+  z-index: 1;
+  max-width: 1360px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 280px repeat(3, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.packages-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.packages-main-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 3.2vw, 2.6rem);
+  color: var(--heading);
+  margin: 0 0 10px 0;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.packages-main-lead {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+  text-align: left;
+}
+
 /* ── Rozbalovací odkaz na voucher ───────────────── */
 .promo-bar-wrap {
   position: relative;
   z-index: 2;
-  max-width: 560px;
-  margin: 0 auto 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .promo-toggle-link {
@@ -186,7 +169,7 @@
   font-size: 0.84rem;
   letter-spacing: 0.3px;
   cursor: pointer;
-  padding: 5px 14px;
+  padding: 5px 12px;
   border-radius: 20px;
   display: inline-flex;
   align-items: center;
@@ -319,18 +302,6 @@
   color: #ff9900;
 }
 
-/* ── Packages Grid ──────────────────────────────── */
-.packages__inner {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  align-items: stretch;
-}
-
 /* ── Package card ───────────────────────────────── */
 .pkg-card {
   background: var(--surface);
@@ -451,7 +422,7 @@
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-/* ── Feature list (Trvale viditelné, kompaktní a čisté bez mezer) ── */
+/* ── Feature list ───────────────────────────────── */
 .pkg-card__list {
   list-style: none;
   display: flex;
@@ -492,7 +463,6 @@
   line-height: 1.35;
 }
 
-/* Popisky jsou trvale viditelné a perfektně zarovnané */
 .pkg-card__item-desc {
   font-size: .8rem;
   color: var(--muted);
@@ -517,7 +487,6 @@
   opacity: .75;
 }
 
-/* Patička je pevně ukotvená dole */
 .pkg-card__footer {
   display: flex;
   flex-direction: column;
@@ -879,74 +848,16 @@
   line-height: 1.75;
 }
 
-/* ── Responsive ─────────────────────────────────── */
-@media (max-width: 960px) {
-  .packages__inner {
+/* ── Responzivita pro menší obrazovky a mobily ────── */
+@media (max-width: 1100px) {
+  .packages-grid-pro {
     grid-template-columns: 1fr;
     max-width: 520px;
   }
-  .pkg-card--featured { transform: none; }
-
-  .info-blocks__inner { grid-template-columns: 1fr; max-width: 520px; }
-
-  .food-slider { padding: 40px 0 60px; }
-  .food-slider__stage { height: 280px; }
-}
-
-@media (max-width: 600px) {
-  .page-hero { padding: 30px 20px 8px; }
-  .pkg-card { padding: 26px 20px 22px; }
-  .info-card { padding: 26px 20px; }
-  .food-slider { padding: 28px 0 48px; }
-  .food-slider__stage { height: 200px; }
-  .food-slider__item { left: 28px; right: 28px; }
-  .promo-bar__inputs { flex-direction: column; }
-}
-/* ── Levý panel s nadpisem a karty vedle sebe ────── */
-.packages-layout {
-  max-width: 1320px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 28px;
-  align-items: start;
-}
-
-.packages-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  position: sticky;
-  top: 100px;
-}
-
-.packages-main-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2rem, 3.2vw, 2.6rem);
-  color: var(--heading);
-  margin: 0 0 10px 0;
-  line-height: 1.1;
-  text-align: left;
-}
-
-.packages-main-lead {
-  font-size: 0.9rem;
-  color: var(--muted);
-  line-height: 1.6;
-  margin: 0;
-  text-align: left;
-}
-
-/* Přizpůsobení pro menší obrazovky a mobily */
-@media (max-width: 1050px) {
-  .packages-layout {
-    grid-template-columns: 1fr;
-  }
   .packages-sidebar {
-    position: static;
-    max-width: 600px;
-    margin: 0 auto 30px;
     text-align: center;
+    align-items: center;
+    margin-bottom: 10px;
   }
   .packages-main-title,
   .packages-main-lead {
@@ -955,4 +866,13 @@
   .promo-bar-wrap {
     align-items: center !important;
   }
+}
+
+@media (max-width: 600px) {
+  .pkg-card { padding: 26px 20px 22px; }
+  .info-card { padding: 26px 20px; }
+  .food-slider { padding: 28px 0 48px; }
+  .food-slider__stage { height: 200px; }
+  .food-slider__item { left: 28px; right: 28px; }
+  .promo-bar__inputs { flex-direction: column; }
 }
