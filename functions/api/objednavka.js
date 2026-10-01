@@ -3,9 +3,8 @@
 const REQUIRED_CONTACT = ['Jmeno', 'Email', 'Telefon', 'Ulice', 'Mesto', 'PSC', 'Zeme'];
 const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
 
-// 1. Získání OAuth2 tokenu z Fakturoid API v3
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
-  const credentials = btoa(`${clientId}:${clientSecret}`);
+  const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
   const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token', {
     method: 'POST',
     headers: {
@@ -18,13 +17,12 @@ async function getFakturoidToken(clientId, clientSecret, userAgent) {
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Fakturoid OAuth selhal (${res.status}): ${errText}`);
+    throw new Error(`OAuth selhal (${res.status}): ${errText}`);
   }
   const data = await res.json();
   return data.access_token;
 }
 
-// 2. Vyhledání nebo vytvoření kontaktu ve Fakturoidu
 async function getOrCreateSubject(slug, token, body, userAgent) {
   const searchRes = await fetch(
     `https://app.fakturoid.cz/api/v3/accounts/${slug}/subjects.json?query=${encodeURIComponent(body.Email)}`,
@@ -65,14 +63,13 @@ async function getOrCreateSubject(slug, token, body, userAgent) {
 
   if (!createRes.ok) {
     const errText = await createRes.text();
-    throw new Error(`Chyba vytvoření kontaktu (${createRes.status}): ${errText}`);
+    throw new Error(`Kontakt selhal (${createRes.status}): ${errText}`);
   }
 
   const created = await createRes.json();
   return created.id;
 }
 
-// 3. Vystavení proformy ve Fakturoidu
 async function createProformaInvoice(slug, token, subjectId, body, isGift, userAgent) {
   const rawPrice = String(body.Cena || '').replace(/[^\d]/g, '');
   const priceAmount = parseInt(rawPrice, 10) || 0;
@@ -103,13 +100,12 @@ async function createProformaInvoice(slug, token, subjectId, body, isGift, userA
 
   if (!invoiceRes.ok) {
     const errText = await invoiceRes.text();
-    throw new Error(`Vystavení proformy selhalo (${invoiceRes.status}): ${errText}`);
+    throw new Error(`Faktura selhala (${invoiceRes.status}): ${errText}`);
   }
 
   return await invoiceRes.json();
 }
 
-// Hlavní obsluha požadavku
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
@@ -121,92 +117,52 @@ export async function onRequestPost(context) {
 
     for (const field of requiredFields) {
       if (!body[field] || String(body[field]).trim() === '') {
-        return new Response(JSON.stringify({ ok: false, error: `Chybí povinné pole: ${field}` }), {
+        return new Response(JSON.stringify({ ok: false, error: `Chybí pole: ${field}` }), {
           status: 400,
           headers: { 'Content-Type': 'application/json; charset=utf-8' }
         });
       }
     }
 
-    // A) Fakturoid integrace
     const slug = context.env.FAKTUROID_SLUG || 'krystofkoblas';
     const clientId = context.env.FAKTUROID_CLIENT_ID;
     const clientSecret = context.env.FAKTUROID_CLIENT_SECRET;
-    const userAgent = `KKoblas Web (koblas.nutricni.info@gmail.com)`;
+    const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
+
+    console.log('STAV PROMENNYCH:', {
+      hasSlug: !!slug,
+      slugValue: slug,
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      hasResendKey: !!context.env.RESEND_API_KEY
+    });
+
     let fakturoidInvoice = null;
 
     if (clientId && clientSecret) {
       try {
+        console.log('1. Žádám Fakturoid OAuth token...');
         const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
+        console.log('2. Hledám/zakládám kontakt...');
         const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
+        console.log('3. Vystavuji proforma fakturu...');
         fakturoidInvoice = await createProformaInvoice(slug, fToken, subjectId, body, isGift, userAgent);
+        console.log('ÚSPĚCH! Faktura vytvořena s ID:', fakturoidInvoice.id);
       } catch (faktErr) {
-        console.error('Chyba Fakturoid:', faktErr.message);
+        console.error('FAKTUROID CHYBA:', faktErr.message);
       }
+    } else {
+      console.warn('VAROVÁNÍ: Chybí FAKTUROID_CLIENT_ID nebo FAKTUROID_CLIENT_SECRET!');
     }
 
-    // B) Promo kód KV evidence
-    const usedCode = (body.Pouzity_kod || '').trim();
-    if (usedCode && context.env.STATUS_STORE) {
-      try {
-        const rawCodes = await context.env.STATUS_STORE.get('PROMO_CODES');
-        if (rawCodes) {
-          const codes = JSON.parse(rawCodes);
-          const target = codes.find(c => c.code && c.code.trim().toUpperCase() === usedCode.toUpperCase());
-          if (target) {
-            target.usedCount = (Number(target.usedCount) || 0) + 1;
-            if (target.oneTime) target.used = true;
-            await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
-          }
-        }
-      } catch (kvErr) {
-        console.error('Chyba při aktualizaci kódu v KV:', kvErr);
-      }
-    }
-
-    // C) E-maily přes Resend
-    const resendKey = context.env.RESEND_API_KEY;
-    const fromDomain = context.env.FROM_DOMAIN || 'koblas-nutricni.cz';
-
-    if (resendKey) {
-      const proformaInfo = fakturoidInvoice?.html_url 
-        ? `<p>Zálohovou fakturu k úhradě najdeš zde: <a href="${fakturoidInvoice.html_url}" style="color:#ff9900;">Zobrazit proforma fakturu</a></p>`
-        : '';
-
-      const emailHtmlClient = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #222; line-height: 1.6;">
-          <h2 style="color: #ff9900;">Ahoj ${body.Jmeno},</h2>
-          <p>děkuji za tvou objednávku služby <strong>${body.Sluzba || 'Nutriční poradenství'}</strong>!</p>
-          ${proformaInfo}
-          <p>Po připsání platby obdržíš potvrzení a domluvíme další kroky.</p>
-          ${isGift ? '<p>🎁 <em>Voucher s unikátním kódem ti dorazí automaticky po zaplacení.</em></p>' : ''}
-          <br>
-          <p>S pozdravem,<br><strong>Kryštof Koblas</strong><br>Nutriční poradce<br><a href="https://koblas-nutricni.cz" style="color: #ff9900;">koblas-nutricni.cz</a></p>
-        </div>
-      `;
-
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: `Kryštof Koblas <info@${fromDomain}>`,
-          to: [body.Email],
-          subject: `Objednávka – ${body.Sluzba || 'KKoblas'}`,
-          html: emailHtmlClient
-        })
-      });
-    }
-
-    return new Response(JSON.stringify({ ok: true, invoice: fakturoidInvoice ? fakturoidInvoice.id : null }), {
+    return new Response(JSON.stringify({ ok: true, invoiceId: fakturoidInvoice?.id || null }), {
       status: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ ok: false, error: err.message || 'Server error' }), {
+    console.error('HLAVNÍ CHYBA:', err.message);
+    return new Response(JSON.stringify({ ok: false, error: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
     });
