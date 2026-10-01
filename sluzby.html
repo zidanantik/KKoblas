@@ -64,31 +64,30 @@
     <!-- ── Packages ──────────────────────────────── -->
     <section class="packages" id="packages">
 
-      <!-- Hlavní mřížka: Vlevo nadpis, podnadpis a kód, vpravo 3 karty vedle sebe -->
-      <div class="packages-grid-pro">
+      <!-- Horní blok: Nadpis vlevo + lišta pro kód pod ním uprostřed -->
+      <div class="packages-top-wrap">
+        <div class="packages-titles">
+          <h1 class="packages-main-title">Služby &amp; ceník</h1>
+          <p class="packages-main-lead">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
+        </div>
 
-        <!-- Levý panel (Nadpis, podnadpis a lišta pro kód) -->
-        <div class="packages-sidebar">
-          <div>
-            <h1 class="packages-main-title">Služby &amp; ceník</h1>
-            <p class="packages-main-lead">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
-          </div>
-
-          <!-- Rozbalovací lišta na kód -->
-          <div class="promo-bar-wrap" style="margin: 0; width: 100%;">
-            <button type="button" class="promo-toggle-link" id="promoToggleBtn" style="padding: 5px 10px;">
-              🎁 Máš poukaz nebo kód? <strong>Uplatnit zde ▾</strong>
-            </button>
-            <div class="promo-bar" id="promoBar" hidden style="margin-top: 8px;">
-              <div class="promo-bar__inputs">
-                <input type="text" id="promoCodeInput" class="promo-bar__input" placeholder="ZADEJ KÓD" autocomplete="off" spellcheck="false">
-                <button type="button" id="promoApplyBtn" class="promo-bar__btn">UPLATNIT</button>
-                <button type="button" id="promoResetBtn" class="promo-bar__reset" hidden>✕</button>
-              </div>
-              <div id="promoBarStatus" class="promo-bar__status" hidden></div>
+        <!-- Rozbalovací lišta na kód nahoře nad balíčky -->
+        <div class="promo-bar-wrap">
+          <button type="button" class="promo-toggle-link" id="promoToggleBtn">
+            🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>
+          </button>
+          <div class="promo-bar" id="promoBar" hidden>
+            <div class="promo-bar__inputs">
+              <input type="text" id="promoCodeInput" class="promo-bar__input" placeholder="ZADEJ KÓD POUKAZU / SLEVY" autocomplete="off" spellcheck="false">
+              <button type="button" id="promoApplyBtn" class="promo-bar__btn">UPLATNIT</button>
+              <button type="button" id="promoResetBtn" class="promo-bar__reset" hidden>✕ ZRUŠIT</button>
             </div>
+            <div id="promoBarStatus" class="promo-bar__status" hidden></div>
           </div>
         </div>
+      </div>
+
+      <div class="packages__inner">
 
         <!-- 1. START-UP -->
         <article class="pkg-card" data-sluzba="startup" id="card-startup">
