@@ -9,7 +9,7 @@ function generateGiftCode() {
   return 'DAR-' + res;
 }
 
-// Pomocná funkce pro získání Fakturoid tokenu (pro automatické vytváření dalších splátek)
+// Pomocná funkce pro získání Fakturoid OAuth tokenu
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
   const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
   const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
@@ -41,18 +41,19 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ignored: true, event: eventName }), { status: 200 });
     }
 
-    const invoiceId = invoice.id;
+    const invoiceId = invoice.id || payload.invoice_id;
     if (!invoiceId) {
       return new Response(JSON.stringify({ ok: false, error: 'Chybí invoice ID' }), { status: 400 });
     }
 
-    // 1. Načteme klienty z KV
+    // 1. Načtení klientů z KV
     const rawClients = await context.env.STATUS_STORE.get('CLIENTS');
     let clients = rawClients ? JSON.parse(rawClients) : [];
 
-    const clientIndex = clients.findIndex(c => c.fakturoid_id === invoiceId);
+    // Bezpečné porovnání ID bez ohledu na datový typ (číslo vs string)
+    const clientIndex = clients.findIndex(c => String(c.fakturoid_id) === String(invoiceId));
     if (clientIndex === -1) {
-      return new Response(JSON.stringify({ ok: true, message: 'Klient nenalezen (není z webu)' }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true, message: 'Klient nenalezen v KV' }), { status: 200 });
     }
 
     const client = clients[clientIndex];
@@ -61,7 +62,7 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ok: true, message: 'Klient již je aktivní' }), { status: 200 });
     }
 
-    // 2. AKTIVACE KLIENTA
+    // 2. Aktivace klienta a uložení data platby
     client.status = 'aktivni';
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
@@ -69,13 +70,16 @@ export async function onRequestPost(context) {
     const resendKey = context.env.RESEND_API_KEY;
     const fromDomain = context.env.FROM_DOMAIN || 'koblas-nutricni.cz';
 
-    // 3. POKUD JDE O DÁREK -> VYGENEROVAT KÓD A POSLAT KUPUJÍCÍMU
+    // 3. Pokud jde o dárkový poukaz -> vygenerovat kód a zapsat do PROMO_CODES
     if (client.is_gift) {
       const giftCode = generateGiftCode();
       client.kod_voucheru = giftCode;
 
       const rawCodes = await context.env.STATUS_STORE.get('PROMO_CODES');
       let codes = rawCodes ? JSON.parse(rawCodes) : [];
+
+      const buyerName = (client.kupujici && client.kupujici.jmeno) ? client.kupujici.jmeno : 'Dárkový nákup';
+      const purchaseDate = new Date().toLocaleDateString('cs-CZ');
 
       const newPromo = {
         id: crypto.randomUUID(),
@@ -89,7 +93,8 @@ export async function onRequestPost(context) {
         active: true,
         used: false,
         usedCount: 0,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        note: `${buyerName} (${purchaseDate})`
       };
 
       codes.unshift(newPromo);
@@ -130,7 +135,7 @@ export async function onRequestPost(context) {
       }
 
     } else {
-      // 4. BĚŽNÝ NÁKUP -> ODESLÁNÍ NAŠEHO NOVÉHO PROMYŠLENÉHO E-MAILU
+      // 4. Běžný přímý nákup -> uvítací e-mail
       if (resendKey && client.kupujici && client.kupujici.email) {
         const packageName = client.sluzba_nazev || 'nutriční program';
 
@@ -176,7 +181,7 @@ export async function onRequestPost(context) {
       }
     }
 
-    // 5. AUTOMATICKÉ VYTVOŘENÍ DALŠÍ SPLÁTKY (pokud jde o splátkový program a zbývají splátky)
+    // 5. Automatické vystavení další splátky ve Fakturoidu
     if (client.is_installment && client.current_installment < client.total_installments) {
       try {
         const slug = 'krystofkoblas';
@@ -188,7 +193,7 @@ export async function onRequestPost(context) {
         
         const nextInstallmentNum = client.current_installment + 1;
         const dueDate = new Date();
-        dueDate.setMonth(dueDate.getMonth() + 1); // Splatnost za 1 měsíc od zaplacení předchozí
+        dueDate.setMonth(dueDate.getMonth() + 1);
 
         const invoicePayload = {
           subject_id: invoice.subject_id,
@@ -222,7 +227,7 @@ export async function onRequestPost(context) {
       }
     }
 
-    // Uložíme aktualizovaný stav klientů do KV
+    // Uložení aktualizovaného stavu klientů do KV
     await context.env.STATUS_STORE.put('CLIENTS', JSON.stringify(clients));
 
     return new Response(JSON.stringify({ ok: true, activated: true }), {
