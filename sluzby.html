@@ -108,11 +108,11 @@
     <!-- ── Packages ──────────────────────────────── -->
     <section class="packages" id="packages">
 
-      <!-- Horní blok: Nadpis vlevo + lišta pro kód pod ním uprostřed -->
+      <!-- Horní blok: Nadpis a text na střed -->
       <div class="packages-top-wrap">
-        <div class="packages-titles">
+        <div class="packages-titles" style="text-align: center;">
           <h1 class="packages-main-title">Služby &amp; ceník</h1>
-          <p class="packages-main-lead">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
+          <p class="packages-main-lead" style="margin-left: auto; margin-right: auto;">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
         </div>
 
         <!-- Rozbalovací lišta na kód nahoře nad balíčky -->
@@ -596,7 +596,7 @@
                 var inbEl = document.getElementById('inbody-' + s);
                 if (inbEl) inbEl.textContent = 'Sleva ' + (data.type === 'percent' ? data.value + ' %' : fmtKc(data.value)) + ' platí výhradně na dárkový poukaz';
 
-                // Klasické tlačítko ZTMAVNE a zůstává mu původní cena bez slevy v URL!
+                // Klasické tlačítko ZTMAVNE a zůstává mu původní cena bez slevy v URL
                 if (bOrder) {
                   bOrder.classList.add('btn--dimmed-gift-mode');
                   bOrder.textContent = 'Koupit pro sebe (' + fmtKc(orig) + ')';
@@ -611,7 +611,7 @@
                   bSpl.href = 'objednavka.html?sluzba=' + s + '&platba=splatky';
                 }
 
-                // DÁRKOVÉ TLAČÍTKO SE ROZZÁŘÍ JAKO HLAVNÍ AKCE
+                // Dárkové tlačítko se rozzáří jako hlavní akce
                 if (g) {
                   g.className = 'pkg-gift-btn pkg-gift-btn--highlight';
                   g.innerHTML = '🎁 Koupit jako dárkový poukaz za ' + fmtKc(finalP) + ' →';
