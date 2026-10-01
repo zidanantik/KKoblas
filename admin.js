@@ -322,24 +322,46 @@ function generateRandomCode() {
   if (input) input.value = prefix + res;
 }
 
-// Propojení checkboxu splátek s balíčkem START-UP (Start-up nemá splátky)
+// Propojení checkboxů splátek a dárku (vzájemné vyloučení + vypnutí Start-upu u splátek)
 var promoSplatkyCheckbox = document.getElementById('newPromoSplatky');
+var promoDarekOnlyCheckbox = document.getElementById('newPromoDarekOnly');
+
 if (promoSplatkyCheckbox) {
   promoSplatkyCheckbox.addEventListener('change', function () {
     var suCb = document.querySelector('.promo-pkg-cb[value="startup"]');
-    if (!suCb) return;
     if (this.checked) {
-      suCb.checked = false;
-      suCb.disabled = true;
-      if (suCb.parentElement) {
-        suCb.parentElement.style.opacity = '0.35';
-        suCb.parentElement.style.pointerEvents = 'none';
+      if (promoDarekOnlyCheckbox) promoDarekOnlyCheckbox.checked = false;
+      if (suCb) {
+        suCb.checked = false;
+        suCb.disabled = true;
+        if (suCb.parentElement) {
+          suCb.parentElement.style.opacity = '0.35';
+          suCb.parentElement.style.pointerEvents = 'none';
+        }
       }
     } else {
-      suCb.disabled = false;
-      if (suCb.parentElement) {
-        suCb.parentElement.style.opacity = '1';
-        suCb.parentElement.style.pointerEvents = 'auto';
+      if (suCb) {
+        suCb.disabled = false;
+        if (suCb.parentElement) {
+          suCb.parentElement.style.opacity = '1';
+          suCb.parentElement.style.pointerEvents = 'auto';
+        }
+      }
+    }
+  });
+}
+
+if (promoDarekOnlyCheckbox) {
+  promoDarekOnlyCheckbox.addEventListener('change', function () {
+    if (this.checked && promoSplatkyCheckbox) {
+      promoSplatkyCheckbox.checked = false;
+      var suCb = document.querySelector('.promo-pkg-cb[value="startup"]');
+      if (suCb) {
+        suCb.disabled = false;
+        if (suCb.parentElement) {
+          suCb.parentElement.style.opacity = '1';
+          suCb.parentElement.style.pointerEvents = 'auto';
+        }
       }
     }
   });
@@ -372,9 +394,9 @@ function printVoucherModal(id) {
 
   var typeTitle = c.type === 'gift' 
     ? 'DÁRKOVÝ POUKAZ' 
-    : (c.splatky ? 'SLEVOVÝ VOUCHER – SPLÁTKY' : 'SLEVOVÝ VOUCHER');
+    : (c.splatky ? 'SLEVOVÝ VOUCHER – SPLÁTKY' : (c.darekOnly ? 'SLEVA NA DÁRKOVÝ POUKAZ' : 'SLEVOVÝ VOUCHER'));
 
-  var suffix = c.splatky ? ' na 1. splátku' : '';
+  var suffix = c.splatky ? ' na 1. splátku' : (c.darekOnly ? ' na dárkový poukaz' : '');
   var valueDisplay = c.type === 'gift' 
     ? '100% Uhrazeno' 
     : (c.type === 'percent' ? 'Sleva ' + c.value + ' %' + suffix : 'Sleva ' + c.value + ' Kč' + suffix);
@@ -386,10 +408,12 @@ function printVoucherModal(id) {
   } else {
     pkgsDisplay = c.packages.map(function(p) { return pkgTitlesMap[p] || p.toUpperCase(); }).join(', ');
     if (c.splatky) pkgsDisplay += ' – NA SPLÁTKY';
+    if (c.darekOnly) pkgsDisplay += ' – JAKO DÁREK';
   }
 
   var redeemUrl = 'https://koblas-nutricni.cz/objednavka.html?kod=' + encodeURIComponent(c.code);
   if (c.splatky) redeemUrl += '&platba=splatky';
+  if (c.darekOnly) redeemUrl += '&platba=jednorizove&darek=1';
   if (c.packages && c.packages.length === 1) redeemUrl += '&sluzba=' + encodeURIComponent(c.packages[0]);
 
   var printWin = window.open('', '_blank', 'width=900,height=750');
@@ -567,7 +591,7 @@ function printVoucherModal(id) {
           </div>
 
           <div class="instructions">
-            Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong>, zvolte odpovídající balíček ${c.splatky ? 'a platbu na splátky' : ''} a v objednávkovém formuláři zadejte tento kód.<br>
+            Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong>, zvolte odpovídající balíček ${c.splatky ? 'a platbu na splátky' : (c.darekOnly ? 'a možnost Koupit jako dárkový poukaz' : '')} a v objednávkovém formuláři zadejte tento kód.<br>
             Přímý odkaz: <a href="${redeemUrl}">${redeemUrl}</a>
           </div>
         </div>
@@ -625,6 +649,8 @@ function renderPromoCodesList(codes) {
 
     if (c.splatky) {
       typeLabel += ' <span style="background: rgba(52,152,219,0.15); color: #3498db; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 6px;">[SPLÁTKY]</span>';
+    } else if (c.darekOnly) {
+      typeLabel += ' <span style="background: rgba(230,126,34,0.15); color: #e67e22; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 6px;">[JEN DÁREK]</span>';
     }
 
     var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ');
@@ -671,6 +697,7 @@ async function createNewPromoCode() {
   var value = document.getElementById('newPromoValue').value;
   var oneTime = document.getElementById('newPromoOneTime').checked;
   var splatky = document.getElementById('newPromoSplatky') ? document.getElementById('newPromoSplatky').checked : false;
+  var darekOnly = document.getElementById('newPromoDarekOnly') ? document.getElementById('newPromoDarekOnly').checked : false;
 
   var pkgCheckboxes = document.querySelectorAll('.promo-pkg-cb:checked');
   var packages = Array.from(pkgCheckboxes).map(function(cb) { return cb.value; });
@@ -697,6 +724,7 @@ async function createNewPromoCode() {
     value: value, 
     oneTime: oneTime, 
     splatky: splatky, 
+    darekOnly: darekOnly,
     packages: packages 
   };
 
@@ -716,6 +744,9 @@ async function createNewPromoCode() {
     
     var splatkyEl = document.getElementById('newPromoSplatky');
     if (splatkyEl) splatkyEl.checked = false;
+
+    var darekEl = document.getElementById('newPromoDarekOnly');
+    if (darekEl) darekEl.checked = false;
 
     // Resetování stavu checkboxu pro startup
     var suCb = document.querySelector('.promo-pkg-cb[value="startup"]');
