@@ -133,19 +133,17 @@ function renderPrices() {
   el = document.getElementById('priceStartupJed');   if (el) el.value = su.jednorizove || '6 900 Kč';
   el = document.getElementById('priceMentoringJed'); if (el) el.value = me.jednorizove || '14 700 Kč';
   el = document.getElementById('priceMentoringSpl'); if (el) el.value = me.splatky     || '7 500 Kč (1. splátka)';
-  el = document.getElementById('priceMentoringNote');if (el) el.value = me.splatkyNote || '';
   el = document.getElementById('priceUltimateJed');  if (el) el.value = ul.jednorizove || '22 300 Kč';
   el = document.getElementById('priceUltimateSpl');  if (el) el.value = ul.splatky     || '11 900 Kč (1. splátka)';
-  el = document.getElementById('priceUltimateNote'); if (el) el.value = ul.splatkyNote || '';
 }
 
 function renderEvent() {
-  var ev      = currentStatus.event || {};
+  var ev       = currentStatus.event || {};
   var isActive = ev.active === true;
-  var led     = document.getElementById('led-event');
-  var txt     = document.getElementById('statusText-event');
-  var lbl     = document.getElementById('btnLabel-event');
-  var panel   = document.getElementById('eventPanel');
+  var led      = document.getElementById('led-event');
+  var txt      = document.getElementById('statusText-event');
+  var lbl      = document.getElementById('btnLabel-event');
+  var panel    = document.getElementById('eventPanel');
   if (led)    led.className   = 'status-led ' + (isActive ? 'volny' : '');
   if (txt)    txt.textContent = isActive ? 'AKTIVNÍ' : 'NEAKTIVNÍ';
   if (lbl)    lbl.textContent = isActive ? 'DEAKTIVOVAT' : 'AKTIVOVAT';
@@ -281,13 +279,11 @@ document.getElementById('priceSave').addEventListener('click', async function ()
     startup:  { jednorizove: document.getElementById('priceStartupJed').value.trim()  || '6 900 Kč' },
     mentoring: {
       jednorizove: document.getElementById('priceMentoringJed').value.trim()  || '14 700 Kč',
-      splatky:     document.getElementById('priceMentoringSpl').value.trim()  || '7 500 Kč (1. splátka)',
-      splatkyNote: document.getElementById('priceMentoringNote').value.trim() || ''
+      splatky:     document.getElementById('priceMentoringSpl').value.trim()  || '7 500 Kč (1. splátka)'
     },
     ultimate: {
       jednorizove: document.getElementById('priceUltimateJed').value.trim()  || '22 300 Kč',
-      splatky:     document.getElementById('priceUltimateSpl').value.trim()  || '11 900 Kč (1. splátka)',
-      splatkyNote: document.getElementById('priceUltimateNote').value.trim() || ''
+      splatky:     document.getElementById('priceUltimateSpl').value.trim()  || '11 900 Kč (1. splátka)'
     }
   };
   await saveStatus();
@@ -378,7 +374,6 @@ function printVoucherModal(id) {
           min-height: 95vh;
         }
 
-        /* Lišta s ovládáním a výběrem šablony */
         .toolbar {
           margin-bottom: 25px;
           display: flex;
