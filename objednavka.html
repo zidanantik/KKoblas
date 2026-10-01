@@ -560,6 +560,9 @@
   <!-- ── Skript pro slevové kódy a dárkový režim ── -->
   <script>
     (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isSplatky = urlParams.get('platba') === 'splatky';
+
       let basePriceText = '';
       let basePriceNumber = 0;
 
@@ -604,6 +607,13 @@
       const sectionAnalysis = document.getElementById('sectionAnalysis');
       const hiddenIsGift = document.getElementById('hiddenIsGift');
 
+      // ── KONTROLA SPLÁTEK: U splátek natvrdo skrýt a vypnout dárkový box ──
+      if (isSplatky && giftCard) {
+        giftCard.style.display = 'none';
+        if (giftCheckbox) giftCheckbox.checked = false;
+        if (hiddenIsGift) hiddenIsGift.value = 'ne';
+      }
+
       const checkHealth = document.getElementById('checkHealth');
       const checkHealthLabel = document.getElementById('checkHealthLabel');
       const checkAnon = document.getElementById('checkAnon');
@@ -617,7 +627,7 @@
       ];
 
       function toggleGiftMode() {
-        if (!giftCheckbox) return;
+        if (!giftCheckbox || isSplatky) return;
         const isGift = giftCheckbox.checked;
 
         if (giftCard) {
@@ -666,7 +676,7 @@
         }
       }
 
-      if (giftCheckbox) {
+      if (giftCheckbox && !isSplatky) {
         giftCheckbox.addEventListener('change', toggleGiftMode);
       }
 
@@ -683,13 +693,13 @@
           return;
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
         const pkg = (urlParams.get('sluzba') || '').toLowerCase();
+        const modeDarek = giftCheckbox && giftCheckbox.checked;
 
         showPromoMsg('Ověřuji kód...', 'info');
 
         try {
-          const res = await fetch(`/api/codes?code=${encodeURIComponent(code)}&package=${encodeURIComponent(pkg)}`);
+          const res = await fetch(`/api/codes?code=${encodeURIComponent(code)}&package=${encodeURIComponent(pkg)}&splatky=${isSplatky}&darek=${modeDarek}`);
           const data = await res.json();
 
           if (!data.valid) {
@@ -736,7 +746,7 @@
             priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
             showPromoMsg(`✓ Sleva ${data.value} % uplatněna (-${formatPrice(discountAmt)}).`, 'ok');
 
-            if (giftCard) giftCard.style.display = 'block';
+            if (giftCard && !isSplatky) giftCard.style.display = 'block';
 
           } else if (data.type === 'fixed') {
             const discountAmt = data.value;
@@ -746,7 +756,7 @@
             priceEl.innerHTML = `<span class="price-original-struck">${baseTxt}</span> ${newPriceStr}`;
             showPromoMsg(`✓ Sleva ${formatPrice(discountAmt)} uplatněna.`, 'ok');
 
-            if (giftCard) giftCard.style.display = 'block';
+            if (giftCard && !isSplatky) giftCard.style.display = 'block';
           }
 
           if (hiddenPrice) hiddenPrice.value = newPriceStr;
@@ -770,7 +780,6 @@
       }
 
       // Auto-uplatnění kódu z parametru v URL (?kod=... nebo ?code=...)
-      const urlParams = new URLSearchParams(window.location.search);
       const urlCode = urlParams.get('kod') || urlParams.get('code');
       if (urlCode) {
         let attempts = 0;
@@ -786,8 +795,8 @@
         setTimeout(autoApply, 200);
       }
 
-      // Automatická aktivace dárkového režimu z URL (?darek=1 nebo ?darek=ano)
-      if (urlParams.get('darek') === '1' || urlParams.get('darek') === 'ano') {
+      // Automatická aktivace dárkového režimu z URL (?darek=1 nebo ?darek=ano) - pouze pokud nejde o splátky
+      if (!isSplatky && (urlParams.get('darek') === '1' || urlParams.get('darek') === 'ano')) {
         if (giftCheckbox) {
           giftCheckbox.checked = true;
           toggleGiftMode();
