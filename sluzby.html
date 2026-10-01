@@ -47,10 +47,9 @@
 
   <main>
 
-    <!-- ── Page hero ────────────────────────────── -->
+    <!-- ── Page hero (Bez řádku "Co nabízím", kompaktní výška) ── -->
     <section class="page-hero">
       <div class="page-hero__inner">
-        <span class="eyebrow">Co nabízím</span>
         <h1 class="page-hero__title">Služby & ceník</h1>
         <p class="page-hero__lead">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
       </div>
@@ -182,7 +181,6 @@
                 <span class="pkg-card__price" id="price-mentoring">14 700 Kč</span>
                 <span class="pkg-card__price-inbody" id="inbody-mentoring">bez InBody: 15 900 Kč (−1 200 Kč)</span>
                 <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
-                <span class="pkg-card__price-note" id="note-mentoring">Nebo splátky: 7 500 Kč (v 1. měs. po slevě jen 6 200 Kč) + 3× 2 800 Kč.</span>
               </div>
             </div>
             <div class="pkg-btns pkg-btns--normal">
@@ -238,7 +236,6 @@
                 <span class="pkg-card__price" id="price-ultimate">22 300 Kč</span>
                 <span class="pkg-card__price-inbody" id="inbody-ultimate">bez InBody: 23 900 Kč (−1 600 Kč)</span>
                 <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
-                <span class="pkg-card__price-note" id="note-ultimate">Nebo splátky: 11 900 Kč (po slevě na InBody jen 10 300 Kč) + 5× 2 400 Kč.</span>
               </div>
             </div>
             <div class="pkg-btns pkg-btns--normal">
@@ -368,8 +365,8 @@
 
       var currentPrices = {
         startup:   { jed: 6900 },
-        mentoring: { jed: 14700, spl: 7500, note: '' },
-        ultimate:  { jed: 22300, spl: 11900, note: '' }
+        mentoring: { jed: 14700, spl: 7500 },
+        ultimate:  { jed: 22300, spl: 11900 }
       };
 
       var SU_INBODY = 800;
@@ -384,9 +381,6 @@
         set('inbody-startup',   'Hodnota: ' + fmtKc(currentPrices.startup.jed + SU_INBODY) + ' (odečteno ' + fmtKc(SU_INBODY) + ' na InBody)');
         set('inbody-mentoring', 'Hodnota: ' + fmtKc(currentPrices.mentoring.jed + ME_INBODY) + ' (odečteno ' + fmtKc(ME_INBODY) + ' na InBody)');
         set('inbody-ultimate',  'Hodnota: ' + fmtKc(currentPrices.ultimate.jed + UL_INBODY) + ' (odečteno ' + fmtKc(UL_INBODY) + ' na InBody)');
-
-        set('note-mentoring', currentPrices.mentoring.note || ('Nebo splátky: ' + fmtKc(currentPrices.mentoring.spl) + ' (v 1. měs. po slevě jen ' + fmtKc(currentPrices.mentoring.spl - ME_INBODY) + ') + 3× 2 800 Kč.'));
-        set('note-ultimate',  currentPrices.ultimate.note || ('Nebo splátky: ' + fmtKc(currentPrices.ultimate.spl) + ' (po slevě na InBody jen ' + fmtKc(currentPrices.ultimate.spl - UL_INBODY) + ') + 5× 2 400 Kč.'));
 
         var bSu = document.getElementById('btn-startup-order');
         if (bSu) { bSu.textContent = 'Objednat za ' + fmtKc(currentPrices.startup.jed); bSu.href = 'objednavka.html?sluzba=startup'; }
@@ -424,11 +418,9 @@
           currentPrices.startup.jed   = parseKc(su.jednorizove) || 6900;
           currentPrices.mentoring.jed = parseKc(me.jednorizove) || 14700;
           currentPrices.mentoring.spl = parseKc(me.splatky)     || 7500;
-          currentPrices.mentoring.note = me.splatkyNote || '';
 
           currentPrices.ultimate.jed  = parseKc(ul.jednorizove) || 22300;
           currentPrices.ultimate.spl  = parseKc(ul.splatky)     || 11900;
-          currentPrices.ultimate.note = ul.splatkyNote || '';
 
           renderBasePrices();
         })
