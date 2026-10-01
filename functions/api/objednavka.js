@@ -1,143 +1,155 @@
-var DEFAULT_PRICES = {
-  startup:   { jednorizove: '6 900 Kč' },
-  mentoring: { jednorizove: '14 700 Kč', splatky: '7 500 Kč (1. splátka)' },
-  ultimate:  { jednorizove: '22 300 Kč', splatky: '11 900 Kč (1. splátka)' }
-};
+// functions/api/objednavka.js
 
-function buildServiceMap(prices, event) {
-  var p = prices || {};
-  var su = p.startup   || DEFAULT_PRICES.startup;
-  var me = p.mentoring || DEFAULT_PRICES.mentoring;
-  var ul = p.ultimate  || DEFAULT_PRICES.ultimate;
-  var map = {
-    startup: {
-      label: 'START-UP – Profi odrazový můstek',
-      jednorizove: { platba: 'Jednorázová platba', price: su.jednorizove || DEFAULT_PRICES.startup.jednorizove },
-      splatky:     { platba: 'Jednorázová platba', price: su.jednorizove || DEFAULT_PRICES.startup.jednorizove }
-    },
-    mentoring: {
-      label: 'MENTORING – Individuální vedení',
-      jednorizove: { platba: 'Jednorázová platba', price: me.jednorizove || DEFAULT_PRICES.mentoring.jednorizove },
-      splatky:     { platba: 'Splátkový kalendář', price: me.splatky     || DEFAULT_PRICES.mentoring.splatky }
-    },
-    ultimate: {
-      label: 'ULTIMATE – Maximální výkon a biohacking',
-      jednorizove: { platba: 'Jednorázová platba', price: ul.jednorizove || DEFAULT_PRICES.ultimate.jednorizove },
-      splatky:     { platba: 'Splátkový kalendář', price: ul.splatky     || DEFAULT_PRICES.ultimate.splatky }
-    }
-  };
-  if (event && event.active && event.name) {
-    map.event = {
-      label: event.name,
-      jednorizove: { platba: 'Jednorázová platba', price: event.cena || '—' }
-    };
-  }
-  return map;
-}
+const REQUIRED_CONTACT = ['Jmeno', 'Email', 'Telefon', 'Ulice', 'Mesto', 'PSC', 'Zeme'];
+const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
 
-function initOrder(serviceMap) {
-  var params  = new URLSearchParams(location.search);
-  var sluzba  = params.get('sluzba') || 'startup';
-  var platba  = params.get('platba') || 'jednorizove';
+export async function onRequestPost(context) {
+  try {
+    const body = await context.request.json();
+    const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
 
-  var svc  = serviceMap[sluzba] || serviceMap.startup;
-  var info = svc[platba] || svc.jednorizove;
+    // Pro nákup dárku nevyžadujeme tělesné míry
+    const requiredFields = isGift
+      ? REQUIRED_CONTACT
+      : [...REQUIRED_CONTACT, ...REQUIRED_ANALYSIS];
 
-  var nameEl   = document.getElementById('orderServiceName');
-  var platbaEl = document.getElementById('orderPlatba');
-  var priceEl  = document.getElementById('orderPrice');
-
-  if (nameEl)   nameEl.textContent   = svc.label;
-  if (platbaEl) platbaEl.textContent = info.platba;
-  if (priceEl)  priceEl.textContent  = info.price;
-
-  var hSluzba = document.getElementById('hiddenSluzba');
-  var hPlatba = document.getElementById('hiddenPlatba');
-  var hPrice  = document.getElementById('hiddenPrice');
-  var hSubj   = document.getElementById('emailSubject');
-
-  if (hSluzba) hSluzba.value = svc.label;
-  if (hPlatba) hPlatba.value = info.platba;
-  if (hPrice)  hPrice.value  = info.price;
-  if (hSubj)   hSubj.value   = 'Nová objednávka – ' + svc.label;
-
-  var form      = document.getElementById('orderForm');
-  var submitBtn = document.getElementById('submitBtn');
-  var errorEl   = document.getElementById('formError');
-
-  if (!form) return;
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
+    for (const field of requiredFields) {
+      if (!body[field] || String(body[field]).trim() === '') {
+        return new Response(JSON.stringify({ ok: false, error: `Chybí povinné pole: ${field}` }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        });
+      }
     }
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Odesílám...';
-    if (errorEl) errorEl.hidden = true;
+    // Automatické přičtení použití kódu do Cloudflare KV
+    const usedCode = (body.Pouzity_kod || '').trim();
+    if (usedCode && context.env.STATUS_STORE) {
+      try {
+        const rawCodes = await context.env.STATUS_STORE.get('PROMO_CODES');
+        if (rawCodes) {
+          const codes = JSON.parse(rawCodes);
+          const target = codes.find(c => c.code && c.code.trim().toUpperCase() === usedCode.toUpperCase());
+          if (target) {
+            target.usedCount = (Number(target.usedCount) || 0) + 1;
+            if (target.oneTime) target.used = true;
+            await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
+          }
+        }
+      } catch (kvErr) {
+        console.error('Chyba při aktualizaci kódu v KV:', kvErr);
+      }
+    }
 
-    try {
-      var formData = new FormData(form);
-      var payload  = {};
-      formData.forEach(function (val, key) { payload[key] = val; });
+    const icoHtml = body.ICO
+      ? `<tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">IČO / DIČ</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.ICO}</td></tr>`
+      : '';
 
-      var response = await fetch('/api/objednavka', {
+    const promoHtml = usedCode
+      ? `<tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Slevový kód</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><strong>${usedCode}</strong> (${body.Sleva_info || 'Sleva'})</td></tr>`
+      : '';
+
+    const analysisHtml = isGift
+      ? '<tr><td colspan="2" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-style:italic">Objednáno jako dárek – míry a zdravotní údaje vyplní obdarovaný sám při uplatnění voucheru na webu.</td></tr>'
+      : `
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Věk</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Vek} let</td></tr>
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Pohlaví</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Pohlavi}</td></tr>
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Výška</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Vyska_cm} cm</td></tr>
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Váha</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Vaha_kg} kg</td></tr>
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Obvod boků</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Obvod_boku_cm || '—'} cm</td></tr>
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Obvod pasu</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Obvod_pasu_cm || '—'} cm</td></tr>
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Motivace</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Motivace || '—'}</td></tr>
+        <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Anonymní reference</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Souhlas_anonymni === 'ano' ? 'Ano' : 'Ne'}</td></tr>
+      `;
+
+    const emailHtmlAdmin = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #111;">
+        <h2 style="color: #ff9900; border-bottom: 2px solid #ff9900; padding-bottom: 8px;">Nová objednávka z webu</h2>
+        
+        <h3 style="margin-top: 20px;">Vybraný balíček</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;width:40%;">Služba</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><strong>${body.Sluzba || 'Neuvedeno'}</strong></td></tr>
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Způsob platby</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Platba || 'Jednorázová platba'}</td></tr>
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Cena</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><strong>${body.Cena || 'Neuvedeno'}</strong></td></tr>
+          ${promoHtml}
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Dárkový režim</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${isGift ? '🎁 ANO (Dárkový poukaz)' : 'Běžná objednávka pro sebe'}</td></tr>
+        </table>
+
+        <h3 style="margin-top: 24px;">Kontaktní a fakturační údaje</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;width:40%;">Jméno</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Jmeno}</td></tr>
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">E-mail</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><a href="mailto:${body.Email}">${body.Email}</a></td></tr>
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Telefon</td><td style="padding:8px 16px;border-bottom:1px solid #eee"><a href="tel:${body.Telefon}">${body.Telefon}</a></td></tr>
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Ulice a č.p.</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Ulice}</td></tr>
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Město a PSČ</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Mesto}, ${body.PSC}</td></tr>
+          <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666">Země</td><td style="padding:8px 16px;border-bottom:1px solid #eee">${body.Zeme}</td></tr>
+          ${icoHtml}
+        </table>
+
+        <h3 style="margin-top: 24px;">Údaje pro analýzu</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          ${analysisHtml}
+        </table>
+      </div>
+    `;
+
+    const emailHtmlClient = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #222; line-height: 1.6;">
+        <h2 style="color: #ff9900;">Ahoj ${body.Jmeno},</h2>
+        <p>děkuji za tvou objednávku služby <strong>${body.Sluzba || 'Nutriční poradenství'}</strong>!</p>
+        <p>Tvá žádost byla úspěšně přijata. Do <strong>2 pracovních dnů</strong> tě budu kontaktovat s fakturou a dalšími instrukcemi ohledně zahájení naší spolupráce.</p>
+        ${isGift ? '<p>🎁 <em>Jelikož jsi balíček objednal/a jako dárkový poukaz, po úhradě ti zašlu elektronický certifikát s unikátním kódem pro obdarovaného.</em></p>' : ''}
+        <br>
+        <p>S pozdravem,<br><strong>Kryštof Koblas</strong><br>Nutriční poradce<br><a href="https://koblas-nutricni.cz" style="color: #ff9900;">koblas-nutricni.cz</a></p>
+      </div>
+    `;
+
+    // Odeslání e-mailů přes Resend API
+    const resendKey = context.env.RESEND_API_KEY;
+    const fromDomain = context.env.FROM_DOMAIN || 'koblas-nutricni.cz';
+
+    if (resendKey) {
+      // 1. Notifikace poradci
+      await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload)
+        headers: {
+          'Authorization': `Bearer ${resendKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: `KKoblas Web <info@${fromDomain}>`,
+          to: ['koblas.nutricni.info@gmail.com'],
+          reply_to: body.Email,
+          subject: body.subject || `Nová objednávka – ${body.Sluzba || 'KKoblas'}`,
+          html: emailHtmlAdmin
+        })
       });
 
-      var result = await response.json();
-      if (response.ok && result.ok) {
-        var name  = form.querySelector('[name="Jmeno"]').value;
-        var email = form.querySelector('[name="Email"]').value;
-        var dest  = 'dekujeme.html?sluzba=' + encodeURIComponent(svc.label)
-                  + '&jmeno=' + encodeURIComponent(name)
-                  + '&email=' + encodeURIComponent(email);
-        window.location.href = dest;
-      } else {
-        throw new Error(result.error || 'Server error');
-      }
-    } catch (err) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
-      if (errorEl) { errorEl.hidden = false; errorEl.textContent = err.message || 'Chyba odesílání'; }
+      // 2. Potvrzení klientovi
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: `Kryštof Koblas <info@${fromDomain}>`,
+          to: [body.Email],
+          subject: `Přijetí objednávky – ${body.Sluzba || 'KKoblas'}`,
+          html: emailHtmlClient
+        })
+      });
     }
-  });
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ ok: false, error: err.message || 'Server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    });
+  }
 }
-
-(function () {
-  fetch('/api/status', { cache: 'no-store' })
-    .then(function (r) { return r.json(); })
-    .then(function (status) { initOrder(buildServiceMap(status.prices, status.event)); })
-    .catch(function () { initOrder(buildServiceMap(null, null)); });
-})();
-
-// ── Modals ────────────────────────────────────────
-(function () {
-  document.querySelectorAll('[data-modal]').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      var modal = document.getElementById(link.dataset.modal);
-      if (modal) modal.hidden = false;
-    });
-  });
-
-  document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-    overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) overlay.hidden = true;
-    });
-    overlay.querySelector('.modal__close').addEventListener('click', function () {
-      overlay.hidden = true;
-    });
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay').forEach(function (o) { o.hidden = true; });
-    }
-  });
-})();
