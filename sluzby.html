@@ -62,21 +62,21 @@
     </div>
 
     <!-- ── Packages ──────────────────────────────── -->
-    <section class="packages" id="packages">
+    <section class="packages" id="packages" style="padding-top: 24px;">
 
-      <!-- Hlavní mřížka: Vlevo nadpis, vpravo karty -->
-      <div class="packages-layout">
+      <!-- Hlavní mřížka: Vlevo nadpis + podnadpis + kód, vpravo 3 karty vedle sebe -->
+      <div class="packages-grid-pro">
 
-        <!-- Levý panel s nadpisem a lištou pro kód -->
+        <!-- Levý panel (Nadpis, podnadpis a lišta pro kód pod ním) -->
         <div class="packages-sidebar">
           <div>
             <h1 class="packages-main-title">Služby &amp; ceník</h1>
             <p class="packages-main-lead">Vyber si balíček, který sedí tvým cílům. Každý klient dostane individuální přístup – žádné šablony.</p>
           </div>
 
-          <!-- Decentní rozbalovací lišta na kód -->
+          <!-- Rozbalovací lišta na kód -->
           <div class="promo-bar-wrap" style="margin: 0; width: 100%;">
-            <button type="button" class="promo-toggle-link" id="promoToggleBtn">
+            <button type="button" class="promo-toggle-link" id="promoToggleBtn" style="padding: 5px 10px;">
               🎁 Máš poukaz nebo kód? <strong>Uplatnit zde ▾</strong>
             </button>
             <div class="promo-bar" id="promoBar" hidden style="margin-top: 8px;">
@@ -90,171 +90,166 @@
           </div>
         </div>
 
-        <!-- Pravá mřížka s 3 balíčky -->
-        <div class="packages__inner">
+        <!-- 1. START-UP -->
+        <article class="pkg-card" data-sluzba="startup" id="card-startup">
+          <div class="pkg-card__head">
+            <span class="pkg-card__badge">1</span>
+            <div>
+              <h2 class="pkg-card__name">START-UP</h2>
+              <p class="pkg-card__tagline">Profi odrazový můstek</p>
+            </div>
+          </div>
+          <p class="pkg-card__desc">Ideální pro ty, kteří potřebují systém a vědu bez dlouhých závazků. Žádné hádání, jen jasná data.</p>
 
-          <!-- 1. START-UP -->
-          <article class="pkg-card" data-sluzba="startup" id="card-startup">
-            <div class="pkg-card__head">
-              <span class="pkg-card__badge">1</span>
-              <div>
-                <h2 class="pkg-card__name">START-UP</h2>
-                <p class="pkg-card__tagline">Profi odrazový můstek</p>
+          <ul class="pkg-card__list">
+            <li>
+              <span class="pkg-card__item-title">1× online konzultace (45–60 min)</span>
+              <span class="pkg-card__item-desc">Vstupní analýza, kde probereme tvoje návyky a nastavíme směr.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Individuální plán v systému <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a></span>
+              <span class="pkg-card__item-desc">Vytvoříš si bezplatný účet a já se s tebou propojím přes svou licenci. Neplatíš žádné poplatky za platformu.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Suplementace s rozumem</span>
+              <span class="pkg-card__item-desc">Pouze to, co tvoje tělo skutečně potřebuje (metodika <a href="https://www.kurzyatac.cz/" target="_blank" rel="noopener" class="pkg-anchor">ATAC</a>).</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">2× Diagnostika <a href="#inbody" class="pkg-anchor">InBody</a></span>
+              <span class="pkg-card__item-desc">Úvodní a výstupní měření pro ověření výsledků.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Podpora na WhatsAppu</span>
+              <span class="pkg-card__item-desc">Průběžná asistence a prostor pro tvoje dotazy po celý měsíc spolupráce.</span>
+            </li>
+          </ul>
+
+          <div class="pkg-card__footer">
+            <div class="pkg-card__meta">
+              <span class="pkg-card__duration">1 měsíc</span>
+              <div class="pkg-card__pricing">
+                <span class="pkg-card__price" id="price-startup">6 900 Kč</span>
+                <span class="pkg-card__price-inbody" id="inbody-startup">bez InBody: 7 700 Kč (−800 Kč)</span>
+                <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
               </div>
             </div>
-            <p class="pkg-card__desc">Ideální pro ty, kteří potřebují systém a vědu bez dlouhých závazků. Žádné hádání, jen jasná data.</p>
+            <div class="pkg-btns pkg-btns--normal">
+              <a href="objednavka.html?sluzba=startup" class="btn btn--primary btn--block" id="btn-startup-order">Objednat za 6 900 Kč</a>
+              <a href="objednavka.html?sluzba=startup&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-startup-gift">🎁 Koupit jako dárkový poukaz</a>
+            </div>
+            <div class="pkg-btns pkg-btns--plno">
+              <p class="plno-notice">Kapacita je momentálně plná.</p>
+              <a href="cekacka.html" class="btn btn--outline btn--block">Chci vědět o volném místě</a>
+            </div>
+          </div>
+        </article>
 
-            <ul class="pkg-card__list">
-              <li>
-                <span class="pkg-card__item-title">1× online konzultace (45–60 min)</span>
-                <span class="pkg-card__item-desc">Vstupní analýza, kde probereme tvoje návyky a nastavíme směr.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">Individuální plán v systému <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a></span>
-                <span class="pkg-card__item-desc">Vytvoříš si bezplatný účet a já se s tebou propojím přes svou licenci. Neplatíš žádné poplatky za platformu.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">Suplementace s rozumem</span>
-                <span class="pkg-card__item-desc">Pouze to, co tvoje tělo skutečně potřebuje (metodika <a href="https://www.kurzyatac.cz/" target="_blank" rel="noopener" class="pkg-anchor">ATAC</a>).</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">2× Diagnostika <a href="#inbody" class="pkg-anchor">InBody</a></span>
-                <span class="pkg-card__item-desc">Úvodní a výstupní měření pro ověření výsledků.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">Podpora na WhatsAppu</span>
-                <span class="pkg-card__item-desc">Průběžná asistence a prostor pro tvoje dotazy po celý měsíc spolupráce.</span>
-              </li>
-            </ul>
+        <!-- 2. MENTORING -->
+        <article class="pkg-card pkg-card--featured" data-sluzba="mentoring" id="card-mentoring">
+          <div class="pkg-card__ribbon">Nejoblíbenější</div>
+          <div class="pkg-card__head">
+            <span class="pkg-card__badge">2</span>
+            <div>
+              <h2 class="pkg-card__name">MENTORING</h2>
+              <p class="pkg-card__tagline">Individuální vedení</p>
+            </div>
+          </div>
+          <p class="pkg-card__desc">Můj nejoblíbenější balíček pro ty, kteří chtějí trvalou změnu pod dohledem parťáka.</p>
 
-            <div class="pkg-card__footer">
-              <div class="pkg-card__meta">
-                <span class="pkg-card__duration">1 měsíc</span>
-                <div class="pkg-card__pricing">
-                  <span class="pkg-card__price" id="price-startup">6 900 Kč</span>
-                  <span class="pkg-card__price-inbody" id="inbody-startup">bez InBody: 7 700 Kč (−800 Kč)</span>
-                  <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
-                </div>
-              </div>
-              <div class="pkg-btns pkg-btns--normal">
-                <a href="objednavka.html?sluzba=startup" class="btn btn--primary btn--block" id="btn-startup-order">Objednat za 6 900 Kč</a>
-                <a href="objednavka.html?sluzba=startup&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-startup-gift">🎁 Koupit jako dárkový poukaz</a>
-              </div>
-              <div class="pkg-btns pkg-btns--plno">
-                <p class="plno-notice">Kapacita je momentálně plná.</p>
-                <a href="cekacka.html" class="btn btn--outline btn--block">Chci vědět o volném místě</a>
+          <ul class="pkg-card__list">
+            <li>
+              <span class="pkg-card__item-title">Celkem 4 online schůzky</span>
+              <span class="pkg-card__item-desc">Každý měsíc jeden 45minutový videohovor (1× vstupní + 3× mentoring).</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Metodika a zázemí</span>
+              <span class="pkg-card__item-desc">Kompletní nastavení plánu v <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a> a suplementace <a href="https://www.kurzyatac.cz/" target="_blank" rel="noopener" class="pkg-anchor">ATAC</a> jako u balíčku Start-up.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">3× Diagnostika <a href="#inbody" class="pkg-anchor">InBody</a></span>
+              <span class="pkg-card__item-desc">Pravidelná kontrola tvého progresu.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Podpora na WhatsAppu</span>
+              <span class="pkg-card__item-desc">VIP odpověď garantuji do 24 hodin.</span>
+            </li>
+          </ul>
+
+          <div class="pkg-card__footer">
+            <div class="pkg-card__meta">
+              <span class="pkg-card__duration">4 měsíce</span>
+              <div class="pkg-card__pricing">
+                <span class="pkg-card__price" id="price-mentoring">14 700 Kč</span>
+                <span class="pkg-card__price-inbody" id="inbody-mentoring">bez InBody: 15 900 Kč (−1 200 Kč)</span>
+                <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
               </div>
             </div>
-          </article>
+            <div class="pkg-btns pkg-btns--normal">
+              <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn btn--primary btn--block" id="btn-mentoring-jed">Koupit jednorázově za 14 700 Kč</a>
+              <a href="objednavka.html?sluzba=mentoring&platba=splatky" class="btn btn--outline btn--block" id="btn-mentoring-spl">Chci na splátky – 1. platba 7 500 Kč</a>
+              <a href="objednavka.html?sluzba=mentoring&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-mentoring-gift">🎁 Koupit jako dárkový poukaz</a>
+            </div>
+            <div class="pkg-btns pkg-btns--plno">
+              <p class="plno-notice">Kapacita je momentálně plná.</p>
+              <a href="cekacka.html" class="btn btn--outline btn--block">Chci vědět o volném místě</a>
+            </div>
+          </div>
+        </article>
 
-          <!-- 2. MENTORING -->
-          <article class="pkg-card pkg-card--featured" data-sluzba="mentoring" id="card-mentoring">
-            <div class="pkg-card__ribbon">Nejoblíbenější</div>
-            <div class="pkg-card__head">
-              <span class="pkg-card__badge">2</span>
-              <div>
-                <h2 class="pkg-card__name">MENTORING</h2>
-                <p class="pkg-card__tagline">Individuální vedení</p>
+        <!-- 3. ULTIMATE -->
+        <article class="pkg-card" data-sluzba="ultimate" id="card-ultimate">
+          <div class="pkg-card__head">
+            <span class="pkg-card__badge">3</span>
+            <div>
+              <h2 class="pkg-card__name">ULTIMATE</h2>
+              <p class="pkg-card__tagline">Maximální výkon a biohacking</p>
+            </div>
+          </div>
+          <p class="pkg-card__desc">Prémiová péče pro optimalizaci těla na buněčné úrovni včetně spánku a regenerace.</p>
+
+          <ul class="pkg-card__list">
+            <li>
+              <span class="pkg-card__item-title">Celkem 6 online schůzek</span>
+              <span class="pkg-card__item-desc">Intenzivní vedení, scházíme se každý měsíc (1× vstupní + 5× mentoring).</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Kompletní servis</span>
+              <span class="pkg-card__item-desc">Zahrnuje všechnu technickou podporu, licenci <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a> a WhatsApp asistenci.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">Pokročilé protokoly</span>
+              <span class="pkg-card__item-desc">Cirkadiánní rytmus a mentální výkon.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">4× Diagnostika <a href="#inbody" class="pkg-anchor">InBody</a></span>
+              <span class="pkg-card__item-desc">Maximální kontrola tvé proměny v čase.</span>
+            </li>
+            <li>
+              <span class="pkg-card__item-title">VIP podpora</span>
+              <span class="pkg-card__item-desc">Přednostní právo, garance odpovědi na WhatsAppu do 12 hodin.</span>
+            </li>
+          </ul>
+
+          <div class="pkg-card__footer">
+            <div class="pkg-card__meta">
+              <span class="pkg-card__duration">6 měsíců</span>
+              <div class="pkg-card__pricing">
+                <span class="pkg-card__price" id="price-ultimate">22 300 Kč</span>
+                <span class="pkg-card__price-inbody" id="inbody-ultimate">bez InBody: 23 900 Kč (−1 600 Kč)</span>
+                <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
               </div>
             </div>
-            <p class="pkg-card__desc">Můj nejoblíbenější balíček pro ty, kteří chtějí trvalou změnu pod dohledem parťáka.</p>
-
-            <ul class="pkg-card__list">
-              <li>
-                <span class="pkg-card__item-title">Celkem 4 online schůzky</span>
-                <span class="pkg-card__item-desc">Každý měsíc jeden 45minutový videohovor (1× vstupní + 3× mentoring).</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">Metodika a zázemí</span>
-                <span class="pkg-card__item-desc">Kompletní nastavení plánu v <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a> a suplementace <a href="https://www.kurzyatac.cz/" target="_blank" rel="noopener" class="pkg-anchor">ATAC</a> jako u balíčku Start-up.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">3× Diagnostika <a href="#inbody" class="pkg-anchor">InBody</a></span>
-                <span class="pkg-card__item-desc">Pravidelná kontrola tvého progresu.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">Podpora na WhatsAppu</span>
-                <span class="pkg-card__item-desc">VIP odpověď garantuji do 24 hodin.</span>
-              </li>
-            </ul>
-
-            <div class="pkg-card__footer">
-              <div class="pkg-card__meta">
-                <span class="pkg-card__duration">4 měsíce</span>
-                <div class="pkg-card__pricing">
-                  <span class="pkg-card__price" id="price-mentoring">14 700 Kč</span>
-                  <span class="pkg-card__price-inbody" id="inbody-mentoring">bez InBody: 15 900 Kč (−1 200 Kč)</span>
-                  <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
-                </div>
-              </div>
-              <div class="pkg-btns pkg-btns--normal">
-                <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn btn--primary btn--block" id="btn-mentoring-jed">Koupit jednorázově za 14 700 Kč</a>
-                <a href="objednavka.html?sluzba=mentoring&platba=splatky" class="btn btn--outline btn--block" id="btn-mentoring-spl">Chci na splátky – 1. platba 7 500 Kč</a>
-                <a href="objednavka.html?sluzba=mentoring&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-mentoring-gift">🎁 Koupit jako dárkový poukaz</a>
-              </div>
-              <div class="pkg-btns pkg-btns--plno">
-                <p class="plno-notice">Kapacita je momentálně plná.</p>
-                <a href="cekacka.html" class="btn btn--outline btn--block">Chci vědět o volném místě</a>
-              </div>
+            <div class="pkg-btns pkg-btns--normal">
+              <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn btn--primary btn--block" id="btn-ultimate-jed">Koupit jednorázově za 22 300 Kč</a>
+              <a href="objednavka.html?sluzba=ultimate&platba=splatky" class="btn btn--outline btn--block" id="btn-ultimate-spl">Chci na splátky – 1. platba 11 900 Kč</a>
+              <a href="objednavka.html?sluzba=ultimate&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-ultimate-gift">🎁 Koupit jako dárkový poukaz</a>
             </div>
-          </article>
-
-          <!-- 3. ULTIMATE -->
-          <article class="pkg-card" data-sluzba="ultimate" id="card-ultimate">
-            <div class="pkg-card__head">
-              <span class="pkg-card__badge">3</span>
-              <div>
-                <h2 class="pkg-card__name">ULTIMATE</h2>
-                <p class="pkg-card__tagline">Maximální výkon a biohacking</p>
-              </div>
+            <div class="pkg-btns pkg-btns--plno">
+              <p class="plno-notice">Kapacita je momentálně plná.</p>
+              <a href="cekacka.html" class="btn btn--outline btn--block">Chci vědět o volném místě</a>
             </div>
-            <p class="pkg-card__desc">Prémiová péče pro optimalizaci těla na buněčné úrovni včetně spánku a regenerace.</p>
-
-            <ul class="pkg-card__list">
-              <li>
-                <span class="pkg-card__item-title">Celkem 6 online schůzek</span>
-                <span class="pkg-card__item-desc">Intenzivní vedení, scházíme se každý měsíc (1× vstupní + 5× mentoring).</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">Kompletní servis</span>
-                <span class="pkg-card__item-desc">Zahrnuje všechnu technickou podporu, licenci <a href="https://www.zofapp.cz/" target="_blank" rel="noopener" class="pkg-anchor">ZOF</a> a WhatsApp asistenci.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">Pokročilé protokoly</span>
-                <span class="pkg-card__item-desc">Cirkadiánní rytmus a mentální výkon.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">4× Diagnostika <a href="#inbody" class="pkg-anchor">InBody</a></span>
-                <span class="pkg-card__item-desc">Maximální kontrola tvé proměny v čase.</span>
-              </li>
-              <li>
-                <span class="pkg-card__item-title">VIP podpora</span>
-                <span class="pkg-card__item-desc">Přednostní právo, garance odpovědi na WhatsAppu do 12 hodin.</span>
-              </li>
-            </ul>
-
-            <div class="pkg-card__footer">
-              <div class="pkg-card__meta">
-                <span class="pkg-card__duration">6 měsíců</span>
-                <div class="pkg-card__pricing">
-                  <span class="pkg-card__price" id="price-ultimate">22 300 Kč</span>
-                  <span class="pkg-card__price-inbody" id="inbody-ultimate">bez InBody: 23 900 Kč (−1 600 Kč)</span>
-                  <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
-                </div>
-              </div>
-              <div class="pkg-btns pkg-btns--normal">
-                <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn btn--primary btn--block" id="btn-ultimate-jed">Koupit jednorázově za 22 300 Kč</a>
-                <a href="objednavka.html?sluzba=ultimate&platba=splatky" class="btn btn--outline btn--block" id="btn-ultimate-spl">Chci na splátky – 1. platba 11 900 Kč</a>
-                <a href="objednavka.html?sluzba=ultimate&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-ultimate-gift">🎁 Koupit jako dárkový poukaz</a>
-              </div>
-              <div class="pkg-btns pkg-btns--plno">
-                <p class="plno-notice">Kapacita je momentálně plná.</p>
-                <a href="cekacka.html" class="btn btn--outline btn--block">Chci vědět o volném místě</a>
-              </div>
-            </div>
-          </article>
-
-        </div>
+          </div>
+        </article>
 
       </div>
     </section>
