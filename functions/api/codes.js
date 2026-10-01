@@ -20,6 +20,7 @@ export async function onRequestGet(context) {
     const codeParam = (url.searchParams.get('code') || '').trim().toUpperCase();
     const pkgParam = (url.searchParams.get('package') || '').trim().toLowerCase();
     const modeSplatky = url.searchParams.get('splatky') === 'true';
+    const modeDarek = url.searchParams.get('darek') === '1' || url.searchParams.get('darek') === 'true';
 
     if (!codeParam) {
       return new Response(JSON.stringify({ valid: false, message: 'Chybí kód.' }), {
@@ -41,7 +42,7 @@ export async function onRequestGet(context) {
       });
     }
 
-    // Validace typu platby (splátky vs. jednorázově), pokud je parametr přítomen
+    // Validace typu platby (splátky vs. jednorázově)
     if (found.splatky && url.searchParams.has('splatky') && !modeSplatky) {
       return new Response(JSON.stringify({ valid: false, message: 'Tento kód platí pouze pro platbu na splátky.' }), {
         headers: { 'Content-Type': 'application/json' }
@@ -49,6 +50,13 @@ export async function onRequestGet(context) {
     }
     if (!found.splatky && url.searchParams.has('splatky') && modeSplatky) {
       return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na splátky.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Validace dárkového kódu (pouze pro nákup dárkového voucheru)
+    if (found.darekOnly && url.searchParams.has('darek') && !modeDarek) {
+      return new Response(JSON.stringify({ valid: false, message: 'Tento kód lze uplatnit výhradně na nákup dárkového poukazu.' }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -62,13 +70,14 @@ export async function onRequestGet(context) {
       });
     }
 
-    // Vrací data včetně příznaku splátek a povolených balíčků
+    // Vrací data včetně příznaku splátek, dárku a povolených balíčků
     return new Response(JSON.stringify({
       valid: true,
       code: found.code,
       type: found.type,
       value: found.value,
       splatky: !!found.splatky,
+      darekOnly: !!found.darekOnly,
       packages: allowedPkgs
     }), {
       headers: { 'Content-Type': 'application/json' }
@@ -116,7 +125,8 @@ export async function onRequestPost(context) {
       type: body.type || 'percent',
       value: body.type === 'gift' ? 100 : Number(body.value || 0),
       oneTime: !!body.oneTime,
-      splatky: !!body.splatky, // Uložení příznaku pro splátky
+      splatky: !!body.splatky,
+      darekOnly: !!body.darekOnly, // Uložení příznaku pouze pro dárkový nákup
       packages: (body.packages || []).map(p => p.toLowerCase()),
       active: true,
       used: false,
