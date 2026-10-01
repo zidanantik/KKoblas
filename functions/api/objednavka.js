@@ -90,31 +90,8 @@ function initOrder(serviceMap) {
         body: JSON.stringify(payload)
       });
 
-      var text = await response.text();
-      var result = {};
-      try {
-        result = JSON.parse(text);
-      } catch (err) {
-        throw new Error('Chyba serveru (' + response.status + '): Server nevrátil platná data.');
-      }
-
+      var result = await response.json();
       if (response.ok && result.ok) {
-        // Započtení kódu po úspěšné objednávce (+1)
-        var promoCodeVal = (payload.Pouzity_kod || (document.getElementById('hiddenPromoCode') ? document.getElementById('hiddenPromoCode').value : '') || (document.getElementById('promoInput') ? document.getElementById('promoInput').value : '')).trim();
-        
-        if (promoCodeVal) {
-          try {
-            await fetch('/api/codes', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'redeem', code: promoCodeVal }),
-              keepalive: true
-            });
-          } catch (e) {
-            console.warn('Počítadlo kódu nebylo možné aktualizovat:', e);
-          }
-        }
-
         var name  = form.querySelector('[name="Jmeno"]').value;
         var email = form.querySelector('[name="Email"]').value;
         var dest  = 'dekujeme.html?sluzba=' + encodeURIComponent(svc.label)
@@ -122,15 +99,12 @@ function initOrder(serviceMap) {
                   + '&email=' + encodeURIComponent(email);
         window.location.href = dest;
       } else {
-        throw new Error(result.error || ('Chyba odeslání (' + response.status + ')'));
+        throw new Error(result.error || 'Server error');
       }
     } catch (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
-      if (errorEl) { 
-        errorEl.hidden = false; 
-        errorEl.textContent = err.message || 'Chyba odesílání'; 
-      }
+      if (errorEl) { errorEl.hidden = false; errorEl.textContent = err.message || 'Chyba odesílání'; }
     }
   });
 }
