@@ -9,7 +9,6 @@ function generateGiftCode() {
   return 'DAR-' + res;
 }
 
-// Pomocná funkce pro získání Fakturoid OAuth tokenu
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
   const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
   const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
@@ -50,7 +49,6 @@ export async function onRequestPost(context) {
     const rawClients = await context.env.STATUS_STORE.get('CLIENTS');
     let clients = rawClients ? JSON.parse(rawClients) : [];
 
-    // Bezpečné porovnání ID bez ohledu na datový typ (číslo vs string)
     const clientIndex = clients.findIndex(c => String(c.fakturoid_id) === String(invoiceId));
     if (clientIndex === -1) {
       return new Response(JSON.stringify({ ok: true, message: 'Klient nenalezen v KV' }), { status: 200 });
@@ -62,15 +60,21 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ok: true, message: 'Klient již je aktivní' }), { status: 200 });
     }
 
-    // 2. Aktivace klienta a uložení data platby
+    // 2. Aktivace klienta
     client.status = 'aktivni';
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
 
     const resendKey = context.env.RESEND_API_KEY;
-    const fromDomain = context.env.FROM_DOMAIN || 'koblas-nutricni.cz';
 
-    // 3. Pokud jde o dárkový poukaz -> vygenerovat kód a zapsat do PROMO_CODES
+    // Bezpečná konstrukce odesílatele – zabrání vnoření závorek i diakritice v adrese
+    let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
+    if (!sender.includes('<')) {
+      const cleanEmail = sender.includes('@') ? sender : `info@${sender}`;
+      sender = `Kryštof Koblas <${cleanEmail}>`;
+    }
+
+    // 3. Generování voucheru a odeslání e-mailu pro dárkový poukaz
     if (client.is_gift) {
       const giftCode = generateGiftCode();
       client.kod_voucheru = giftCode;
@@ -101,13 +105,16 @@ export async function onRequestPost(context) {
       await context.env.STATUS_STORE.put('PROMO_CODES', JSON.stringify(codes));
 
       if (resendKey && client.kupujici && client.kupujici.email) {
-        const redeemUrl = `https://${fromDomain}/objednavka.html?sluzba=${encodeURIComponent(client.sluzba)}&kod=${encodeURIComponent(giftCode)}`;
+        const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(client.sluzba || '')}&kod=${encodeURIComponent(giftCode)}`;
 
-        await fetch('https://api.resend.com/emails', {
+        const emailRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          headers: { 
+            'Authorization': `Bearer ${resendKey}`, 
+            'Content-Type': 'application/json' 
+          },
           body: JSON.stringify({
-            from: `Kryštof Koblas <info@${fromDomain}>`,
+            from: sender,
             to: [client.kupujici.email],
             subject: `🎁 Tvůj dárkový poukaz je připraven! – Kód: ${giftCode}`,
             html: `
@@ -132,10 +139,15 @@ export async function onRequestPost(context) {
             `
           })
         });
+
+        if (!emailRes.ok) {
+          const errBody = await emailRes.text();
+          console.error(`Resend email selhal (${emailRes.status}): ${errBody}`);
+        }
       }
 
     } else {
-      // 4. Běžný přímý nákup -> uvítací e-mail
+      // 4. Běžný přímý nákup – uvítací zpráva
       if (resendKey && client.kupujici && client.kupujici.email) {
         const packageName = client.sluzba_nazev || 'nutriční program';
 
@@ -168,16 +180,24 @@ export async function onRequestPost(context) {
           </div>
         `;
 
-        await fetch('https://api.resend.com/emails', {
+        const emailRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          headers: { 
+            'Authorization': `Bearer ${resendKey}`, 
+            'Content-Type': 'application/json' 
+          },
           body: JSON.stringify({
-            from: `Kryštof Koblas <info@${fromDomain}>`,
+            from: sender,
             to: [client.kupujici.email],
             subject: `koblas-nutricni.cz | Platba za ${packageName} dorazila! Info, co bude dál 🚀`,
             html: emailHtml
           })
         });
+
+        if (!emailRes.ok) {
+          const errBody = await emailRes.text();
+          console.error(`Resend email selhal (${emailRes.status}): ${errBody}`);
+        }
       }
     }
 
@@ -227,7 +247,6 @@ export async function onRequestPost(context) {
       }
     }
 
-    // Uložení aktualizovaného stavu klientů do KV
     await context.env.STATUS_STORE.put('CLIENTS', JSON.stringify(clients));
 
     return new Response(JSON.stringify({ ok: true, activated: true }), {
