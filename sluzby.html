@@ -47,7 +47,7 @@
 
   <main>
 
-    <!-- ── Page hero (Bez řádku "Co nabízím", kompaktní výška) ── -->
+    <!-- ── Page hero ────────────────────────────── -->
     <section class="page-hero">
       <div class="page-hero__inner">
         <h1 class="page-hero__title">Služby & ceník</h1>
@@ -324,7 +324,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
             </a>
             <a href="https://tiktok.com/@krytof.koblas" target="_blank" rel="noopener" class="footer__icon-pill footer__icon-pill--tt" aria-label="TikTok">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.25 8.25 0 0 0 4.83 1.56V6.78a4.85 4.85 0 0 1-1.06-.09z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.25 8.25 0 0 0 4.83 1.56V6.78a4.85 4.85 0 0 1-1.06-.09z"/></svg>
             </a>
           </div>
           <div>
@@ -487,14 +487,19 @@
           if (promoInput) promoInput.value = data.code;
           if (promoReset) promoReset.hidden = false;
 
-          renderBasePrices();
+          renderBasePrices(); // Vždy resetujeme do základu
 
           var isGift = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
-          var allowedPkgs = (data.packages && data.packages.length > 0) ? data.packages : ['startup', 'mentoring', 'ultimate'];
+          
+          // DŮLEŽITÉ: Pouze balíčky, pro které je kód skutečně určen!
+          var rawPkgs = Array.isArray(data.packages) ? data.packages.map(function(p){ return p.toLowerCase(); }) : [];
+          var allowedPkgs = (rawPkgs.length > 0) ? rawPkgs : ['startup', 'mentoring', 'ultimate'];
+
+          var pkgTitles = { startup: 'START-UP', mentoring: 'MENTORING', ultimate: 'ULTIMATE' };
 
           if (isGift) {
+            // ── DÁRKOVÝ POUKAZ (100 %) ──
             var targetPkg = allowedPkgs[0] || 'mentoring';
-            var pkgTitles = { startup: 'START-UP', mentoring: 'MENTORING', ultimate: 'ULTIMATE' };
 
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
               var card = document.getElementById('card-' + s);
@@ -541,43 +546,60 @@
             if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
           } else {
-            allowedPkgs.forEach(function(s) {
-              var orig = currentPrices[s].jed;
-              var discount = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
-              var finalP = Math.max(0, orig - discount);
+            // ── BĚŽNÁ SLEVA (% nebo Kč) ──
+            ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
+              var card = document.getElementById('card-' + s);
 
-              setHtml('price-' + s, '<span class="price-original-struck">' + fmtKc(orig) + '</span><span class="price-discounted">' + fmtKc(finalP) + '</span>');
+              // Pokud je služba v povolených balíčcích:
+              if (allowedPkgs.includes(s)) {
+                var orig = currentPrices[s].jed;
+                var discount = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
+                var finalP = Math.max(0, orig - discount);
 
-              if (s === 'startup') {
-                var b = document.getElementById('btn-startup-order');
-                if (b) {
-                  b.textContent = 'Objednat za ' + fmtKc(finalP);
-                  b.href = 'objednavka.html?sluzba=startup&kod=' + encodeURIComponent(data.code);
+                setHtml('price-' + s, '<span class="price-original-struck">' + fmtKc(orig) + '</span><span class="price-discounted">' + fmtKc(finalP) + '</span>');
+
+                if (s === 'startup') {
+                  var b = document.getElementById('btn-startup-order');
+                  if (b) {
+                    b.textContent = 'Objednat za ' + fmtKc(finalP);
+                    b.href = 'objednavka.html?sluzba=startup&kod=' + encodeURIComponent(data.code);
+                  }
+                } else if (s === 'mentoring') {
+                  var b = document.getElementById('btn-mentoring-jed');
+                  if (b) {
+                    b.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
+                    b.href = 'objednavka.html?sluzba=mentoring&platba=jednorizove&kod=' + encodeURIComponent(data.code);
+                  }
+                  var bSpl = document.getElementById('btn-mentoring-spl');
+                  if (bSpl) bSpl.href = 'objednavka.html?sluzba=mentoring&platba=splatky&kod=' + encodeURIComponent(data.code);
+                } else if (s === 'ultimate') {
+                  var b = document.getElementById('btn-ultimate-jed');
+                  if (b) {
+                    b.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
+                    b.href = 'objednavka.html?sluzba=ultimate&platba=jednorizove&kod=' + encodeURIComponent(data.code);
+                  }
+                  var bSpl = document.getElementById('btn-ultimate-spl');
+                  if (bSpl) bSpl.href = 'objednavka.html?sluzba=ultimate&platba=splatky&kod=' + encodeURIComponent(data.code);
                 }
-              } else if (s === 'mentoring') {
-                var b = document.getElementById('btn-mentoring-jed');
-                if (b) {
-                  b.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
-                  b.href = 'objednavka.html?sluzba=mentoring&platba=jednorizove&kod=' + encodeURIComponent(data.code);
-                }
-                var bSpl = document.getElementById('btn-mentoring-spl');
-                if (bSpl) bSpl.href = 'objednavka.html?sluzba=mentoring&platba=splatky&kod=' + encodeURIComponent(data.code);
-              } else if (s === 'ultimate') {
-                var b = document.getElementById('btn-ultimate-jed');
-                if (b) {
-                  b.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
-                  b.href = 'objednavka.html?sluzba=ultimate&platba=jednorizove&kod=' + encodeURIComponent(data.code);
-                }
-                var bSpl = document.getElementById('btn-ultimate-spl');
-                if (bSpl) bSpl.href = 'objednavka.html?sluzba=ultimate&platba=splatky&kod=' + encodeURIComponent(data.code);
+
+                var g = document.getElementById('btn-' + s + '-gift');
+                if (g) g.href = 'objednavka.html?sluzba=' + s + '&platba=jednorizove&darek=1&kod=' + encodeURIComponent(data.code);
+
+              } else {
+                // TATO SLUŽBA NENÍ VE SLEVĚ: Necháme původní cenu a KÓD DO NÍ NEPŘIDÁVÁME!
+                if (card) card.classList.add('is-dimmed');
+                var orig = currentPrices[s].jed;
+                setHtml('price-' + s, fmtKc(orig) + ' <small style="display:block;font-size:11px;color:#888;font-weight:normal;font-family:sans-serif;margin-top:4px;">(Kód na tento balíček neplatí)</small>');
               }
-
-              var g = document.getElementById('btn-' + s + '-gift');
-              if (g) g.href = 'objednavka.html?sluzba=' + s + '&platba=jednorizove&darek=1&kod=' + encodeURIComponent(data.code);
             });
 
             var discountLabel = data.type === 'percent' ? data.value + ' %' : fmtKc(data.value);
-            showStatus('✓ Sleva ' + discountLabel + ' byla započtena do ceníku.', 'ok');
+            var namesList = allowedPkgs.map(function(p){ return pkgTitles[p] || p.toUpperCase(); }).join(' a ');
+            showStatus('✓ Sleva ' + discountLabel + ' započtena pro: ' + namesList + '.', 'ok');
+
+            // Plynulý scroll dolů na služby, aby zákazník hned viděl přepočet
+            var firstCard = document.getElementById('card-' + allowedPkgs[0]) || document.getElementById('packages');
+            if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
 
         } catch (err) {
