@@ -349,7 +349,15 @@ function printVoucherModal(id) {
 
   var typeTitle = c.type === 'gift' ? 'DÁRKOVÝ POUKAZ' : 'SLEVOVÝ VOUCHER';
   var valueDisplay = c.type === 'gift' ? '100% Uhrazeno' : (c.type === 'percent' ? 'Sleva ' + c.value + ' %' : 'Sleva ' + c.value + ' Kč');
-  var pkgsDisplay = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ') || 'VŠECHNY SLUŽBY';
+  
+  var pkgTitlesMap = { startup: 'START-UP', mentoring: 'MENTORING', ultimate: 'ULTIMATE' };
+  var pkgsDisplay = '';
+  if (!c.packages || c.packages.length === 0 || c.packages.length === 3) {
+    pkgsDisplay = 'VŠECHNY SLUŽBY';
+  } else {
+    pkgsDisplay = c.packages.map(function(p) { return pkgTitlesMap[p] || p.toUpperCase(); }).join(', ');
+  }
+
   var redeemUrl = 'https://koblas-nutricni.cz/objednavka.html?kod=' + encodeURIComponent(c.code);
 
   var printWin = window.open('', '_blank', 'width=900,height=750');
@@ -437,9 +445,9 @@ function printVoucherModal(id) {
           background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
         }
         .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 26px; color: #ff9900; margin: 0; }
-        .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 11px; color: #888; letter-spacing: 3px; margin-top: 4px; }
+        .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 11px; color: #888; letter-spacing: 2px; margin-top: 4px; }
         .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; }
-        .tpl-dark-gold .service-name { font-size: 22px; letter-spacing: 3px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-dark-gold .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
         .tpl-dark-gold .service-desc { color: #aaa; font-size: 15px; }
         .tpl-dark-gold .code-box { margin: 25px auto; padding: 16px 28px; background: #080808; border: 1px dashed #ff9900; border-radius: 8px; display: inline-block; }
         .tpl-dark-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff9900; letter-spacing: 6px; }
@@ -457,9 +465,9 @@ function printVoucherModal(id) {
           box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
         .tpl-clean-white .brand-title { font-family: Georgia, serif; font-size: 28px; color: #111; margin: 0; font-weight: bold; }
-        .tpl-clean-white .brand-sub { font-family: monospace; font-size: 11px; color: #555; letter-spacing: 3px; margin-top: 4px; }
+        .tpl-clean-white .brand-sub { font-family: monospace; font-size: 11px; color: #555; letter-spacing: 2px; margin-top: 4px; }
         .tpl-clean-white .badge-type { background: #111; border: 1px solid #111; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 2px; }
-        .tpl-clean-white .service-name { font-size: 22px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-clean-white .service-name { font-size: 20px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
         .tpl-clean-white .service-desc { color: #444; font-size: 15px; }
         .tpl-clean-white .code-box { margin: 25px auto; padding: 16px 28px; background: #f4f4f4; border: 2px solid #111; border-radius: 4px; display: inline-block; }
         .tpl-clean-white .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; }
@@ -482,7 +490,7 @@ function printVoucherModal(id) {
         .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 30px; color: #ff5500; margin: 0; letter-spacing: 1px; }
         .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 11px; color: #999; letter-spacing: 2px; margin-top: 4px; }
         .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 3px; font-weight: bold; }
-        .tpl-sport-energy .service-name { font-size: 22px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-sport-energy .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
         .tpl-sport-energy .service-desc { color: #ccc; font-size: 15px; }
         .tpl-sport-energy .code-box { margin: 25px auto; padding: 16px 28px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
         .tpl-sport-energy .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff5500; letter-spacing: 6px; }
@@ -513,7 +521,7 @@ function printVoucherModal(id) {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 25px;">
           <div>
             <h1 class="brand-title">KRYŠTOF KOBLAS</h1>
-            <div class="brand-sub">NUTRIČNÍ ANALÝZA &amp; COACHING</div>
+            <div class="brand-sub">NUTRIČNÍ ANALÝZA &amp; PORADENSTVÍ</div>
           </div>
           <div class="badge-type">${typeTitle}</div>
         </div>
