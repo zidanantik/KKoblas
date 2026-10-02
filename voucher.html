@@ -80,7 +80,7 @@
     }
     .btn-back:hover { color: #fff; border-color: #666; }
 
-    /* ── PRÉMIOVÝ FORMÁT DL POUKAZU (210 x 98 mm) ── */
+    /* ── PRÉMIOVÝ FORMÁT DL POUKAZU (200 x 94 mm) ── */
     .print-wrapper {
       position: relative;
       display: flex;
@@ -89,7 +89,6 @@
     }
 
     .voucher-card {
-      width: 100%;
       width: 760px;
       min-height: 350px;
       position: relative;
@@ -101,26 +100,33 @@
     /* Rohové tiskařské ořezové značky */
     .crop-mark {
       position: absolute;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       pointer-events: none;
-      opacity: 0.6;
+      opacity: 0.55;
     }
-    .crop-tl { top: -6px; left: -6px; border-top: 2px solid #999; border-left: 2px solid #999; }
-    .crop-tr { top: -6px; right: -6px; border-top: 2px solid #999; border-right: 2px solid #999; }
-    .crop-bl { bottom: -6px; left: -6px; border-bottom: 2px solid #999; border-left: 2px solid #999; }
-    .crop-br { bottom: -6px; right: -6px; border-bottom: 2px solid #999; border-right: 2px solid #999; }
+    .crop-tl { top: -6px; left: -6px; border-top: 2px solid #888; border-left: 2px solid #888; }
+    .crop-tr { top: -6px; right: -6px; border-top: 2px solid #888; border-right: 2px solid #888; }
+    .crop-bl { bottom: -6px; left: -6px; border-bottom: 2px solid #888; border-left: 2px solid #888; }
+    .crop-br { bottom: -6px; right: -6px; border-bottom: 2px solid #888; border-right: 2px solid #888; }
 
-    /* Samostatná spodní střižná čára */
+    /* Spodní střižná čára přes celou šířku s nůžkami */
     .cut-line-banner {
       width: 760px;
-      margin-top: 18px;
-      text-align: center;
-      font-family: monospace;
-      font-size: 11px;
-      color: #999;
-      letter-spacing: 1px;
-      user-select: none;
+      margin-top: 22px;
+      position: relative;
+      border-top: 1.5px dashed #777;
+      height: 1px;
+    }
+    .cut-line-banner::before {
+      content: "✂";
+      position: absolute;
+      top: -11px;
+      left: 0;
+      font-size: 14px;
+      color: #777;
+      background: transparent;
+      padding-right: 6px;
     }
 
     .voucher-brand-badge {
@@ -344,7 +350,7 @@
       .toolbar { display: none !important; }
       
       .print-wrapper {
-        margin: 5mm auto 0 auto !important;
+        margin: 8mm auto 0 auto !important;
         width: 200mm !important;
       }
 
@@ -359,17 +365,19 @@
       }
 
       .crop-mark {
-        border-color: #666 !important;
+        border-color: #777 !important;
         opacity: 0.8 !important;
       }
 
       .cut-line-banner {
         width: 200mm !important;
-        margin-top: 6mm !important;
-        color: #333 !important;
-        font-size: 9px !important;
+        margin-top: 7mm !important;
+        border-top: 1.5px dashed #666 !important;
         display: block !important;
         visibility: visible !important;
+      }
+      .cut-line-banner::before {
+        color: #444 !important;
       }
     }
   </style>
@@ -394,7 +402,7 @@
 
   <div class="print-wrapper">
     <div id="voucherContainer" class="voucher-card tpl-nordic-snow">
-      <!-- 4 rohové ořezové tiskařské značky -->
+      <!-- 4 rohové ořezové značky -->
       <div class="crop-mark crop-tl"></div>
       <div class="crop-mark crop-tr"></div>
       <div class="crop-mark crop-bl"></div>
@@ -488,10 +496,8 @@
       </div>
     </div>
 
-    <!-- Výrazná střižná linka pod poukazem -->
-    <div class="cut-line-banner">
-      ✂ - - - - - - - - - - - - - - - - - - - - - - - Zde odstřihněte pro formát DL (do obálky) - - - - - - - - - - - - - - - - - - - - - - - ✂
-    </div>
+    <!-- Čistá střižná linka bez textu -->
+    <div class="cut-line-banner"></div>
   </div>
 
   <script>
