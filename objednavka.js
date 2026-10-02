@@ -35,21 +35,78 @@ function buildServiceMap(prices, event) {
   return map;
 }
 
-function initOrder(serviceMap) {
-  var params  = new URLSearchParams(location.search);
-  var sluzba  = params.get('sluzba') || 'startup';
-  var platba  = params.get('platba') || 'jednorizove';
+async function initOrder(serviceMap, rawStatus) {
+  var params   = new URLSearchParams(location.search);
+  var sluzba   = params.get('sluzba') || 'startup';
+  var platba   = params.get('platba') || 'jednorizove';
+  var kodParam = (params.get('kod') || params.get('code') || '').trim().toUpperCase();
 
   var svc  = serviceMap[sluzba] || serviceMap.startup;
   var info = svc[platba] || svc.jednorizove;
+
+  // ── Ověření kódu voucheru / slevy ──
+  var validPromo = null;
+  if (kodParam) {
+    try {
+      var checkUrl = '/api/codes?code=' + encodeURIComponent(kodParam) 
+        + '&package=' + encodeURIComponent(sluzba)
+        + (platba === 'splatky' ? '&splatky=true' : '');
+      var cRes = await fetch(checkUrl);
+      if (cRes.ok) {
+        var cData = await cRes.json();
+        if (cData && cData.valid) {
+          validPromo = cData;
+        }
+      }
+    } catch (e) {
+      console.warn('Ověření kódu selhalo:', e);
+    }
+  }
+
+  // ── Kontrola kapacity a uzamčení balíčku ──
+  var isClosed = false;
+  if (rawStatus) {
+    if (rawStatus[sluzba] === 'uzavreny') isClosed = true;
+    if (rawStatus.capacity && rawStatus.capacity.mode === 'total' && rawStatus.capacity.totalLimit > 0) {
+      var activeCount = (rawStatus.counts && rawStatus.counts.total) || 0;
+      if (activeCount >= rawStatus.capacity.totalLimit) {
+        isClosed = true;
+      }
+    }
+  }
+
+  // Pokud je kapacita naplněná, ale klient má platný dárkový poukaz (100% sleva) -> VIP přístup povolen!
+  var isGiftVoucher = validPromo && validPromo.type === 'gift';
+  if (isClosed && !isGiftVoucher) {
+    window.location.href = 'cekacka.html?sluzba=' + encodeURIComponent(sluzba);
+    return;
+  }
+
+  // ── Úprava cen a popisků podle typu poukazu ──
+  var finalPriceText = info.price;
+  var finalPaymentText = info.platba;
+
+  if (isGiftVoucher) {
+    finalPriceText = '0 Kč (Uhrazeno dárkovým poukazem)';
+    finalPaymentText = 'Dárkový poukaz (100% uhrazeno)';
+  } else if (validPromo) {
+    var rawNum = parseInt(info.price.replace(/[^\d]/g, ''), 10) || 0;
+    if (validPromo.type === 'percent') {
+      var disc = Math.round(rawNum * (1 - validPromo.value / 100));
+      finalPriceText = disc.toLocaleString('cs-CZ') + ' Kč (' + validPromo.value + ' % sleva)';
+    } else if (validPromo.type === 'fixed') {
+      var disc = Math.max(0, rawNum - Number(validPromo.value));
+      finalPriceText = disc.toLocaleString('cs-CZ') + ' Kč (-' + validPromo.value + ' Kč)';
+    }
+  }
 
   var nameEl   = document.getElementById('orderServiceName');
   var platbaEl = document.getElementById('orderPlatba');
   var priceEl  = document.getElementById('orderPrice');
 
   if (nameEl)   nameEl.textContent   = svc.label;
-  if (platbaEl) platbaEl.textContent = info.platba;
-  if (priceEl)  priceEl.textContent  = info.price;
+  if (platbaEl) platbaEl.textContent = finalPaymentText;
+  if (priceEl)  priceEl.textContent  = finalPriceText;
 
   var hSluzba = document.getElementById('hiddenSluzba');
   var hPlatba = document.getElementById('hiddenPlatba');
@@ -57,8 +114,8 @@ function initOrder(serviceMap) {
   var hSubj   = document.getElementById('emailSubject');
 
   if (hSluzba) hSluzba.value = svc.label;
-  if (hPlatba) hPlatba.value = info.platba;
-  if (hPrice)  hPrice.value  = info.price;
+  if (hPlatba) hPlatba.value = finalPaymentText;
+  if (hPrice)  hPrice.value  = finalPriceText;
   if (hSubj)   hSubj.value   = 'Nová objednávka – ' + svc.label;
 
   var form      = document.getElementById('orderForm');
@@ -66,6 +123,23 @@ function initOrder(serviceMap) {
   var errorEl   = document.getElementById('formError');
 
   if (!form) return;
+
+  // Úprava textu na tlačítku pro obdarované
+  if (isGiftVoucher && submitBtn) {
+    submitBtn.textContent = 'AKTIVOVAT POUKAZ A ODESLAT DIAGNOSTIKU';
+  }
+
+  // Zajištění předání uplatněného kódu ve formuláři
+  var promoInput = form.querySelector('input[name="Pouzity_kod"]') || document.getElementById('hiddenPromoCode');
+  if (!promoInput && kodParam) {
+    promoInput = document.createElement('input');
+    promoInput.type = 'hidden';
+    promoInput.name = 'Pouzity_kod';
+    form.appendChild(promoInput);
+  }
+  if (promoInput && kodParam) {
+    promoInput.value = kodParam;
+  }
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -84,6 +158,11 @@ function initOrder(serviceMap) {
       var payload  = {};
       formData.forEach(function (val, key) { payload[key] = val; });
 
+      // Garance předání kódu v payloadu
+      if (kodParam && !payload.Pouzity_kod) {
+        payload.Pouzity_kod = kodParam;
+      }
+
       var response = await fetch('/api/objednavka', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -92,14 +171,14 @@ function initOrder(serviceMap) {
 
       var result = await response.json();
       if (response.ok && result.ok) {
-        // ── PŘIČTENÍ POUŽITÍ KÓDU DO KV DATABÁZE (+1) ──
-        var promoCodeVal = payload.Pouzity_kod || (document.getElementById('hiddenPromoCode') ? document.getElementById('hiddenPromoCode').value : '');
-        if (promoCodeVal) {
+        // ── Záznam o uplatnění kódu v KV ──
+        var codeToRedeem = payload.Pouzity_kod || kodParam;
+        if (codeToRedeem) {
           try {
             await fetch('/api/codes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'redeem', code: promoCodeVal })
+              body: JSON.stringify({ action: 'redeem', code: codeToRedeem })
             });
           } catch (e) {
             console.warn('Počítadlo kódu nebylo možné aktualizovat:', e);
@@ -117,8 +196,11 @@ function initOrder(serviceMap) {
       }
     } catch (err) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
-      if (errorEl) { errorEl.hidden = false; errorEl.textContent = err.message || 'Chyba odesílání'; }
+      submitBtn.textContent = isGiftVoucher ? 'AKTIVOVAT POUKAZ A ODESLAT DIAGNOSTIKU' : 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
+      if (errorEl) { 
+        errorEl.hidden = false; 
+        errorEl.textContent = err.message || 'Chyba odesílání'; 
+      }
     }
   });
 }
@@ -126,8 +208,8 @@ function initOrder(serviceMap) {
 (function () {
   fetch('/api/status', { cache: 'no-store' })
     .then(function (r) { return r.json(); })
-    .then(function (status) { initOrder(buildServiceMap(status.prices, status.event)); })
-    .catch(function () { initOrder(buildServiceMap(null, null)); });
+    .then(function (status) { initOrder(buildServiceMap(status.prices, status.event), status); })
+    .catch(function () { initOrder(buildServiceMap(null, null), null); });
 })();
 
 // ── Modals ────────────────────────────────────────
