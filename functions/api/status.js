@@ -7,6 +7,7 @@ const DEFAULT = {
     totalLimit: 10,
     limits: { startup: 0, mentoring: 0, ultimate: 0 }
   },
+  manualOverride: { startup: false, mentoring: false, ultimate: false },
   event: { active: false, name: '', popis: '', cena: '', odkaz: '' },
   prices: {
     startup:   { jednorizove: '6 900 Kč' },
@@ -38,7 +39,6 @@ export async function onRequestGet(context) {
     const counts = { startup: 0, mentoring: 0, ultimate: 0, total: 0 };
 
     clients.forEach(c => {
-      // Aktivní je klient se stavem aktivni a platným datem (nebo čekající dárkový poukaz)
       if (c.status === 'aktivni') {
         const isWithinDates = !c.end_date || c.end_date >= todayStr;
         if (isWithinDates) {
@@ -53,21 +53,29 @@ export async function onRequestGet(context) {
 
     data.counts = counts;
     if (!data.capacity) data.capacity = DEFAULT.capacity;
+    if (!data.manualOverride) data.manualOverride = { startup: false, mentoring: false, ultimate: false };
 
-    // Automatické uzamčení podle kapacity
     const cap = data.capacity;
+
+    // ── AUTOMATICKÉ VYHODNOCENÍ KAPACITY A ODEMYKÁNÍ / ZAMYKÁNÍ ──
     if (cap.mode === 'total' && cap.totalLimit > 0) {
-      if (counts.total >= cap.totalLimit) {
-        data.startup = 'uzavreny';
-        data.mentoring = 'uzavreny';
-        data.ultimate = 'uzavreny';
-        data.autoClosed = true;
-      }
+      const isFull = counts.total >= cap.totalLimit;
+      ['startup', 'mentoring', 'ultimate'].forEach(pkg => {
+        if (isFull) {
+          data[pkg] = 'uzavreny';
+        } else {
+          // Pokud je volno, odemkneme, ledaže jsi to ručně zavřel přes override
+          data[pkg] = data.manualOverride[pkg] ? 'uzavreny' : 'volny';
+        }
+      });
+      data.autoClosed = isFull;
     } else if (cap.mode === 'packages') {
       ['startup', 'mentoring', 'ultimate'].forEach(pkg => {
         const lim = (cap.limits && cap.limits[pkg]) || 0;
         if (lim > 0 && counts[pkg] >= lim) {
           data[pkg] = 'uzavreny';
+        } else {
+          data[pkg] = data.manualOverride[pkg] ? 'uzavreny' : 'volny';
         }
       });
     }
@@ -97,10 +105,17 @@ export async function onRequestPost(context) {
     const allowed = ['volny', 'uzavreny'];
     const DEF_P = DEFAULT.prices;
 
+    const manualOverride = {
+      startup: body.startup === 'uzavreny',
+      mentoring: body.mentoring === 'uzavreny',
+      ultimate: body.ultimate === 'uzavreny'
+    };
+
     const status = {
       startup:   allowed.includes(body.startup)   ? body.startup   : prev.startup,
       mentoring: allowed.includes(body.mentoring) ? body.mentoring : prev.mentoring,
       ultimate:  allowed.includes(body.ultimate)  ? body.ultimate  : prev.ultimate,
+      manualOverride: manualOverride,
       capacity: {
         mode: body.capacity?.mode || prev.capacity?.mode || 'total',
         totalLimit: Number(body.capacity?.totalLimit ?? prev.capacity?.totalLimit ?? 10),
