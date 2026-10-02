@@ -189,13 +189,17 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── 1. NOTIFIKACE PRO TEBE ──
+    // ── 1. NOTIFIKACE PRO TEBE PŘI VYTVOŘENÍ OBJEDNÁVKY ──
     if (resendKey) {
-      let ownerSubject = `Nová objednávka – ${sluzbaNazev}`;
+      let ownerSubject = `Nová objednávka (ČEKÁ NA ÚHRADU) – ${sluzbaNazev} – ${body.Jmeno}`;
+      let statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: ČEKÁ NA PLATBU. Klientovi byla vystavena zálohová faktura. Jakmile ji uhradí, přijde ti e-mail s potvrzením o zaplacení.</div>`;
+
       if (isGift) {
-        ownerSubject = `Nová objednávka (DÁREK) – ${sluzbaNazev}`;
+        ownerSubject = `Nová objednávka (DÁREK – ČEKÁ NA ÚHRADU) – ${sluzbaNazev}`;
+        statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: DÁREK ČEKÁ NA PLATBU. Kód se vygeneruje automaticky až po přijetí platby.</div>`;
       } else if (isZeroPayment) {
-        ownerSubject = `Nová objednávka – ${sluzbaNazev} (Uplatněn poukaz)`;
+        ownerSubject = `Poukaz uplatněn (UHRAZENO) – ${sluzbaNazev} – ${body.Jmeno}`;
+        statusBanner = `<div style="background:#d4edda;color:#155724;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">✅ STAV: AKTIVNÍ (Uplatněn dárkový poukaz). Klientovi byl odeslán uvítací e-mail se ZOFem a InBody.</div>`;
       }
 
       const diagnosticRows = !isGift ? `
@@ -204,17 +208,19 @@ export async function onRequestPost(context) {
         <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Pohlaví</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Pohlavi || '—'}</td></tr>
         <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Výška</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vyska_cm ? body.Vyska_cm + ' cm' : '—'}</td></tr>
         <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Váha</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vaha_kg ? body.Vaha_kg + ' kg' : '—'}</td></tr>
+        ${body.Duvod_zmeny ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cíl / zpráva</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Duvod_zmeny}</td></tr>` : ''}
       ` : '';
 
       const ownerHtml = `
         <div style="font-family:sans-serif;max-width:640px;color:#222;">
           <h2 style="color:#222;margin-top:0;">${ownerSubject}</h2>
+          ${statusBanner}
           <table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:20px;">
             <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Objednaná služba</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;width:35%;">Služba</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${sluzbaNazev}</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cena</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Cena || (isZeroPayment ? '0 Kč (Poukaz)' : '—')}</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Typ objednávky</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${isGift ? 'Dárkový poukaz' : (isInstallment ? 'Splátky' : 'Přímý nákup')}</td></tr>
-            ${body.Pouzity_kod ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Uplatněný kód</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Pouzity_kod}</td></tr>` : ''}
+            ${body.Pouzity_kod ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Uplatněný kód</td><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#ff9900;font-weight:bold;">${body.Pouzity_kod}</td></tr>` : ''}
             
             <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Kontaktní údaje klienta</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Jméno</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Jmeno}</td></tr>
@@ -248,7 +254,6 @@ export async function onRequestPost(context) {
       await new Promise(r => setTimeout(r, 600));
 
       const subjectClient = `Podklady pro zahájení spolupráce – ${sluzbaNazev}`;
-
       const plainText = `Ahoj ${body.Jmeno},\n\ntvůj poukaz na balíček ${sluzbaNazev} byl úspěšně aktivován a pouštíme se do práce.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace. Můžeš mi samozřejmě napsat i sám/sama.\n- WhatsApp používáme primárně pro zprávy.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
 
       const htmlClient = `
@@ -296,7 +301,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── 3. KV ULOŽENÍ ──
+    // ── 3. ULOŽENÍ DO KV DATABÁZE (CLIENTS) VČETNĚ DIAGNOSTIKY ──
     const store = context.env.STATUS_STORE;
     if (store) {
       const rawClients = await store.get('CLIENTS');
@@ -317,7 +322,20 @@ export async function onRequestPost(context) {
         kupujici: {
           jmeno: body.Jmeno,
           email: body.Email,
-          telefon: body.Telefon
+          telefon: body.Telefon,
+          ulice: body.Ulice,
+          mesto: body.Mesto,
+          psc: body.PSC,
+          zeme: body.Zeme
+        },
+        diagnostika: {
+          vek: body.Vek || '',
+          pohlavi: body.Pohlavi || '',
+          vyska: body.Vyska_cm || '',
+          vaha: body.Vaha_kg || '',
+          obvod_boku: body.Obvod_boku_cm || '',
+          obvod_pasu: body.Obvod_pasu_cm || '',
+          zprava: body.Duvod_zmeny || ''
         },
         created_at: new Date().toISOString()
       };
