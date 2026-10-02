@@ -20,27 +20,6 @@ function normalizePkg(str) {
   return s.trim();
 }
 
-async function getFakturoidToken(clientId, clientSecret, userAgent) {
-  const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
-  const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'User-Agent': userAgent
-    },
-    body: JSON.stringify({ grant_type: 'client_credentials' })
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`OAuth selhal (${res.status}): ${errText}`);
-  }
-  const data = await res.json();
-  return data.access_token;
-}
-
 export async function onRequestPost(context) {
   try {
     const payload = await context.request.json();
@@ -198,6 +177,7 @@ export async function onRequestPost(context) {
 
       if (isFinal) {
         client.fully_paid = true;
+        client.next_installment_date = null;
 
         if (resendKey && client.kupujici && client.kupujici.email) {
           await fetch('https://api.resend.com/emails', {
@@ -250,11 +230,12 @@ export async function onRequestPost(context) {
         }
 
       } else {
-        // Mezi-splátka (např. 2., 3., 4., nebo 5.)
-        const nextInstallmentNum = paidInstallmentNum + 1;
-        const nextAmount = client.subsequent_amount || (client.total_installments === 6 ? 2000 : 2800);
+        // Mezi-splátka byla uhrazena -> Naplánujeme datum té další na +30 dní odteď
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + 30);
+        client.next_installment_date = nextDate.toISOString().split('T')[0];
 
-        // Potvrzení klientovi
+        // Potvrzení klientovi o přijetí mezisplátky
         if (resendKey && client.kupujici && client.kupujici.email) {
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -298,75 +279,11 @@ export async function onRequestPost(context) {
                 <div style="font-family:sans-serif;max-width:640px;color:#222;">
                   <h3 style="color:#2ecc71;">Přijata další splátka (${paidInstallmentNum}/${client.total_installments})!</h3>
                   <p>Klient <strong>${client.kupujici.jmeno}</strong> uhradil ${paidInstallmentNum}. splátku na <strong>${packageName}</strong>.</p>
-                  <p>Byla automaticky vystavena ${nextInstallmentNum}. splátka na částku ${nextAmount} Kč se splatností za 30 dní.</p>
+                  <p>Další splátka bude vystavena automaticky až v termínu: <strong>${client.next_installment_date}</strong>.</p>
                 </div>
               `
             })
           });
-        }
-
-        // Vystavení další splátky ve Fakturoidu
-        try {
-          const slug = 'krystofkoblas';
-          const clientId = '4eec39db77ad7e5dc6da69e17153ffa50c8559d7';
-          const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
-          const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
-
-          const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
-          
-          const dueDate = new Date();
-          dueDate.setDate(dueDate.getDate() + 30);
-
-          const invoicePayload = {
-            subject_id: invoice.subject_id,
-            document_type: 'proforma',
-            due_date: dueDate.toISOString().split('T')[0],
-            lines: [
-              {
-                name: `${packageName} – ${nextInstallmentNum}. splátka z ${client.total_installments}`,
-                quantity: 1,
-                unit_price: nextAmount,
-                unit_name: 'ks'
-              }
-            ],
-            note: `Automatická splátka (${nextInstallmentNum}/${client.total_installments})`
-          };
-
-          const createRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${fToken}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'User-Agent': userAgent
-            },
-            body: JSON.stringify(invoicePayload)
-          });
-
-          if (createRes.ok) {
-            const newInvoiceData = await createRes.json();
-            if (!Array.isArray(client.invoice_ids)) {
-              client.invoice_ids = [client.fakturoid_id];
-            }
-            client.invoice_ids.push(newInvoiceData.id);
-            client.current_installment = nextInstallmentNum;
-
-            await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${newInvoiceData.id}/message.json`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${fToken}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': userAgent
-              },
-              body: JSON.stringify({
-                subject: `Zálohová faktura – ${nextInstallmentNum}. splátka (${packageName})`,
-                message: `Ahoj,\n\nv příloze a na odkazu níže posílám zálohovou fakturu na ${nextInstallmentNum}. splátku z ${client.total_installments} za balíček ${packageName}.\n\nSplatnost je nastavena na 30 dní.\n\nMěj se fajn,\nKryštof Koblas`
-              })
-            });
-          }
-        } catch (splatkaErr) {
-          console.error('Chyba při generování další splátky:', splatkaErr);
         }
       }
 
@@ -378,6 +295,14 @@ export async function onRequestPost(context) {
     client.status = 'aktivni';
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
+
+    // Pokud jde o splátky, naplánujeme 2. splátku přesně na +30 dní
+    if (client.is_installment && client.total_installments > 1) {
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 30);
+      client.next_installment_date = nextDate.toISOString().split('T')[0];
+      client.next_installment_num = 2;
+    }
 
     // 1. Uvítací e-mail klientovi (se ZOFem a InBody)
     if (resendKey && client.kupujici && client.kupujici.email) {
@@ -441,7 +366,7 @@ export async function onRequestPost(context) {
         : `✅ ZAPLACENO: ${packageName} – ${client.kupujici.jmeno}`;
 
       let statusMsg = client.is_installment 
-        ? `1. splátka dorazila na účet! Klientovi byl odeslán uvítací e-mail se ZOFem a InBody. Druhá splátka byla automaticky vystavena ve Fakturoidu se splatností za 30 dní.`
+        ? `1. splátka dorazila na účet! Klientovi byl odeslán uvítací e-mail se ZOFem a InBody. 2. splátka je naplánována k vystavení až na termín: ${client.next_installment_date}.`
         : `Platba dorazila na účet! Klientovi byl odeslán uvítací e-mail se ZOFem a InBody. Můžeš se mu ozvat.`;
 
       const ownerPaidHtml = `
@@ -482,75 +407,6 @@ export async function onRequestPost(context) {
           html: ownerPaidHtml
         })
       });
-    }
-
-    // 3. VYSTAVENÍ A ODESLÁNÍ 2. SPLÁTKY
-    if (client.is_installment && client.current_installment < client.total_installments) {
-      try {
-        const slug = 'krystofkoblas';
-        const clientId = '4eec39db77ad7e5dc6da69e17153ffa50c8559d7';
-        const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
-        const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
-
-        const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
-        
-        const nextInstallmentNum = 2;
-        const nextAmount = client.subsequent_amount || (client.total_installments === 6 ? 2000 : 2800);
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + 30);
-
-        const invoicePayload = {
-          subject_id: invoice.subject_id,
-          document_type: 'proforma',
-          due_date: dueDate.toISOString().split('T')[0],
-          lines: [
-            {
-              name: `${packageName} – ${nextInstallmentNum}. splátka z ${client.total_installments}`,
-              quantity: 1,
-              unit_price: nextAmount,
-              unit_name: 'ks'
-            }
-          ],
-          note: `Automatická splátka (${nextInstallmentNum}/${client.total_installments})`
-        };
-
-        const createRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${fToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': userAgent
-          },
-          body: JSON.stringify(invoicePayload)
-        });
-
-        if (createRes.ok) {
-          const newInvoiceData = await createRes.json();
-          if (!Array.isArray(client.invoice_ids)) {
-            client.invoice_ids = [client.fakturoid_id];
-          }
-          client.invoice_ids.push(newInvoiceData.id);
-          client.current_installment = nextInstallmentNum;
-
-          await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${newInvoiceData.id}/message.json`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${fToken}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'User-Agent': userAgent
-            },
-            body: JSON.stringify({
-              subject: `Zálohová faktura – ${nextInstallmentNum}. splátka (${packageName})`,
-              message: `Ahoj,\n\nv příloze a na odkazu níže posílám zálohovou fakturu na ${nextInstallmentNum}. splátku z ${client.total_installments} za balíček ${packageName}.\n\nSplatnost je nastavena na 30 dní od zahájení naší spolupráce.\n\nMěj se fajn,\nKryštof Koblas`
-            })
-          });
-        }
-
-      } catch (splatkaErr) {
-        console.error('Chyba při generování další splátky:', splatkaErr);
-      }
     }
 
     await context.env.STATUS_STORE.put('CLIENTS', JSON.stringify(clients));
