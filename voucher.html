@@ -6,7 +6,10 @@
   <title>Dárkový poukaz – Kryštof Koblas Nutriční poradenství</title>
   <link rel="icon" type="image/webp" href="LOGO nové.webp">
   <style>
-    @page { size: A4 landscape; margin: 10mm; }
+    @page { 
+      size: A4 portrait; 
+      margin: 10mm; 
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -77,14 +80,22 @@
     }
     .btn-back:hover { color: #fff; border-color: #666; }
 
-    /* Brand logo & Vánoční čepička */
+    .voucher-card {
+      width: 100%;
+      max-width: 680px;
+      min-height: 420px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Brand logo & Čepička */
     .voucher-brand-badge {
       position: relative;
       display: inline-flex;
       align-items: center;
     }
     .voucher-logo-img {
-      height: 46px;
+      height: 44px;
       width: auto;
       object-fit: contain;
       display: block;
@@ -98,166 +109,160 @@
       height: 34px;
       transform: rotate(-15deg);
       pointer-events: none;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
       display: none;
     }
 
-    /* Fitness činka pro Sport & Energy */
     .sport-dumbbell {
       display: none;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       vertical-align: middle;
       margin-left: 8px;
     }
 
-    /* ── ŠABLONA 1: Dark Gold (Klasik) ── */
-    .tpl-dark-gold {
-      width: 740px;
-      background: #141414;
-      color: #eee;
-      border: 2px solid #c88a2c;
-      border-radius: 12px;
-      padding: 38px 40px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-      background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
+    /* Kontejner pro kód a stromeček */
+    .code-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 18px auto;
     }
-    .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 24px; color: #ff9900; margin: 0; }
-    .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 11px; color: #888; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; }
-    .tpl-dark-gold .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
-    .tpl-dark-gold .service-desc { color: #aaa; font-size: 15px; }
-    .tpl-dark-gold .code-box { margin: 24px auto; padding: 16px 28px; background: #080808; border: 1px dashed #ff9900; border-radius: 8px; display: inline-block; }
-    .tpl-dark-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff9900; letter-spacing: 6px; }
-    .tpl-dark-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
-    .tpl-dark-gold a { color: #ff9900; }
+    .xmas-tree-bg {
+      display: none;
+      position: absolute;
+      right: -28px;
+      bottom: -15px;
+      width: 75px;
+      height: 85px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.85;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
 
-    /* ── ŠABLONA 2: Nordic Snow (Čistá bílá + ČERVENÁ čepička) ── */
+    /* ── ŠABLONA 1: Nordic Snow (Bílá + modro-červená čepička + stromeček) ── */
     .tpl-nordic-snow {
-      width: 740px;
       background: #ffffff;
       color: #1a1a1a;
       border: 2px solid #d4af37;
-      border-radius: 10px;
-      padding: 38px 40px;
+      border-radius: 8px;
+      padding: 30px 35px;
       box-shadow: 0 10px 35px rgba(0,0,0,0.1);
     }
-    .tpl-nordic-snow .xmas-cap { 
-      display: block !important; 
-      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.25)) !important;
+    .tpl-nordic-snow .xmas-cap { display: block !important; }
+    .tpl-nordic-snow .xmas-tree-bg { display: block !important; }
+    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 22px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 10.5px; color: #666; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-nordic-snow .badge-type { background: #f0f7ff; border: 1.5px solid #74c0fc; color: #1c7ed6; font-family: monospace; font-size: 11px; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+    .tpl-nordic-snow .service-name { font-size: 19px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+    .tpl-nordic-snow .service-desc { color: #555; font-size: 14px; }
+    .tpl-nordic-snow .code-box { 
+      position: relative; 
+      z-index: 2; 
+      padding: 12px 28px; 
+      background: rgba(255, 255, 255, 0.92); 
+      border: 2px dashed #d4af37; 
+      border-radius: 6px; 
+      display: inline-block;
+      backdrop-filter: blur(2px);
     }
-    .tpl-nordic-snow .xmas-cap path {
-      fill: #e74c3c !important;
-      stroke: #c0392b !important;
-    }
-    .tpl-nordic-snow .xmas-cap circle {
-      fill: #ffffff !important;
-      stroke: #ddd !important;
-    }
-    .tpl-nordic-snow .xmas-cap rect {
-      fill: #ffffff !important;
-      stroke: #ddd !important;
-    }
-    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 24px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 11px; color: #777; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-nordic-snow .badge-type { background: #fff5f5; border: 1.5px solid #e74c3c; color: #c0392b; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
-    .tpl-nordic-snow .service-name { font-size: 20px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
-    .tpl-nordic-snow .service-desc { color: #555; font-size: 15px; }
-    .tpl-nordic-snow .code-box { margin: 24px auto; padding: 14px 28px; background: #fbfbfb; border: 2px dashed #d4af37; border-radius: 8px; display: inline-block; }
-    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #111; letter-spacing: 6px; }
-    .tpl-nordic-snow .instructions { margin-top: 20px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 18px; line-height: 1.6; }
-    .tpl-nordic-snow a { color: #c0392b; font-weight: 600; text-decoration: none; }
+    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #111; letter-spacing: 5px; }
+    .tpl-nordic-snow .instructions { margin-top: 15px; font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 14px; line-height: 1.5; }
+    .tpl-nordic-snow a { color: #1c7ed6; font-weight: 600; text-decoration: none; }
 
-    /* ── ŠABLONA 3: Vánoční Dark Gold (XMAS) ── */
-    .tpl-xmas-gold {
-      width: 740px;
+    /* ── ŠABLONA 2: Dark Gold (Klasik) ── */
+    .tpl-dark-gold {
       background: #141414;
       color: #eee;
-      border: 2px solid #e74c3c;
-      border-radius: 12px;
-      padding: 38px 40px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 25px rgba(231,76,60,0.15);
-      background-image: radial-gradient(circle at 100% 0%, rgba(231,76,60,0.15) 0%, transparent 60%);
+      border: 2px solid #c88a2c;
+      border-radius: 10px;
+      padding: 30px 35px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
     }
-    .tpl-xmas-gold .xmas-cap { display: block !important; }
-    .tpl-xmas-gold .brand-title { font-family: Georgia, serif; font-size: 24px; color: #ffaa22; margin: 0; }
-    .tpl-xmas-gold .brand-sub { font-family: monospace; font-size: 11px; color: #aaa; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-xmas-gold .badge-type { background: rgba(231,76,60,0.2); border: 1px solid #e74c3c; color: #ff7875; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
-    .tpl-xmas-gold .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
-    .tpl-xmas-gold .service-desc { color: #bbb; font-size: 15px; }
-    .tpl-xmas-gold .code-box { margin: 24px auto; padding: 16px 28px; background: #080808; border: 1px dashed #e74c3c; border-radius: 8px; display: inline-block; }
-    .tpl-xmas-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ffaa22; letter-spacing: 6px; }
-    .tpl-xmas-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
-    .tpl-xmas-gold a { color: #ffaa22; }
+    .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 22px; color: #ff9900; margin: 0; }
+    .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 10.5px; color: #888; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 11px; padding: 5px 10px; border-radius: 4px; }
+    .tpl-dark-gold .service-name { font-size: 19px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+    .tpl-dark-gold .service-desc { color: #aaa; font-size: 14px; }
+    .tpl-dark-gold .code-box { padding: 12px 24px; background: #080808; border: 1px dashed #ff9900; border-radius: 6px; display: inline-block; }
+    .tpl-dark-gold .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #ff9900; letter-spacing: 5px; }
+    .tpl-dark-gold .instructions { margin-top: 15px; font-size: 11px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; line-height: 1.5; }
+    .tpl-dark-gold a { color: #ff9900; }
 
-    /* ── ŠABLONA 4: Luxury Cream (Slonovinová kost + zlato) ── */
-    .tpl-luxury-cream {
-      width: 740px;
-      background: #fbfbf9;
-      color: #222222;
-      border: 1px solid #c8a25c;
-      border-radius: 6px;
-      padding: 38px 40px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-    }
-    .tpl-luxury-cream .brand-title { font-family: Georgia, serif; font-size: 24px; color: #1a1a1a; margin: 0; letter-spacing: 1px; }
-    .tpl-luxury-cream .brand-sub { font-family: monospace; font-size: 10.5px; color: #8c734b; letter-spacing: 2.5px; margin-top: 3px; }
-    .tpl-luxury-cream .badge-type { background: #ffffff; border: 1px solid #c8a25c; color: #8c734b; font-family: monospace; font-size: 11.5px; padding: 5px 12px; border-radius: 2px; letter-spacing: 1px; }
-    .tpl-luxury-cream .service-name { font-size: 20px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
-    .tpl-luxury-cream .service-desc { color: #666; font-size: 15px; }
-    .tpl-luxury-cream .code-box { margin: 24px auto; padding: 14px 28px; background: #ffffff; border: 1px solid #c8a25c; border-radius: 4px; display: inline-block; }
-    .tpl-luxury-cream .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #8c734b; letter-spacing: 6px; }
-    .tpl-luxury-cream .instructions { margin-top: 20px; font-size: 12px; color: #777; border-top: 1px solid #ebe7df; padding-top: 18px; line-height: 1.6; }
-    .tpl-luxury-cream a { color: #8c734b; font-weight: 600; text-decoration: none; }
-
-    /* ── ŠABLONA 5: Clean Minimal (Černobílá úsporná) ── */
-    .tpl-clean-white {
-      width: 740px;
-      background: #ffffff;
-      color: #111111;
-      border: 3px solid #111111;
-      border-radius: 4px;
-      padding: 38px 40px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-    }
-    .tpl-clean-white .brand-title { font-family: Georgia, serif; font-size: 26px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-clean-white .brand-sub { font-family: monospace; font-size: 11px; color: #555; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-clean-white .badge-type { background: #111; border: 1px solid #111; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 2px; }
-    .tpl-clean-white .service-name { font-size: 20px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
-    .tpl-clean-white .service-desc { color: #444; font-size: 15px; }
-    .tpl-clean-white .code-box { margin: 24px auto; padding: 16px 28px; background: #f4f4f4; border: 2px solid #111; border-radius: 4px; display: inline-block; }
-    .tpl-clean-white .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; }
-    .tpl-clean-white .instructions { margin-top: 20px; font-size: 12px; color: #555; border-top: 1px solid #ddd; padding-top: 18px; line-height: 1.6; }
-    .tpl-clean-white a { color: #111; font-weight: bold; }
-
-    /* ── ŠABLONA 6: Sport & Energy (S fitness činkou) ── */
+    /* ── ŠABLONA 3: Sport & Energy ── */
     .tpl-sport-energy {
-      width: 740px;
       background: linear-gradient(135deg, #0f0f0f 0%, #1b1b1b 100%);
       color: #fff;
-      border-left: 8px solid #ff5500;
+      border-left: 6px solid #ff5500;
       border-top: 1px solid #333;
       border-right: 1px solid #333;
       border-bottom: 1px solid #333;
       border-radius: 6px;
-      padding: 38px 40px;
+      padding: 30px 35px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8);
     }
     .tpl-sport-energy .sport-dumbbell { display: inline-block !important; }
-    .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 28px; color: #ff5500; margin: 0; letter-spacing: 1px; }
-    .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 11px; color: #999; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 3px; font-weight: bold; display: inline-flex; align-items: center; }
-    .tpl-sport-energy .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
-    .tpl-sport-energy .service-desc { color: #ccc; font-size: 15px; }
-    .tpl-sport-energy .code-box { margin: 24px auto; padding: 16px 28px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
-    .tpl-sport-energy .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff5500; letter-spacing: 6px; }
-    .tpl-sport-energy .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 18px; line-height: 1.6; }
+    .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 24px; color: #ff5500; margin: 0; letter-spacing: 1px; }
+    .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 10.5px; color: #999; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 3px; font-weight: bold; display: inline-flex; align-items: center; }
+    .tpl-sport-energy .service-name { font-size: 19px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+    .tpl-sport-energy .service-desc { color: #ccc; font-size: 14px; }
+    .tpl-sport-energy .code-box { padding: 12px 24px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
+    .tpl-sport-energy .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #ff5500; letter-spacing: 5px; }
+    .tpl-sport-energy .instructions { margin-top: 15px; font-size: 11px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 14px; line-height: 1.5; }
     .tpl-sport-energy a { color: #ff5500; }
 
+    /* ── ŠABLONA 4: Clean Minimal ── */
+    .tpl-clean-white {
+      background: #ffffff;
+      color: #111111;
+      border: 2px solid #111111;
+      border-radius: 4px;
+      padding: 30px 35px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+    }
+    .tpl-clean-white .brand-title { font-family: Georgia, serif; font-size: 22px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-clean-white .brand-sub { font-family: monospace; font-size: 10.5px; color: #555; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-clean-white .badge-type { background: #111; border: 1px solid #111; color: #fff; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 2px; }
+    .tpl-clean-white .service-name { font-size: 19px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+    .tpl-clean-white .service-desc { color: #444; font-size: 14px; }
+    .tpl-clean-white .code-box { padding: 12px 24px; background: #f4f4f4; border: 2px solid #111; border-radius: 4px; display: inline-block; }
+    .tpl-clean-white .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #000; letter-spacing: 5px; }
+    .tpl-clean-white .instructions { margin-top: 15px; font-size: 11px; color: #555; border-top: 1px solid #ddd; padding-top: 14px; line-height: 1.5; }
+    .tpl-clean-white a { color: #111; font-weight: bold; }
+
+    /* Tisková pravidla na půlku A4 */
     @media print {
-      body { background: #fff !important; padding: 0 !important; }
+      body {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+      }
       .toolbar { display: none !important; }
-      .voucher-card { box-shadow: none !important; width: 100% !important; margin: 0 !important; }
+      .voucher-card {
+        width: 190mm !important;
+        height: 128mm !important;
+        min-height: auto !important;
+        max-width: none !important;
+        margin: 0 auto !important;
+        box-shadow: none !important;
+        page-break-inside: avoid !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .voucher-card::after {
+        content: "- - - - - - - - - - - - - - - - - - - - Zde přeložte nebo odstřihněte - - - - - - - - - - - - - - - - - - - -";
+        position: absolute;
+        bottom: -22mm;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-family: monospace;
+        font-size: 9px;
+        color: #bbb;
+      }
     }
   </style>
 </head>
@@ -266,11 +271,9 @@
   <div class="toolbar">
     <label>VZHLED CERTIFIKÁTU:
       <select id="templateSelector" onchange="changeTemplate(this.value)">
-        <option value="tpl-nordic-snow">❄️ Nordic Snow (Čistá bílá + Červená čepička)</option>
+        <option value="tpl-nordic-snow">❄️ Nordic Snow (Bílá + Stromeček + Čepička)</option>
         <option value="tpl-dark-gold">Dark Gold (Prémiová tmavá)</option>
         <option value="tpl-sport-energy">⚡ Sport &amp; Energy (Fitness s činkou)</option>
-        <option value="tpl-luxury-cream">✨ Luxury Cream (Slonovinová kost + Zlato)</option>
-        <option value="tpl-xmas-gold">🎄 Vánoční Dark Gold (Tmavá + Čepička)</option>
         <option value="tpl-clean-white">Clean Minimal (Černobílý tisk)</option>
       </select>
     </label>
@@ -279,17 +282,17 @@
   </div>
 
   <div id="voucherContainer" class="voucher-card tpl-nordic-snow">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 25px;">
-      <div style="display: flex; align-items: center; gap: 16px;">
-        <!-- Logo s vánoční čepičkou -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <!-- Logo s čepičkou -->
         <div class="voucher-brand-badge">
           <img src="LOGO nové.webp" alt="KKoblas logo" class="voucher-logo-img">
           
           <svg class="xmas-cap" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 44 C 18 20, 38 12, 52 18 C 50 26, 44 38, 48 44 Z" fill="#e74c3c" stroke="#c0392b" stroke-width="1.5"/>
-            <path d="M52 18 C 56 20, 58 26, 56 30" fill="none" stroke="#e74c3c" stroke-width="5" stroke-linecap="round"/>
-            <circle cx="56" cy="31" r="5" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
-            <rect x="8" y="40" width="44" height="10" rx="5" fill="#ffffff" stroke="#eee" stroke-width="1"/>
+            <path d="M12 44 C 18 20, 38 12, 52 18 C 50 26, 44 38, 48 44 Z" fill="#e03131" stroke="#c92a2a" stroke-width="1.5"/>
+            <path d="M52 18 C 56 20, 58 26, 56 30" fill="none" stroke="#e03131" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="56" cy="31" r="5.5" fill="#a5d8ff" stroke="#74c0fc" stroke-width="1.2"/>
+            <rect x="8" y="40" width="44" height="9" rx="4.5" fill="#d0ebff" stroke="#a5d8ff" stroke-width="1.2"/>
           </svg>
         </div>
 
@@ -301,19 +304,39 @@
 
       <div class="badge-type">
         <span>DÁRKOVÝ POUKAZ</span>
-        <!-- Ikona činky pro Sport & Energy -->
         <svg class="sport-dumbbell" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M6 5H4v14h2V5zm14 0h-2v14h2V5zM2 8H1v8h1V8zm21 0h-1v8h1V8zM8 11h8v2H8v-2z" />
         </svg>
       </div>
     </div>
 
-    <div style="text-align: center; margin: 25px 0;">
+    <div style="text-align: center; margin: 20px 0;">
       <div class="service-name" id="voucherService">VŠECHNY SLUŽBY</div>
       <div class="service-desc" id="voucherDesc">100% Uhrazeno dárkovým certifikátem</div>
 
-      <div class="code-box">
-        <div class="code-text" id="voucherCode">DAR-XXXXX</div>
+      <!-- Kód s vánočním stromečkem zasahujícím z rohu -->
+      <div class="code-wrapper">
+        <div class="code-box">
+          <div class="code-text" id="voucherCode">DAR-XXXXX</div>
+        </div>
+
+        <!-- Vektorový stromeček s ozdobami -->
+        <svg class="xmas-tree-bg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Kmen -->
+          <rect x="44" y="98" width="12" height="18" rx="2" fill="#795548" />
+          <!-- Patra jehličí -->
+          <polygon points="50,15 20,52 35,52 12,80 30,80 5,102 95,102 70,80 88,80 65,52 80,52" fill="#2b8a3e" />
+          <polygon points="50,15 28,48 40,48 20,74 38,74 15,98 85,98 62,74 80,74 60,48 72,48" fill="#2f9e44" />
+          <!-- Zlatá hvězda na špici -->
+          <polygon points="50,4 53,13 62,13 55,18 57,27 50,22 43,27 45,18 38,13 47,13" fill="#fcc419" />
+          <!-- Barevné baňky -->
+          <circle cx="34" cy="90" r="3.5" fill="#e03131" />
+          <circle cx="66" cy="88" r="3.5" fill="#74c0fc" />
+          <circle cx="48" cy="72" r="3.5" fill="#fcc419" />
+          <circle cx="38" cy="62" r="3" fill="#e03131" />
+          <circle cx="62" cy="60" r="3" fill="#ffffff" />
+          <circle cx="50" cy="40" r="2.5" fill="#74c0fc" />
+        </svg>
       </div>
 
       <div class="instructions">
@@ -331,14 +354,6 @@
     (async function() {
       var params = new URLSearchParams(window.location.search);
       var code = (params.get('kod') || params.get('code') || '').trim().toUpperCase();
-
-      if (params.get('xmas') === '1') {
-        var sel = document.getElementById('templateSelector');
-        if (sel) {
-          sel.value = 'tpl-xmas-gold';
-          changeTemplate('tpl-xmas-gold');
-        }
-      }
 
       if (code) {
         document.getElementById('voucherCode').textContent = code;
