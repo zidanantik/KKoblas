@@ -12,6 +12,29 @@ function normalizeCountry(country) {
   return country.length === 2 ? country.toUpperCase() : 'CZ';
 }
 
+function getInstallmentConfig(pkgName, firstPrice) {
+  const s = String(pkgName || '').toLowerCase();
+  if (s.includes('ultimate')) {
+    return {
+      totalInstallments: 6,
+      firstAmount: firstPrice || 11900,
+      subsequentAmount: 2000
+    };
+  }
+  if (s.includes('mentor')) {
+    return {
+      totalInstallments: 4,
+      firstAmount: firstPrice || 7500,
+      subsequentAmount: 2800
+    };
+  }
+  return {
+    totalInstallments: 2,
+    firstAmount: firstPrice || 0,
+    subsequentAmount: firstPrice || 0
+  };
+}
+
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
   const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
   const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
@@ -86,7 +109,12 @@ export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
     const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
-    const isInstallment = body.Splatky === true || body.Splatky === 'true';
+
+    const isInstallment = 
+      body.Splatky === true || 
+      body.Splatky === 'true' || 
+      String(body.Platba || '').toLowerCase().includes('splátk') ||
+      String(body.platba || '').toLowerCase().includes('splat');
 
     const requiredFields = isGift
       ? REQUIRED_CONTACT
@@ -116,22 +144,34 @@ export async function onRequestPost(context) {
     const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
     const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
 
-    const rawPrice = String(body.Cena || '').replace(/[^\d]/g, '');
-    const totalPrice = parseInt(rawPrice, 10) || 0;
-    const isZeroPayment = totalPrice === 0;
-
-    const totalInstallments = isInstallment ? (parseInt(body.Mesice, 10) || 3) : 1;
-    const installmentAmount = isInstallment ? Math.round(totalPrice / totalInstallments) : totalPrice;
     const sluzbaNazev = body.Sluzba_Nazev || body.Sluzba || 'Nutriční balíček';
+    
+    // Bezpečné vytažení první částky
+    let parsedPrice = 0;
+    const priceMatch = String(body.Cena || '').match(/([\d\s]+)\s*Kč/);
+    if (priceMatch) {
+      parsedPrice = parseInt(priceMatch[1].replace(/\s/g, ''), 10) || 0;
+    } else {
+      parsedPrice = parseInt(String(body.Cena || '').replace(/[^\d]/g, ''), 10) || 0;
+    }
+
+    const isZeroPayment = parsedPrice === 0 || (body.Pouzity_kod && !isInstallment);
+
+    // Konfigurace podle balíčku
+    const instConfig = getInstallmentConfig(sluzbaNazev, parsedPrice);
+    const totalInstallments = isInstallment ? instConfig.totalInstallments : 1;
+    const firstInstallmentAmount = isInstallment ? instConfig.firstAmount : parsedPrice;
+    const subsequentAmount = isInstallment ? instConfig.subsequentAmount : 0;
 
     let createdInvoiceId = null;
 
+    // ── FAKTUROID FAKTURA (POKUD CENA > 0 KČ) ──
     if (!isZeroPayment) {
       let lineName = sluzbaNazev;
       if (isGift) {
         lineName += ' (Dárkový poukaz)';
       } else if (isInstallment) {
-        lineName += ' – 1. splátka z ' + totalInstallments;
+        lineName += ` – 1. splátka z ${totalInstallments}`;
       }
 
       const invoicePayload = {
@@ -141,13 +181,13 @@ export async function onRequestPost(context) {
           {
             name: lineName,
             quantity: 1,
-            unit_price: installmentAmount,
+            unit_price: firstInstallmentAmount,
             unit_name: 'ks'
           }
         ],
         note: isGift 
           ? 'Objednáno jako dárkový poukaz – voucher se odešle po úhradě.' 
-          : (isInstallment ? 'Splátková platba (1/' + totalInstallments + ')' : '')
+          : (isInstallment ? `Splátkový kalendář (1/${totalInstallments})` : '')
       };
 
       const invoiceRes = await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`, {
@@ -175,6 +215,11 @@ export async function onRequestPost(context) {
           subject: `Zálohová faktura – Dárkový poukaz (${sluzbaNazev})`,
           message: `Ahoj,\n\nděkuji za objednávku dárkového poukazu na službu ${sluzbaNazev}.\n\nVšechny platební údaje najdeš přímo pod odkazem níže.\n\nJakmile platba dorazí, obratem ti do e-mailu pošlu unikátní kód poukazu a odkaz pro obdarovaného.\n\nMěj se fajn,\nKryštof Koblas`
         };
+      } else if (isInstallment) {
+        messagePayload = {
+          subject: `Zálohová faktura – 1. splátka (${sluzbaNazev})`,
+          message: `Ahoj,\n\nv příloze a na odkazu níže posílám zálohovou fakturu na 1. splátku z ${totalInstallments} za balíček ${sluzbaNazev}.\n\nJakmile platba dorazí, pošlu ti podklady a domluvíme termín úvodní online konzultace.\n\nMěj se fajn,\nKryštof Koblas`
+        };
       }
 
       await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${createdInvoiceId}/message.json`, {
@@ -191,12 +236,13 @@ export async function onRequestPost(context) {
 
     // ── 1. NOTIFIKACE PRO TEBE PŘI VYTVOŘENÍ OBJEDNÁVKY ──
     if (resendKey) {
+      let typeLabel = isGift ? 'Dárkový poukaz' : (isInstallment ? `Splátky (1. splátka: ${firstInstallmentAmount} Kč, pak ${totalInstallments - 1}× ${subsequentAmount} Kč)` : 'Jednorázová platba');
       let ownerSubject = `Nová objednávka (ČEKÁ NA ÚHRADU) – ${sluzbaNazev} – ${body.Jmeno}`;
-      let statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: ČEKÁ NA PLATBU. Klientovi byla vystavena zálohová faktura. Jakmile ji uhradí, přijde ti e-mail s potvrzením o zaplacení.</div>`;
+      let statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: ČEKÁ NA PLATBU. Klientovi byla vystavena zálohová faktura na ${firstInstallmentAmount} Kč. Jakmile ji uhradí, přijde ti e-mail s potvrzením o zaplacení.</div>`;
 
       if (isGift) {
         ownerSubject = `Nová objednávka (DÁREK – ČEKÁ NA ÚHRADU) – ${sluzbaNazev}`;
-        statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: DÁREK ČEKÁ NA PLATBU. Kód se vygeneruje automaticky až po přijetí platby.</div>`;
+        statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: DÁREK ČEKÁ NA PLATBU. Kód se vygeneruje automaticky až po úhradě.</div>`;
       } else if (isZeroPayment) {
         ownerSubject = `Poukaz uplatněn (UHRAZENO) – ${sluzbaNazev} – ${body.Jmeno}`;
         statusBanner = `<div style="background:#d4edda;color:#155724;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">✅ STAV: AKTIVNÍ (Uplatněn dárkový poukaz). Klientovi byl odeslán uvítací e-mail se ZOFem a InBody.</div>`;
@@ -218,8 +264,8 @@ export async function onRequestPost(context) {
           <table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:20px;">
             <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Objednaná služba</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;width:35%;">Služba</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${sluzbaNazev}</td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cena</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Cena || (isZeroPayment ? '0 Kč (Poukaz)' : '—')}</td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Typ objednávky</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${isGift ? 'Dárkový poukaz' : (isInstallment ? 'Splátky' : 'Přímý nákup')}</td></tr>
+            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">1. splátka k úhradě</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${firstInstallmentAmount} Kč</td></tr>
+            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Typ platby</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${typeLabel}</td></tr>
             ${body.Pouzity_kod ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Uplatněný kód</td><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#ff9900;font-weight:bold;">${body.Pouzity_kod}</td></tr>` : ''}
             
             <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Kontaktní údaje klienta</td></tr>
@@ -249,7 +295,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── 2. UVÍTACÍ E-MAIL PRO OBDAROVANÉHO (0 Kč) ──
+    // ── 2. UVÍTACÍ E-MAIL PRO 0 Kč POUKAZ ──
     if (isZeroPayment && resendKey && body.Email) {
       await new Promise(r => setTimeout(r, 600));
 
@@ -301,7 +347,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── 3. ULOŽENÍ DO KV DATABÁZE (CLIENTS) VČETNĚ DIAGNOSTIKY ──
+    // ── 3. ULOŽENÍ DO KV DATABÁZE SE SLEDOVÁNÍM SPLÁTEK ──
     const store = context.env.STATUS_STORE;
     if (store) {
       const rawClients = await store.get('CLIENTS');
@@ -309,6 +355,8 @@ export async function onRequestPost(context) {
 
       const newClientRecord = {
         fakturoid_id: createdInvoiceId || 'POUKAZ-ZDARMA',
+        invoice_ids: createdInvoiceId ? [createdInvoiceId] : [],
+        paid_invoice_ids: [],
         status: isZeroPayment ? 'aktivni' : 'ceka_na_platbu',
         pocita_se: isZeroPayment,
         datum_platby: isZeroPayment ? new Date().toISOString() : null,
@@ -318,7 +366,8 @@ export async function onRequestPost(context) {
         is_installment: isInstallment,
         total_installments: totalInstallments,
         current_installment: 1,
-        installment_amount: installmentAmount,
+        installment_amount: firstInstallmentAmount,
+        subsequent_amount: subsequentAmount,
         kupujici: {
           jmeno: body.Jmeno,
           email: body.Email,
