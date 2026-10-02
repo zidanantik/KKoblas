@@ -102,6 +102,15 @@
       display: none;
     }
 
+    /* Fitness činka pro Sport & Energy */
+    .sport-dumbbell {
+      display: none;
+      width: 28px;
+      height: 28px;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
     /* ── ŠABLONA 1: Dark Gold (Klasik) ── */
     .tpl-dark-gold {
       width: 740px;
@@ -123,7 +132,43 @@
     .tpl-dark-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
     .tpl-dark-gold a { color: #ff9900; }
 
-    /* ── ŠABLONA 2: Vánoční Dark Gold (XMAS) ── */
+    /* ── ŠABLONA 2: Nordic Snow (Čistá bílá + ČERVENÁ čepička) ── */
+    .tpl-nordic-snow {
+      width: 740px;
+      background: #ffffff;
+      color: #1a1a1a;
+      border: 2px solid #d4af37;
+      border-radius: 10px;
+      padding: 38px 40px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.1);
+    }
+    .tpl-nordic-snow .xmas-cap { 
+      display: block !important; 
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.25)) !important;
+    }
+    .tpl-nordic-snow .xmas-cap path {
+      fill: #e74c3c !important;
+      stroke: #c0392b !important;
+    }
+    .tpl-nordic-snow .xmas-cap circle {
+      fill: #ffffff !important;
+      stroke: #ddd !important;
+    }
+    .tpl-nordic-snow .xmas-cap rect {
+      fill: #ffffff !important;
+      stroke: #ddd !important;
+    }
+    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 24px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 11px; color: #777; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-nordic-snow .badge-type { background: #fff5f5; border: 1.5px solid #e74c3c; color: #c0392b; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
+    .tpl-nordic-snow .service-name { font-size: 20px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+    .tpl-nordic-snow .service-desc { color: #555; font-size: 15px; }
+    .tpl-nordic-snow .code-box { margin: 24px auto; padding: 14px 28px; background: #fbfbfb; border: 2px dashed #d4af37; border-radius: 8px; display: inline-block; }
+    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #111; letter-spacing: 6px; }
+    .tpl-nordic-snow .instructions { margin-top: 20px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 18px; line-height: 1.6; }
+    .tpl-nordic-snow a { color: #c0392b; font-weight: 600; text-decoration: none; }
+
+    /* ── ŠABLONA 3: Vánoční Dark Gold (XMAS) ── */
     .tpl-xmas-gold {
       width: 740px;
       background: #141414;
@@ -145,43 +190,7 @@
     .tpl-xmas-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
     .tpl-xmas-gold a { color: #ffaa22; }
 
-    /* ── ŠABLONA 3: Nordic Snow (Světlé pozadí + stříbro-bílá čepička) ── */
-    .tpl-nordic-snow {
-      width: 740px;
-      background: #ffffff;
-      color: #1a1a1a;
-      border: 1.5px solid #d4af37;
-      border-radius: 8px;
-      padding: 38px 40px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-    }
-    .tpl-nordic-snow .xmas-cap { 
-      display: block !important; 
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)) !important;
-    }
-    .tpl-nordic-snow .xmas-cap path {
-      fill: #f5f5f7 !important;
-      stroke: #c8c8cb !important;
-    }
-    .tpl-nordic-snow .xmas-cap circle {
-      fill: #ffd700 !important;
-      stroke: #d4af37 !important;
-    }
-    .tpl-nordic-snow .xmas-cap rect {
-      fill: #ffffff !important;
-      stroke: #dcdce0 !important;
-    }
-    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 24px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 11px; color: #777; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-nordic-snow .badge-type { background: #fafafa; border: 1px solid #d4af37; color: #996515; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; font-weight: 600; }
-    .tpl-nordic-snow .service-name { font-size: 20px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
-    .tpl-nordic-snow .service-desc { color: #555; font-size: 15px; }
-    .tpl-nordic-snow .code-box { margin: 24px auto; padding: 14px 28px; background: #fafafa; border: 1.5px dashed #d4af37; border-radius: 6px; display: inline-block; }
-    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #111; letter-spacing: 6px; }
-    .tpl-nordic-snow .instructions { margin-top: 20px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 18px; line-height: 1.6; }
-    .tpl-nordic-snow a { color: #996515; font-weight: 600; text-decoration: none; }
-
-    /* ── ŠABLONA 4: Luxury Cream (Slonovinová kost + šampaňské zlato) ── */
+    /* ── ŠABLONA 4: Luxury Cream (Slonovinová kost + zlato) ── */
     .tpl-luxury-cream {
       width: 740px;
       background: #fbfbf9;
@@ -201,7 +210,7 @@
     .tpl-luxury-cream .instructions { margin-top: 20px; font-size: 12px; color: #777; border-top: 1px solid #ebe7df; padding-top: 18px; line-height: 1.6; }
     .tpl-luxury-cream a { color: #8c734b; font-weight: 600; text-decoration: none; }
 
-    /* ── ŠABLONA 5: Clean Minimal ── */
+    /* ── ŠABLONA 5: Clean Minimal (Černobílá úsporná) ── */
     .tpl-clean-white {
       width: 740px;
       background: #ffffff;
@@ -221,7 +230,7 @@
     .tpl-clean-white .instructions { margin-top: 20px; font-size: 12px; color: #555; border-top: 1px solid #ddd; padding-top: 18px; line-height: 1.6; }
     .tpl-clean-white a { color: #111; font-weight: bold; }
 
-    /* ── ŠABLONA 6: Sport & Energy ── */
+    /* ── ŠABLONA 6: Sport & Energy (S fitness činkou) ── */
     .tpl-sport-energy {
       width: 740px;
       background: linear-gradient(135deg, #0f0f0f 0%, #1b1b1b 100%);
@@ -234,9 +243,10 @@
       padding: 38px 40px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8);
     }
+    .tpl-sport-energy .sport-dumbbell { display: inline-block !important; }
     .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 28px; color: #ff5500; margin: 0; letter-spacing: 1px; }
     .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 11px; color: #999; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 3px; font-weight: bold; }
+    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 3px; font-weight: bold; display: inline-flex; align-items: center; }
     .tpl-sport-energy .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
     .tpl-sport-energy .service-desc { color: #ccc; font-size: 15px; }
     .tpl-sport-energy .code-box { margin: 24px auto; padding: 16px 28px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
@@ -256,19 +266,19 @@
   <div class="toolbar">
     <label>VZHLED CERTIFIKÁTU:
       <select id="templateSelector" onchange="changeTemplate(this.value)">
+        <option value="tpl-nordic-snow">❄️ Nordic Snow (Čistá bílá + Červená čepička)</option>
         <option value="tpl-dark-gold">Dark Gold (Prémiová tmavá)</option>
-        <option value="tpl-nordic-snow">❄️ Nordic Snow (Čistá bílá + bílá čepička)</option>
-        <option value="tpl-luxury-cream">✨ Luxury Cream (Slonovinová kost + zlato)</option>
-        <option value="tpl-xmas-gold">🎄 Vánoční edice (Dark Gold + Červená čepička)</option>
+        <option value="tpl-sport-energy">⚡ Sport &amp; Energy (Fitness s činkou)</option>
+        <option value="tpl-luxury-cream">✨ Luxury Cream (Slonovinová kost + Zlato)</option>
+        <option value="tpl-xmas-gold">🎄 Vánoční Dark Gold (Tmavá + Čepička)</option>
         <option value="tpl-clean-white">Clean Minimal (Černobílý tisk)</option>
-        <option value="tpl-sport-energy">Sport &amp; Energy (Fitness styl)</option>
       </select>
     </label>
     <button class="btn-print" onclick="window.print()">🖨 STÁHNOUT JAKO PDF / TISK</button>
     <a href="sluzby.html" class="btn-back">Zpět na web</a>
   </div>
 
-  <div id="voucherContainer" class="voucher-card tpl-dark-gold">
+  <div id="voucherContainer" class="voucher-card tpl-nordic-snow">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 25px;">
       <div style="display: flex; align-items: center; gap: 16px;">
         <!-- Logo s vánoční čepičkou -->
@@ -289,7 +299,13 @@
         </div>
       </div>
 
-      <div class="badge-type">DÁRKOVÝ POUKAZ</div>
+      <div class="badge-type">
+        <span>DÁRKOVÝ POUKAZ</span>
+        <!-- Ikona činky pro Sport & Energy -->
+        <svg class="sport-dumbbell" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 5H4v14h2V5zm14 0h-2v14h2V5zM2 8H1v8h1V8zm21 0h-1v8h1V8zM8 11h8v2H8v-2z" />
+        </svg>
+      </div>
     </div>
 
     <div style="text-align: center; margin: 25px 0;">
