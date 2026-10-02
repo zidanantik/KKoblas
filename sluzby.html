@@ -22,6 +22,59 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="sluzby.css">
   <style>
+    /* Zářící stávající tlačítko pro uplatnění voucheru / kódu */
+    #promoToggleBtn {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      background: linear-gradient(135deg, rgba(255, 153, 0, 0.16) 0%, rgba(20, 20, 20, 0.95) 100%) !important;
+      border: 1px solid #ff9900 !important;
+      color: #ffaa22 !important;
+      font-size: 13.5px !important;
+      padding: 12px 24px !important;
+      border-radius: 8px !important;
+      text-decoration: none !important;
+      box-shadow: 0 4px 18px rgba(255, 153, 0, 0.25) !important;
+      transition: all 0.25s ease !important;
+      animation: pulse-promo-toggle 2.5s infinite ease-in-out !important;
+      cursor: pointer;
+    }
+
+    #promoToggleBtn span {
+      color: #ccc;
+      font-size: 12px;
+      font-weight: normal;
+    }
+
+    #promoToggleBtn strong {
+      background: #ff9900 !important;
+      color: #000 !important;
+      padding: 4px 10px !important;
+      border-radius: 4px !important;
+      font-size: 11.5px !important;
+      letter-spacing: 0.5px !important;
+      margin-left: 6px !important;
+      display: inline-block;
+    }
+
+    #promoToggleBtn:hover {
+      background: rgba(255, 153, 0, 0.25) !important;
+      box-shadow: 0 6px 26px rgba(255, 153, 0, 0.5) !important;
+      transform: translateY(-1px) !important;
+    }
+
+    @keyframes pulse-promo-toggle {
+      0%, 100% {
+        box-shadow: 0 4px 18px rgba(255, 153, 0, 0.25);
+        border-color: #c88a2c;
+      }
+      50% {
+        box-shadow: 0 4px 28px rgba(255, 153, 0, 0.6);
+        border-color: #ffaa22;
+      }
+    }
+
     /* Zářící hlavní dárkové tlačítko při uplatnění dárkového kódu */
     .pkg-gift-btn--highlight {
       background: #ff9900 !important;
@@ -130,7 +183,7 @@
         <!-- Rozbalovací lišta na kód nahoře nad balíčky -->
         <div class="promo-bar-wrap">
           <button type="button" class="promo-toggle-link" id="promoToggleBtn">
-            🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>
+            🎁 MÁŠ DÁRKOVÝ POUKAZ NEBO KÓD? <span>(Místo máš předplacené)</span> <strong>UPLATNIT ZDE ▾</strong>
           </button>
           <div class="promo-bar" id="promoBar" hidden>
             <div class="promo-bar__inputs">
@@ -547,7 +600,7 @@
           promoBar.hidden = !isHidden;
           promoToggleBtn.innerHTML = isHidden 
             ? '🎁 Zadej kód poukazu nebo slevy <strong>▴ Zavřít</strong>' 
-            : '🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>';
+            : '🎁 MÁŠ DÁRKOVÝ POUKAZ NEBO KÓD? <span>(Místo máš předplacené)</span> <strong>UPLATNIT ZDE ▾</strong>';
           if (isHidden && promoInput) promoInput.focus();
         });
       }
@@ -686,7 +739,7 @@
               if (s === targetPkg) {
                 if (card) {
                   card.classList.add('pkg-card--voucher-match');
-                  // ZÁSADNÍ OPRAVA: Odemkneme kartu i přes zamčenou kapacitu!
+                  // Odemkneme kartu i přes zamčenou kapacitu!
                   card.classList.remove('plno');
                 }
               } else {
@@ -734,7 +787,6 @@
               if (bSpl) bSpl.style.display = 'none';
             }
 
-            // Ochrana pro případ, že by zůstalo zobrazeno plno-notice: přidáme VIP tlačítko i do plno bloku
             if (targetCard) {
               var plnoBox = targetCard.querySelector('.pkg-btns--plno');
               if (plnoBox && !plnoBox.querySelector('.vip-override-btn')) {
