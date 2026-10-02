@@ -4,6 +4,14 @@ const REQUIRED_CONTACT = ['Jmeno', 'Email', 'Telefon', 'Ulice', 'Mesto', 'PSC', 
 const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
 const OWNER_EMAIL = 'koblas.nutricni@gmail.com';
 
+function normalizeCountry(country) {
+  if (!country) return 'CZ';
+  const c = String(country).trim().toLowerCase();
+  if (c === 'cz' || c.includes('česk') || c.includes('czech')) return 'CZ';
+  if (c === 'sk' || c.includes('sloven')) return 'SK';
+  return country.length === 2 ? country.toUpperCase() : 'CZ';
+}
+
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
   const credentials = btoa(`${clientId.trim()}:${clientSecret.trim()}`);
   const res = await fetch('https://app.fakturoid.cz/api/v3/oauth/token.json', {
@@ -50,7 +58,7 @@ async function getOrCreateSubject(slug, token, body, userAgent) {
     street: body.Ulice,
     city: body.Mesto,
     zip: body.PSC,
-    country: body.Zeme || 'CZ'
+    country: normalizeCountry(body.Zeme)
   };
   if (body.ICO) subjectPayload.registration_no = body.ICO;
 
@@ -162,6 +170,16 @@ export async function onRequestPost(context) {
       const invoiceData = await invoiceRes.json();
       createdInvoiceId = invoiceData.id;
 
+      // Nastavení zprávy z Fakturoidu:
+      // Pokud jde o dárek, pošleme čistý dárkový text místo obecných úkolů ZOF/InBody
+      let messagePayload = {};
+      if (isGift) {
+        messagePayload = {
+          subject: `koblas-nutricni.cz | Zálohová faktura – Dárkový poukaz (${sluzbaNazev})`,
+          message: `Ahoj,\n\nděkuji za objednávku dárkového poukazu na službu ${sluzbaNazev}.\n\nVšechny podrobnosti k platbě a odkaz pro rychlou úhradu najdeš přímo pod odkazem níže.\n\nJakmile platba dorazí na účet, obratem ti do e-mailu pošlu unikátní dárkový kód a přímý odkaz pro obdarovaného.\n\nMěj se fajn,\nKryštof Koblas`
+        };
+      }
+
       await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${createdInvoiceId}/message.json`, {
         method: 'POST',
         headers: {
@@ -170,7 +188,7 @@ export async function onRequestPost(context) {
           'Accept': 'application/json',
           'User-Agent': userAgent
         },
-        body: JSON.stringify({})
+        body: JSON.stringify(messagePayload)
       });
     }
 
