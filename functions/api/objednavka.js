@@ -131,9 +131,10 @@ export async function onRequestPost(context) {
       }
     }
 
-    const slug = 'krystofkoblas';
-    const clientId = '4eec39db77ad7e5dc6da69e17153ffa50c8559d7';
-    const clientSecret = '5cbf882f10ba944119cec3bf7d92527acb8ed990';
+    // Načítání z prostředí Cloudflare
+    const slug = (context.env.FAKTUROID_SLUG || 'krystofkoblas').trim();
+    const clientId = (context.env.FAKTUROID_CLIENT_ID || '').trim();
+    const clientSecret = (context.env.FAKTUROID_CLIENT_SECRET || '').trim();
     const userAgent = 'KKoblas Web (koblas.nutricni.info@gmail.com)';
     const resendKey = context.env.RESEND_API_KEY;
 
@@ -331,7 +332,6 @@ export async function onRequestPost(context) {
         created_at: new Date().toISOString()
       };
 
-      // Pokud obdarovaný uplatnil voucher, nahradíme původní záznam dárce, ať se kapacita nezdvojí
       if (isGiftRedemption && existingGiftClientIndex > -1) {
         clientData.id = clients[existingGiftClientIndex].id || clientData.id;
         clientData.kod_voucheru = clients[existingGiftClientIndex].kod_voucheru;
