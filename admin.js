@@ -289,10 +289,13 @@ async function saveCapacitySettings() {
   setDeploy('⚡ Ukládám kapacitu...', 'loading');
 
   try {
-    var payload = Object.assign({ password: pass }, currentStatus);
-    delete payload.startup;
-    delete payload.mentoring;
-    delete payload.ultimate;
+    var payload = {
+      password: pass,
+      capacity: currentStatus.capacity,
+      event: currentStatus.event,
+      prices: currentStatus.prices,
+      resetOverride: true
+    };
 
     var res = await fetch('/api/status', {
       method: 'POST',
@@ -387,12 +390,21 @@ function renderClientsTable() {
   var filter = document.getElementById('clientFilter') ? document.getElementById('clientFilter').value : 'active';
   var todayStr = new Date().toISOString().split('T')[0];
 
+  var redeemedCodes = new Set();
+  loadedClientsCache.forEach(function(c) {
+    if (c.pouzity_kod) {
+      redeemedCodes.add(String(c.pouzity_kod).trim().toUpperCase());
+    }
+  });
+
   var filtered = loadedClientsCache.filter(function(c) {
     if (filter === 'all') return true;
-    
-    var isActive = c.status === 'aktivni' && (!c.end_date || c.end_date >= todayStr);
+
+    var isGiftAlreadyRedeemed = c.is_gift && c.kod_voucheru && redeemedCodes.has(String(c.kod_voucheru).trim().toUpperCase());
+
+    var isActive = c.status === 'aktivni' && (!c.end_date || c.end_date >= todayStr) && !isGiftAlreadyRedeemed;
     var isWaiting = c.status === 'ceka_na_platbu';
-    var isEnded = c.status === 'ukonceno' || (c.end_date && c.end_date < todayStr);
+    var isEnded = c.status === 'ukonceno' || (c.end_date && c.end_date < todayStr) || isGiftAlreadyRedeemed;
 
     if (filter === 'active') return isActive || isWaiting;
     if (filter === 'only_active') return isActive;
@@ -410,34 +422,43 @@ function renderClientsTable() {
     var kup = c.kupujici || {};
     var platce = c.platce || kup;
     var isGiftRedeemed = c.is_gift_redemption === true;
+    var isGiftDonorAlreadyClaimed = c.is_gift && c.kod_voucheru && redeemedCodes.has(String(c.kod_voucheru).trim().toUpperCase());
 
     var cleanPhone = (kup.telefon || '').replace(/[^\d+]/g, '');
     var waUrl = cleanPhone.startsWith('+') ? 'https://wa.me/' + cleanPhone.replace('+', '') : 'https://wa.me/420' + cleanPhone;
 
-    var clientHtml = '<div style="font-weight: bold; color: #fff; font-size: 13px;">' + (kup.jmeno || 'Neznámé jméno') + '</div>'
-      + '<div style="font-size: 11px; color: #aaa; margin-top: 2px;">'
-      +   '<a href="' + waUrl + '" target="_blank" style="color: #25D366; text-decoration: none; margin-right: 8px;">💬 WA: ' + (kup.telefon || '—') + '</a> '
-      +   '<a href="mailto:' + (kup.email || '') + '" style="color: #66b3ff; text-decoration: none;">' + (kup.email || '—') + '</a>'
-      + '</div>';
+    var clientHtml = '';
 
-    if (isGiftRedeemed && platce && platce.jmeno !== kup.jmeno) {
-      clientHtml += '<div style="font-size: 10px; color: #ff9900; margin-top: 4px; background: rgba(255,153,0,0.1); padding: 3px 6px; border-radius: 3px; display: inline-block;">'
-        + '🎁 Zaplatil dárce: <strong>' + platce.jmeno + '</strong> (' + (platce.email || '') + ')'
-        + '</div>';
+    if (isGiftDonorAlreadyClaimed) {
+      clientHtml = '<div style="font-weight: bold; color: #888;">DÁRKOVÝ POUKAZ (Uplatněn obdarovaným)</div>'
+        + '<div style="font-size: 11px; color: #666;">Koupil: ' + (kup.jmeno || '') + ' (' + (kup.email || '') + ')</div>'
+        + '<div style="font-size: 10px; color: #555;">Kód: ' + (c.kod_voucheru || '—') + '</div>';
     } else if (c.is_gift && !isGiftRedeemed) {
       clientHtml = '<div style="font-weight: bold; color: #ff9900;">DÁRKOVÝ POUKAZ (Čeká na obdarovaného)</div>'
         + '<div style="font-size: 11px; color: #aaa;">Koupil: ' + (kup.jmeno || '') + ' (' + (kup.email || '') + ')</div>'
         + '<div style="font-size: 10px; color: #777;">Kód: ' + (c.kod_voucheru || '—') + '</div>';
+    } else {
+      clientHtml = '<div style="font-weight: bold; color: #fff; font-size: 13px;">' + (kup.jmeno || 'Neznámé jméno') + '</div>'
+        + '<div style="font-size: 11px; color: #aaa; margin-top: 2px;">'
+        +   '<a href="' + waUrl + '" target="_blank" style="color: #25D366; text-decoration: none; margin-right: 8px;">💬 WA: ' + (kup.telefon || '—') + '</a> '
+        +   '<a href="mailto:' + (kup.email || '') + '" style="color: #66b3ff; text-decoration: none;">' + (kup.email || '—') + '</a>'
+        + '</div>';
+
+      if (isGiftRedeemed && platce && platce.jmeno !== kup.jmeno) {
+        clientHtml += '<div style="font-size: 10px; color: #ff9900; margin-top: 4px; background: rgba(255,153,0,0.1); padding: 3px 6px; border-radius: 3px; display: inline-block;">'
+          + '🎁 Zaplatil dárce: <strong>' + platce.jmeno + '</strong> (' + (platce.email || '') + ')'
+          + '</div>';
+      }
     }
 
     var diag = c.diagnostika || {};
-    var diagText = diag.vek ? (diag.vek + ' let · ' + diag.vyska + ' cm · ' + diag.vaha + ' kg' + (diag.zprava ? ' | Cíl: ' + diag.zprava : '')) : '';
+    var diagText = (!isGiftDonorAlreadyClaimed && diag.vek) ? (diag.vek + ' let · ' + diag.vyska + ' cm · ' + diag.vaha + ' kg' + (diag.zprava ? ' | Cíl: ' + diag.zprava : '')) : '';
 
     var startDateVal = c.start_date || (c.datum_platby ? c.datum_platby.split('T')[0] : '');
     var endDateVal = c.end_date || '';
 
     var daysLeft = '';
-    if (endDateVal && c.status === 'aktivni') {
+    if (endDateVal && c.status === 'aktivni' && !isGiftDonorAlreadyClaimed) {
       var diffDays = Math.ceil((new Date(endDateVal) - new Date()) / (1000 * 60 * 60 * 24));
       if (diffDays > 0) daysLeft = ' <span style="color:#00ff66;font-size:10px;">(zbývá ' + diffDays + ' dní)</span>';
       else daysLeft = ' <span style="color:#ff5555;font-size:10px;">(vypršelo)</span>';
@@ -445,20 +466,37 @@ function renderClientsTable() {
 
     var idKey = c.id || c.fakturoid_id;
 
-    return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">'
+    var statusSelectHtml = '';
+    if (isGiftDonorAlreadyClaimed) {
+      statusSelectHtml = '<span style="color: #888; font-size: 11px;">✔ Uplatněno (Obdarovaný převzal)</span>';
+    } else {
+      statusSelectHtml = '<select id="status-' + idKey + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0;">'
+        + '<option value="aktivni"' + (c.status === 'aktivni' ? ' selected' : '') + '>● Aktivní</option>'
+        + '<option value="ceka_na_platbu"' + (c.status === 'ceka_na_platbu' ? ' selected' : '') + '>○ Čeká na platbu</option>'
+        + '<option value="ukonceno"' + (c.status === 'ukonceno' ? ' selected' : '') + '>× Ukončeno</option>'
+        + '</select>';
+    }
+
+    var dateStartHtml = isGiftDonorAlreadyClaimed 
+      ? '<span style="color:#666;font-size:11px;">—</span>'
+      : '<input type="date" id="start-' + idKey + '" value="' + startDateVal + '" onchange="handleStartDateChange(\'' + idKey + '\', \'' + (c.sluzba || '') + '\')" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;">';
+
+    var dateEndHtml = isGiftDonorAlreadyClaimed 
+      ? '<span style="color:#666;font-size:11px;">—</span>'
+      : '<input type="date" id="end-' + idKey + '" value="' + endDateVal + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;">' + daysLeft;
+
+    var saveBtnHtml = isGiftDonorAlreadyClaimed
+      ? ''
+      : '<button onclick="saveClientRow(\'' + idKey + '\')" class="event-save-btn" style="margin: 0 4px; padding: 4px 10px; font-size: 11px;">💾 Uložit</button>';
+
+    return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.06);' + (isGiftDonorAlreadyClaimed ? 'opacity: 0.6;' : '') + '">'
       + '<td style="padding: 12px 10px;">' + clientHtml + (diagText ? '<div style="font-size: 10px; color: #777; margin-top: 4px;">' + diagText + '</div>' : '') + '</td>'
       + '<td style="padding: 12px 10px; color: #ff9900; font-weight: bold;">' + (c.sluzba_nazev || c.sluzba) + '<br><span style="font-size:10px;color:#888;">' + (c.is_installment ? 'Splátky (' + (c.current_installment || 1) + '/' + (c.total_installments || 1) + ')' : 'Jednorázově') + '</span></td>'
-      + '<td style="padding: 12px 10px;"><input type="date" id="start-' + idKey + '" value="' + startDateVal + '" onchange="handleStartDateChange(\'' + idKey + '\', \'' + (c.sluzba || '') + '\')" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;"></td>'
-      + '<td style="padding: 12px 10px;"><input type="date" id="end-' + idKey + '" value="' + endDateVal + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;">' + daysLeft + '</td>'
-      + '<td style="padding: 12px 10px;">'
-      +   '<select id="status-' + idKey + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0;">'
-      +     '<option value="aktivni"' + (c.status === 'aktivni' ? ' selected' : '') + '>● Aktivní</option>'
-      +     '<option value="ceka_na_platbu"' + (c.status === 'ceka_na_platbu' ? ' selected' : '') + '>○ Čeká na platbu</option>'
-      +     '<option value="ukonceno"' + (c.status === 'ukonceno' ? ' selected' : '') + '>× Ukončeno</option>'
-      +   '</select>'
-      + '</td>'
+      + '<td style="padding: 12px 10px;">' + dateStartHtml + '</td>'
+      + '<td style="padding: 12px 10px;">' + dateEndHtml + '</td>'
+      + '<td style="padding: 12px 10px;">' + statusSelectHtml + '</td>'
       + '<td style="padding: 12px 10px; text-align: right; white-space: nowrap;">'
-      +   '<button onclick="saveClientRow(\'' + idKey + '\')" class="event-save-btn" style="margin: 0 4px; padding: 4px 10px; font-size: 11px;">💾 Uložit</button>'
+      +   saveBtnHtml
       +   '<button onclick="deleteClientRow(\'' + idKey + '\')" style="background: rgba(255,0,0,0.1); border: 1px solid #ff2222; color: #ff2222; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Smazat</button>'
       + '</td>'
       + '</tr>';
