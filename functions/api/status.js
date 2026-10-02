@@ -30,9 +30,22 @@ async function getActiveCounts(store) {
   const clients = rawClients ? JSON.parse(rawClients) : [];
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // 1. Zjistíme všechny kódy, které už obdarovaný klient uplatnil
+  const redeemedCodes = new Set();
+  clients.forEach(c => {
+    if (c.pouzity_kod) {
+      redeemedCodes.add(String(c.pouzity_kod).trim().toUpperCase());
+    }
+  });
+
   const counts = { startup: 0, mentoring: 0, ultimate: 0, total: 0 };
 
   clients.forEach(c => {
+    // Pokud je to původní dárkový nákup a jeho kód už někdo uplatnil, nepočítáme ho (místo už drží obdarovaný)
+    if (c.is_gift && c.kod_voucheru && redeemedCodes.has(String(c.kod_voucheru).trim().toUpperCase())) {
+      return;
+    }
+
     if (c.status === 'aktivni') {
       const isWithinDates = !c.end_date || c.end_date >= todayStr;
       if (isWithinDates) {
