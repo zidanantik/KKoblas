@@ -84,7 +84,7 @@ export async function onRequestPost(context) {
 
     const pkgSlug = normalizePkg(client.sluzba || client.sluzba_nazev);
 
-    // 1. ZPRACOVÁNÍ DÁRKOVÉHO POUKAZU (Odeslání kódu kupujícímu)
+    // ── 1. ZPRACOVÁNÍ DÁRKOVÉHO POUKAZU ──
     if (client.is_gift) {
       const giftCode = generateGiftCode();
       client.kod_voucheru = giftCode;
@@ -117,7 +117,7 @@ export async function onRequestPost(context) {
       if (resendKey && client.kupujici && client.kupujici.email) {
         const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
 
-        const plainTextGift = `Ahoj ${client.kupujici.jmeno},\n\nděkuji za úhradu dárkového poukazu na službu ${client.sluzba_nazev || 'Nutriční spolupráce'}.\n\nKód dárkového poukazu:\n${giftCode}\n\nObdarovaný poukaz aktivuje na adrese:\n${redeemUrl}\n\nTento kód stačí obdarovanému předat (přeposlat nebo vepsat do přáníčka). Všechny další kroky a diagnostiku už vyřeším přímo s ním.\n\nS pozdravem,\nKryštof Koblas`;
+        const plainTextGift = `Ahoj ${client.kupujici.jmeno},\n\nděkuji za úhradu dárkového poukazu na službu ${client.sluzba_nazev || 'Nutriční spolupráce'}.\n\nKód dárkového poukazu:\n${giftCode}\n\nObdarovaný poukaz aktivuje na adrese:\n${redeemUrl}\n\nTento kód stačí obdarovanému předat. Všechny další kroky a diagnostiku už vyřeším přímo s ním.\n\nS pozdravem,\nKryštof Koblas`;
 
         const htmlGift = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; color: #222; line-height: 1.6; font-size: 15px;">
@@ -153,13 +153,37 @@ export async function onRequestPost(context) {
             html: htmlGift
           })
         });
+
+        // Notifikace tobě o zaplacení dárku
+        await new Promise(r => setTimeout(r, 600));
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${resendKey}`, 
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({
+            from: sender,
+            to: [OWNER_EMAIL],
+            reply_to: client.kupujici.email,
+            subject: `DÁREK ZAPLACEN: ${client.sluzba_nazev} – Kód: ${giftCode}`,
+            html: `
+              <div style="font-family:sans-serif;max-width:600px;color:#222;">
+                <h3 style="color:#2ecc71;">Platba za dárkový poukaz byla přijata!</h3>
+                <p>Kupující <strong>${client.kupujici.jmeno}</strong> (${client.kupujici.email}) uhradil fakturu za dárkový poukaz.</p>
+                <p>Byl vygenerován a odeslán kód: <strong>${giftCode}</strong></p>
+              </div>
+            `
+          })
+        });
       }
 
     } else {
-      // 2. BĚŽNÝ NÁKUP PO ZAPLACENÍ (Uvítací e-mail)
-      if (resendKey && client.kupujici && client.kupujici.email) {
-        const packageName = client.sluzba_nazev || 'nutriční program';
+      // ── 2. PŘÍMÝ NÁKUP PO ZAPLACENÍ ──
+      const packageName = client.sluzba_nazev || 'nutriční program';
 
+      // 1. Uvítací e-mail klientovi
+      if (resendKey && client.kupujici && client.kupujici.email) {
         const plainTextClient = `Ahoj ${client.kupujici.jmeno},\n\ntvoje platba za balíček ${packageName} v pořádku dorazila. Oficiálně odmáváme startovní čáru a jdeme na to.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace. Můžeš mi samozřejmě napsat i sám/sama.\n- WhatsApp používáme primárně pro zprávy.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
 
         const htmlClient = `
@@ -206,9 +230,57 @@ export async function onRequestPost(context) {
           })
         });
       }
+
+      // 2. Potvrzení o zaplacení tobě na Gmail (ZAPLACENO!)
+      if (resendKey) {
+        await new Promise(r => setTimeout(r, 600));
+
+        const diag = client.diagnostika || {};
+        const cleanPhone = (client.kupujici.telefon || '').replace(/[^\d+]/g, '');
+        const waLink = cleanPhone.startsWith('+') ? `https://wa.me/${cleanPhone.replace('+', '')}` : `https://wa.me/420${cleanPhone}`;
+
+        const ownerPaidHtml = `
+          <div style="font-family:sans-serif;max-width:640px;color:#222;">
+            <h2 style="color:#2ecc71;margin-top:0;">✅ ZAPLACENO: ${packageName} – ${client.kupujici.jmeno}</h2>
+            
+            <div style="background:#d4edda;color:#155724;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">
+              Platba dorazila na účet! Klientovi byl odeslán uvítací e-mail se ZOFem a InBody. Můžeš se mu ozvat.
+            </div>
+
+            <table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:20px;">
+              <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Rychlý kontakt</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;width:35%;">WhatsApp chat</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;"><a href="${waLink}" style="color:#25D366;font-size:15px;">👉 Otevřít WhatsApp konverzaci</a></td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Telefon</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${client.kupujici.telefon}</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">E-mail</td><td style="padding:8px 14px;border-bottom:1px solid #eee;"><a href="mailto:${client.kupujici.email}">${client.kupujici.email}</a></td></tr>
+
+              <tr><td colspan="2" style="background:#1a1a1a;color:#2ecc71;padding:10px 14px;font-weight:bold;">Vstupní diagnostika klienta</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Věk</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.vek || '—'}</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Pohlaví</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.pohlavi || '—'}</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Výška</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.vyska ? diag.vyska + ' cm' : '—'}</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Váha</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.vaha ? diag.vaha + ' kg' : '—'}</td></tr>
+              ${diag.zprava ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cíl / zpráva</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${diag.zprava}</td></tr>` : ''}
+            </table>
+          </div>
+        `;
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${resendKey}`, 
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({
+            from: sender,
+            to: [OWNER_EMAIL],
+            reply_to: client.kupujici.email,
+            subject: `✅ ZAPLACENO: ${packageName} – ${client.kupujici.jmeno}`,
+            html: ownerPaidHtml
+          })
+        });
+      }
     }
 
-    // 3. SPLÁTKY
+    // ── 3. AUTOMATICKÉ VYSTAVENÍ DALŠÍ SPLÁTKY ──
     if (client.is_installment && client.current_installment < client.total_installments) {
       try {
         const slug = 'krystofkoblas';
