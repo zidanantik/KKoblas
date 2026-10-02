@@ -126,7 +126,6 @@ export async function onRequestPost(context) {
 
     let createdInvoiceId = null;
 
-    // ── FAKTUROID FAKTURA (POUZE PRO PLACENÉ OBJEDNÁVKY > 0 KČ) ──
     if (!isZeroPayment) {
       let lineName = sluzbaNazev;
       if (isGift) {
@@ -170,13 +169,11 @@ export async function onRequestPost(context) {
       const invoiceData = await invoiceRes.json();
       createdInvoiceId = invoiceData.id;
 
-      // Nastavení zprávy z Fakturoidu:
-      // Pokud jde o dárek, pošleme čistý dárkový text místo obecných úkolů ZOF/InBody
       let messagePayload = {};
       if (isGift) {
         messagePayload = {
-          subject: `koblas-nutricni.cz | Zálohová faktura – Dárkový poukaz (${sluzbaNazev})`,
-          message: `Ahoj,\n\nděkuji za objednávku dárkového poukazu na službu ${sluzbaNazev}.\n\nVšechny podrobnosti k platbě a odkaz pro rychlou úhradu najdeš přímo pod odkazem níže.\n\nJakmile platba dorazí na účet, obratem ti do e-mailu pošlu unikátní dárkový kód a přímý odkaz pro obdarovaného.\n\nMěj se fajn,\nKryštof Koblas`
+          subject: `Zálohová faktura – Dárkový poukaz (${sluzbaNazev})`,
+          message: `Ahoj,\n\nděkuji za objednávku dárkového poukazu na službu ${sluzbaNazev}.\n\nVšechny platební údaje najdeš přímo pod odkazem níže.\n\nJakmile platba dorazí, obratem ti do e-mailu pošlu unikátní kód poukazu a odkaz pro obdarovaného.\n\nMěj se fajn,\nKryštof Koblas`
         };
       }
 
@@ -192,13 +189,13 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── 1. NOTIFIKACE PRO TEBE NA GMAIL (PŘEHLED VŠECH ÚDAJŮ) ──
+    // ── 1. NOTIFIKACE PRO TEBE ──
     if (resendKey) {
       let ownerSubject = `Nová objednávka – ${sluzbaNazev}`;
       if (isGift) {
-        ownerSubject = `Nová objednávka (🎁 DÁREK) – ${sluzbaNazev}`;
+        ownerSubject = `Nová objednávka (DÁREK) – ${sluzbaNazev}`;
       } else if (isZeroPayment) {
-        ownerSubject = `Nová objednávka – ${sluzbaNazev} (Uplatněn poukaz 0 Kč)`;
+        ownerSubject = `Nová objednávka – ${sluzbaNazev} (Uplatněn poukaz)`;
       }
 
       const diagnosticRows = !isGift ? `
@@ -211,13 +208,13 @@ export async function onRequestPost(context) {
 
       const ownerHtml = `
         <div style="font-family:sans-serif;max-width:640px;color:#222;">
-          <h2 style="color:#ff9900;margin-top:0;">${ownerSubject}</h2>
+          <h2 style="color:#222;margin-top:0;">${ownerSubject}</h2>
           <table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:20px;">
-            <tr><td colspan="2" style="background:#1a1a1a;color:#ff9900;padding:10px 14px;font-weight:bold;">Objednaná služba a platba</td></tr>
+            <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Objednaná služba</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;width:35%;">Služba</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${sluzbaNazev}</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cena</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Cena || (isZeroPayment ? '0 Kč (Poukaz)' : '—')}</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Typ objednávky</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${isGift ? 'Dárkový poukaz' : (isInstallment ? 'Splátky' : 'Přímý nákup')}</td></tr>
-            ${body.Pouzity_kod ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Uplatněný kód</td><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#ff9900;font-weight:bold;">${body.Pouzity_kod}</td></tr>` : ''}
+            ${body.Pouzity_kod ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Uplatněný kód</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Pouzity_kod}</td></tr>` : ''}
             
             <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Kontaktní údaje klienta</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Jméno</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Jmeno}</td></tr>
@@ -227,7 +224,6 @@ export async function onRequestPost(context) {
 
             ${diagnosticRows}
           </table>
-          <p style="font-size:12px;color:#888;">Fakturoid ID: ${createdInvoiceId || 'Nevytvářeno (Uplatněn poukaz)'}</p>
         </div>
       `;
 
@@ -249,33 +245,37 @@ export async function onRequestPost(context) {
 
     // ── 2. UVÍTACÍ E-MAIL PRO OBDAROVANÉHO (0 Kč) ──
     if (isZeroPayment && resendKey && body.Email) {
-      const welcomeEmailHtml = `
-        <div style="font-family: sans-serif; max-width: 600px; color: #222; line-height: 1.6;">
-          <h2 style="color: #2ecc71;">Poukaz uplatněn! Vítej na palubě 🚀</h2>
+      await new Promise(r => setTimeout(r, 600));
+
+      const subjectClient = `Podklady pro zahájení spolupráce – ${sluzbaNazev}`;
+
+      const plainText = `Ahoj ${body.Jmeno},\n\ntvůj poukaz na balíček ${sluzbaNazev} byl úspěšně aktivován a pouštíme se do práce.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace. Můžeš mi samozřejmě napsat i sám/sama.\n- WhatsApp používáme primárně pro zprávy.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
+
+      const htmlClient = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; color: #222; line-height: 1.6; font-size: 15px;">
           <p>Ahoj ${body.Jmeno},</p>
-          <p>tvůj dárkový poukaz na balíček <strong>${sluzbaNazev}</strong> byl úspěšně aktivován! Oficiálně tak odmáváme startovní čáru a jdeme na to.</p>
+          <p>tvůj poukaz na balíček <strong>${sluzbaNazev}</strong> byl úspěšně aktivován. Oficiálně tak odmáváme startovní čáru a jdeme na to.</p>
           
-          <div style="background: #fff8eb; border-left: 4px solid #ff9900; padding: 15px; margin: 20px 0;">
-            <h3 style="color: #d35400; margin-top: 0; margin-bottom: 8px;">📋 2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ ONLINE SCHŮZKOU:</h3>
-            <p style="margin: 6px 0;"><strong>1. Zápis jídelníčku:</strong> Měj ready aspoň 3 dny zápisu v aplikaci <a href="https://www.zofapp.cz/" style="color: #ff9900; font-weight: bold;">zofapp.cz</a> (čím víc dní zvládneš zapsat, tím líp pro úvodní analýzu).</p>
-            <p style="margin: 6px 0;"><strong>2. Měření InBody:</strong> Zařiď si prosím ve svém okolí měření na InBody a výsledky mi pošli na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</p>
-          </div>
+          <p style="font-weight: bold; margin-top: 20px;">Dva důležité úkoly před naší první online schůzkou:</p>
+          <ol style="padding-left: 20px;">
+            <li style="margin-bottom: 8px;"><strong>Zápis jídelníčku:</strong> Měj ready aspoň 3 dny zápisu v aplikaci <a href="https://www.zofapp.cz/" style="color: #0066cc;">zofapp.cz</a> (čím víc dní zvládneš zapsat, tím lépe pro úvodní analýzu).</li>
+            <li style="margin-bottom: 8px;"><strong>Měření InBody:</strong> Zařiď si prosím ve svém okolí měření na InBody a výsledky mi pošli na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</li>
+          </ol>
 
-          <h3 style="color: #ff9900; margin-top: 25px;">📱 JAK BUDEME V KONTAKTU?</h3>
-          <ul>
-            <li><strong>Prvně ti napíšu na WhatsApp:</strong> Co nejdříve se ti ozvu přímo na WhatsApp (+420 774 143 176), abychom se domluvili na termínu první online schůzky.</li>
-            <li><strong>Klidně napiš sám/sama:</strong> Kdybych to náhodou nestihl hned nebo jsi chtěl/a začátek urychlit, klidně mi napiš jako první.</li>
-            <li><strong>Čistě WhatsApp zprávy:</strong> Číslo používej primárně pro textové a hlasové zprávy. Každému se věnuji na maximum a jakmile mi to čas dovolí, hned odepisuju.</li>
-            <li><strong>Spojení v aplikaci ZOF:</strong> Následně se propojíme i přímo v ZOFu.</li>
+          <p style="font-weight: bold; margin-top: 25px;">Jak budeme v kontaktu:</p>
+          <ul style="padding-left: 20px;">
+            <li style="margin-bottom: 6px;"><strong>WhatsApp:</strong> Co nejdříve se ti ozvu přímo na WhatsApp (+420 774 143 176), abychom se domluvili na termínu první schůzky. Klidně mi napiš i první, pokud chceš začátek urychlit.</li>
+            <li style="margin-bottom: 6px;">Číslo používej primárně pro textové a hlasové zprávy. Jakmile mám prostor mezi klienty, hned odepisuju.</li>
+            <li style="margin-bottom: 6px;">Následně se propojíme přímo v aplikaci ZOF.</li>
           </ul>
 
-          <h3 style="color: #ff9900; margin-top: 25px;">⏱️ JAK JE TO S TVÝM ČASEM? (FÉROVÁ DOHODA)</h3>
-          <ul>
-            <li><strong>O svůj čas nepřijdeš:</strong> Čas balíčku ti začínám oficiálně počítat až ode dne naší první online schůzky (do té doby spolu ladíme jen podklady a diagnostiku).</li>
-            <li><strong>Rušení schůzek:</strong> Když se schůzka předem vykomunikuje a přesune, nic se neděje. Pokud by se ale termíny rušily opakovaně bez omluvy, zaplacený čas začne běžet.</li>
+          <p style="font-weight: bold; margin-top: 25px;">Férová dohoda o počítání času:</p>
+          <ul style="padding-left: 20px;">
+            <li style="margin-bottom: 6px;">Čas balíčku ti začínám oficiálně počítat až ode dne naší první online schůzky. Do té doby ladíme pouze diagnostiku a podklady.</li>
+            <li style="margin-bottom: 6px;">Když se termín schůzky včas omluví a přesune, o nic nepřicházíš.</li>
           </ul>
 
-          <p style="margin-top: 25px;">Všechno v klidu nastavíme tak, aby tě to bavilo a přineslo reálné výsledky.<br><br>Těším se na spolupráci!<br><strong>Kryštof Koblas</strong></p>
+          <p style="margin-top: 30px;">Těším se na spolupráci a na tvé výsledky!<br><br><strong>Kryštof Koblas</strong><br><span style="color: #666; font-size: 13px;">Nutriční poradce | koblas-nutricni.cz</span></p>
         </div>
       `;
 
@@ -288,13 +288,15 @@ export async function onRequestPost(context) {
         body: JSON.stringify({
           from: sender,
           to: [body.Email],
-          subject: `koblas-nutricni.cz | Poukaz na ${sluzbaNazev} aktivován! Info, co bude dál 🚀`,
-          html: welcomeEmailHtml
+          reply_to: OWNER_EMAIL,
+          subject: subjectClient,
+          text: plainText,
+          html: htmlClient
         })
       });
     }
 
-    // ── 3. ULOŽENÍ DO KV DATABÁZE (CLIENTS) ──
+    // ── 3. KV ULOŽENÍ ──
     const store = context.env.STATUS_STORE;
     if (store) {
       const rawClients = await store.get('CLIENTS');
