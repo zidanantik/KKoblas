@@ -42,6 +42,36 @@
 
     <div class="scanlines" aria-hidden="true"></div>
 
+    <!-- ── KAPACITA A AUTOMATICKÉ UZAMYKÁNÍ ── -->
+    <div class="capacity-bar" style="margin: 25px 32px 0; background: #111; border: 1px solid #2a2a2a; border-top: 3px solid #ff9900; border-radius: 4px; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+      <div>
+        <div style="font-size: 13px; font-weight: bold; color: #ff9900; letter-spacing: 2px;">HLÍDÁNÍ KAPACITY &amp; OBSAZENOSTI</div>
+        <div style="font-size: 11px; color: #777; margin-top: 4px;">Při naplnění kapacity web automaticky přepne balíčky na čekací listinu.</div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <label style="font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 8px;">
+          REŽIM:
+          <select id="capacityMode" class="event-input" style="padding: 6px 10px; font-size: 11px; margin: 0;" onchange="handleCapacityModeChange()">
+            <option value="total">Celková kapacita (všechny služby)</option>
+            <option value="packages">Limity po balíčcích</option>
+            <option value="manual">Pouze ručně (vypnuto)</option>
+          </select>
+        </label>
+
+        <div id="capTotalWrapper" style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; color: #aaa;">MAX KLIENTŮ:</span>
+          <input type="number" id="capTotalLimit" class="event-input" style="width: 70px; padding: 6px 8px; margin: 0; text-align: center;" min="1" max="100">
+        </div>
+
+        <button type="button" onclick="saveCapacitySettings()" class="event-save-btn" style="margin: 0; padding: 8px 16px;">💾 ULOŽIT KAPACITU</button>
+
+        <div id="capacityBadge" style="padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; background: rgba(0,255,100,0.1); border: 1px solid #00ff66; color: #00ff66;">
+          AKTIVNÍCH: <span id="capCountDisplay">0</span>
+        </div>
+      </div>
+    </div>
+
     <main class="console-grid">
 
       <!-- ── START-UP ───────── -->
@@ -52,6 +82,7 @@
           <span class="status-led" id="led-startup"></span>
           <span class="status-text" id="statusText-startup">VOLNÝ</span>
         </div>
+        <div style="font-size: 11px; color: #888; font-family: monospace;">Aktivních: <strong id="count-startup" style="color: #ff9900;">0</strong></div>
         <div class="btn-mount">
           <div class="btn-ring">
             <button class="launch-btn" id="btn-startup">
@@ -69,6 +100,7 @@
           <span class="status-led" id="led-mentoring"></span>
           <span class="status-text" id="statusText-mentoring">VOLNÝ</span>
         </div>
+        <div style="font-size: 11px; color: #888; font-family: monospace;">Aktivních: <strong id="count-mentoring" style="color: #ff9900;">0</strong></div>
         <div class="btn-mount">
           <div class="btn-ring">
             <button class="launch-btn" id="btn-mentoring">
@@ -86,6 +118,7 @@
           <span class="status-led" id="led-ultimate"></span>
           <span class="status-text" id="statusText-ultimate">VOLNÝ</span>
         </div>
+        <div style="font-size: 11px; color: #888; font-family: monospace;">Aktivních: <strong id="count-ultimate" style="color: #ff9900;">0</strong></div>
         <div class="btn-mount">
           <div class="btn-ring">
             <button class="launch-btn" id="btn-ultimate">
@@ -96,6 +129,44 @@
       </div>
 
     </main>
+
+    <!-- ── NOVÁ TABULKA: AKTIVNÍ KLIENTI & SPOLUPRÁCE ── -->
+    <div class="event-panel" id="clientsPanel" style="margin-bottom: 30px;">
+      <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="font-family: monospace; font-size: 13px; font-weight: bold; color: #00ff66; letter-spacing: 2px;">KLIENTI A AKTIVNÍ SPOLUPRÁCE</div>
+          <div style="font-family: monospace; font-size: 11px; color: #777; margin-top: 3px;">Správa klientů, termínů 1. schůzky a ukončení spolupráce</div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <select id="clientFilter" onchange="filterClientsTable()" class="event-input" style="padding: 4px 8px; font-size: 11px; margin: 0;">
+            <option value="active">Pouze aktivní</option>
+            <option value="all">Všichni klienti</option>
+            <option value="ended">Ukončení</option>
+          </select>
+          <button type="button" onclick="loadClients()" class="an-refresh-btn" style="cursor: pointer;" title="Obnovit seznam klientů">↻ OBNOVIT</button>
+        </div>
+      </div>
+
+      <div class="event-panel__fields" style="padding: 15px 20px; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #888;">
+              <th style="padding: 10px;">KLIENT (A PLÁTCE)</th>
+              <th style="padding: 10px;">BALÍČEK</th>
+              <th style="padding: 10px;">1. SCHŮZKA (START)</th>
+              <th style="padding: 10px;">UKONČENÍ</th>
+              <th style="padding: 10px;">STAV</th>
+              <th style="padding: 10px; text-align: right;">AKCE</th>
+            </tr>
+          </thead>
+          <tbody id="clientsTableBody">
+            <tr>
+              <td colspan="6" style="padding: 15px; text-align: center; color: #666;">Načítám klienty...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- ── Speciální event ──────────────────────── -->
     <div class="event-panel" id="eventPanel">
@@ -292,6 +363,6 @@
 
   </div>
 
-  <script src="admin.js?v=6"></script>
+  <script src="admin.js?v=7"></script>
 </body>
 </html>
