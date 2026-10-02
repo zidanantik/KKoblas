@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dárkový poukaz – Kryštof Koblas Nutriční poradenství</title>
+  <link rel="icon" type="image/webp" href="LOGO nové.webp">
+  <style>
+    @page { size: A4 landscape; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0d0d0d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 95vh;
+    }
+
+    .toolbar {
+      margin-bottom: 25px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      background: #181818;
+      border: 1px solid #333;
+      padding: 10px 20px;
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar label {
+      color: #bbb;
+      font-family: monospace;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toolbar select {
+      background: #090909;
+      color: #ff9900;
+      border: 1px solid #c88a2c;
+      padding: 7px 12px;
+      font-family: monospace;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-print {
+      background: #ff9900;
+      color: #000;
+      border: none;
+      font-weight: bold;
+      font-size: 13px;
+      padding: 8px 18px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+      transition: all 0.2s ease;
+    }
+    .btn-print:hover {
+      background: #ffaa22;
+      transform: translateY(-1px);
+    }
+    .btn-back {
+      background: #252525;
+      color: #aaa;
+      text-decoration: none;
+      border: 1px solid #444;
+      font-size: 12px;
+      padding: 7px 14px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .btn-back:hover { color: #fff; border-color: #666; }
+
+    /* Brand logo & Vánoční čepička */
+    .voucher-brand-badge {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .voucher-logo-img {
+      height: 46px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+      border-radius: 4px;
+    }
+    .xmas-cap {
+      position: absolute;
+      top: -16px;
+      left: -14px;
+      width: 34px;
+      height: 34px;
+      transform: rotate(-15deg);
+      pointer-events: none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+      display: none; /* ve výchozím stavu skryta */
+    }
+
+    /* ── ŠABLONA 1: Dark Gold (Klasik) ── */
+    .tpl-dark-gold {
+      width: 740px;
+      background: #141414;
+      color: #eee;
+      border: 2px solid #c88a2c;
+      border-radius: 12px;
+      padding: 38px 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
+    }
+    .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 24px; color: #ff9900; margin: 0; }
+    .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 11px; color: #888; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; }
+    .tpl-dark-gold .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+    .tpl-dark-gold .service-desc { color: #aaa; font-size: 15px; }
+    .tpl-dark-gold .code-box { margin: 24px auto; padding: 16px 28px; background: #080808; border: 1px dashed #ff9900; border-radius: 8px; display: inline-block; }
+    .tpl-dark-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff9900; letter-spacing: 6px; }
+    .tpl-dark-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
+    .tpl-dark-gold a { color: #ff9900; }
+
+    /* ── ŠABLONA 2: Vánoční Dark Gold (XMAS) ── */
+    .tpl-xmas-gold {
+      width: 740px;
+      background: #141414;
+      color: #eee;
+      border: 2px solid #e74c3c;
+      border-radius: 12px;
+      padding: 38px 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 25px rgba(231,76,60,0.15);
+      background-image: radial-gradient(circle at 100% 0%, rgba(231,76,60,0.15) 0%, transparent 60%);
+    }
+    .tpl-xmas-gold .xmas-cap { display: block !important; }
+    .tpl-xmas-gold .brand-title { font-family: Georgia, serif; font-size: 24px; color: #ffaa22; margin: 0; }
+    .tpl-xmas-gold .brand-sub { font-family: monospace; font-size: 11px; color: #aaa; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-xmas-gold .badge-type { background: rgba(231,76,60,0.2); border: 1px solid #e74c3c; color: #ff7875; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
+    .tpl-xmas-gold .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+    .tpl-xmas-gold .service-desc { color: #bbb; font-size: 15px; }
+    .tpl-xmas-gold .code-box { margin: 24px auto; padding: 16px 28px; background: #080808; border: 1px dashed #e74c3c; border-radius: 8px; display: inline-block; }
+    .tpl-xmas-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ffaa22; letter-spacing: 6px; }
+    .tpl-xmas-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
+    .tpl-xmas-gold a { color: #ffaa22; }
+
+    /* ── ŠABLONA 3: Clean Minimal ── */
+    .tpl-clean-white {
+      width: 740px;
+      background: #ffffff;
+      color: #111111;
+      border: 3px solid #111111;
+      border-radius: 4px;
+      padding: 38px 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .tpl-clean-white .brand-title { font-family: Georgia, serif; font-size: 26px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-clean-white .brand-sub { font-family: monospace; font-size: 11px; color: #555; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-clean-white .badge-type { background: #111; border: 1px solid #111; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 2px; }
+    .tpl-clean-white .service-name { font-size: 20px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+    .tpl-clean-white .service-desc { color: #444; font-size: 15px; }
+    .tpl-clean-white .code-box { margin: 24px auto; padding: 16px 28px; background: #f4f4f4; border: 2px solid #111; border-radius: 4px; display: inline-block; }
+    .tpl-clean-white .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; }
+    .tpl-clean-white .instructions { margin-top: 20px; font-size: 12px; color: #555; border-top: 1px solid #ddd; padding-top: 18px; line-height: 1.6; }
+    .tpl-clean-white a { color: #111; font-weight: bold; }
+
+    /* ── ŠABLONA 4: Sport & Energy ── */
+    .tpl-sport-energy {
+      width: 740px;
+      background: linear-gradient(135deg, #0f0f0f 0%, #1b1b1b 100%);
+      color: #fff;
+      border-left: 8px solid #ff5500;
+      border-top: 1px solid #333;
+      border-right: 1px solid #333;
+      border-bottom: 1px solid #333;
+      border-radius: 6px;
+      padding: 38px 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    }
+    .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 28px; color: #ff5500; margin: 0; letter-spacing: 1px; }
+    .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 11px; color: #999; letter-spacing: 2px; margin-top: 3px; }
+    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 3px; font-weight: bold; }
+    .tpl-sport-energy .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+    .tpl-sport-energy .service-desc { color: #ccc; font-size: 15px; }
+    .tpl-sport-energy .code-box { margin: 24px auto; padding: 16px 28px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
+    .tpl-sport-energy .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff5500; letter-spacing: 6px; }
+    .tpl-sport-energy .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 18px; line-height: 1.6; }
+    .tpl-sport-energy a { color: #ff5500; }
+
+    @media print {
+      body { background: #fff !important; padding: 0 !important; }
+      .toolbar { display: none !important; }
+      .voucher-card { box-shadow: none !important; width: 100% !important; margin: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <label>VZHLED CERTIFIKÁTU:
+      <select id="templateSelector" onchange="changeTemplate(this.value)">
+        <option value="tpl-dark-gold">Dark Gold (Prémiová tmavá)</option>
+        <option value="tpl-xmas-gold">🎄 Vánoční edice (Dark Gold + Čepička)</option>
+        <option value="tpl-clean-white">Clean Minimal (Světlý tisk / Úsporná)</option>
+        <option value="tpl-sport-energy">Sport &amp; Energy (Fitness styl)</option>
+      </select>
+    </label>
+    <button class="btn-print" onclick="window.print()">🖨 STÁHNOUT JAKO PDF / TISK</button>
+    <a href="sluzby.html" class="btn-back">Zpět na web</a>
+  </div>
+
+  <div id="voucherContainer" class="voucher-card tpl-dark-gold">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 25px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <!-- Logo s vánoční čepičkou -->
+        <div class="voucher-brand-badge">
+          <img src="LOGO nové.webp" alt="KKoblas logo" class="voucher-logo-img">
+          
+          <svg class="xmas-cap" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 44 C 18 20, 38 12, 52 18 C 50 26, 44 38, 48 44 Z" fill="#e74c3c" stroke="#c0392b" stroke-width="1.5"/>
+            <path d="M52 18 C 56 20, 58 26, 56 30" fill="none" stroke="#e74c3c" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="56" cy="31" r="5" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+            <rect x="8" y="40" width="44" height="10" rx="5" fill="#ffffff" stroke="#eee" stroke-width="1"/>
+          </svg>
+        </div>
+
+        <div>
+          <h1 class="brand-title">KRYŠTOF KOBLAS</h1>
+          <div class="brand-sub">NUTRIČNÍ ANALÝZA &amp; PORADENSTVÍ</div>
+        </div>
+      </div>
+
+      <div class="badge-type">DÁRKOVÝ POUKAZ</div>
+    </div>
+
+    <div style="text-align: center; margin: 25px 0;">
+      <div class="service-name" id="voucherService">VŠECHNY SLUŽBY</div>
+      <div class="service-desc" id="voucherDesc">100% Uhrazeno dárkovým certifikátem</div>
+
+      <div class="code-box">
+        <div class="code-text" id="voucherCode">DAR-XXXXX</div>
+      </div>
+
+      <div class="instructions">
+        Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong> a v objednávce zadejte tento kód.<br>
+        Přímý odkaz: <a id="voucherRedeemLink" href="https://koblas-nutricni.cz/sluzby.html">koblas-nutricni.cz/sluzby.html</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function changeTemplate(tplClass) {
+      document.getElementById('voucherContainer').className = 'voucher-card ' + tplClass;
+    }
+
+    (async function() {
+      var params = new URLSearchParams(window.location.search);
+      var code = (params.get('kod') || params.get('code') || '').trim().toUpperCase();
+
+      // Pokud v URL přijde ?xmas=1, rovnou aktivujeme vánoční šablonu
+      if (params.get('xmas') === '1') {
+        var sel = document.getElementById('templateSelector');
+        if (sel) {
+          sel.value = 'tpl-xmas-gold';
+          changeTemplate('tpl-xmas-gold');
+        }
+      }
+
+      if (code) {
+        document.getElementById('voucherCode').textContent = code;
+        var directUrl = 'https://koblas-nutricni.cz/objednavka.html?kod=' + encodeURIComponent(code);
+        
+        try {
+          var res = await fetch('/api/codes?code=' + encodeURIComponent(code));
+          var data = await res.json();
+          if (data.valid && data.packages && data.packages.length > 0) {
+            var pkgTitlesMap = { startup: 'START-UP (1 MĚSÍC)', mentoring: 'MENTORING (4 MĚSÍCE)', ultimate: 'ULTIMATE (6 MĚSÍCŮ)' };
+            var pkgName = pkgTitlesMap[data.packages[0].toLowerCase()] || data.packages[0].toUpperCase();
+            document.getElementById('voucherService').textContent = pkgName;
+            directUrl += '&sluzba=' + encodeURIComponent(data.packages[0]);
+          }
+        } catch (e) {}
+
+        var linkEl = document.getElementById('voucherRedeemLink');
+        if (linkEl) {
+          linkEl.href = directUrl;
+          linkEl.textContent = directUrl;
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
