@@ -9,7 +9,7 @@ const DEFAULT = {
   },
   event: { active: false, name: '', popis: '', cena: '', odkaz: '' },
   prices: {
-    startup:  { jednorizove: '6 900 Kč' },
+    startup:   { jednorizove: '6 900 Kč' },
     mentoring: { jednorizove: '14 700 Kč', splatky: '7 500 Kč (1. splátka)' },
     ultimate:  { jednorizove: '22 300 Kč', splatky: '11 900 Kč (1. splátka)' }
   }
@@ -38,10 +38,7 @@ export async function onRequestGet(context) {
     const counts = { startup: 0, mentoring: 0, ultimate: 0, total: 0 };
 
     clients.forEach(c => {
-      // Poukaz jako dárek, který ještě nebyl uplatněn, nezabírá tréninkovou kapacitu
-      if (c.is_gift && !c.is_gift_redemption) return;
-
-      // Aktivní je klient se stavem aktivni a platným datem
+      // Aktivní je klient se stavem aktivni a platným datem (nebo čekající dárkový poukaz)
       if (c.status === 'aktivni') {
         const isWithinDates = !c.end_date || c.end_date >= todayStr;
         if (isWithinDates) {
@@ -57,7 +54,7 @@ export async function onRequestGet(context) {
     data.counts = counts;
     if (!data.capacity) data.capacity = DEFAULT.capacity;
 
-    // Automatické vyhodnocení stavu balíčků podle kapacity
+    // Automatické uzamčení podle kapacity
     const cap = data.capacity;
     if (cap.mode === 'total' && cap.totalLimit > 0) {
       if (counts.total >= cap.totalLimit) {
