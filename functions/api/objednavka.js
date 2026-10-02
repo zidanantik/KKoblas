@@ -118,7 +118,7 @@ export async function onRequestPost(context) {
 
     let createdInvoiceId = null;
 
-    // ── FAKTUROID FAKTURA (POUZE POKUD JDE O PLACENOU OBJEDNÁVKU > 0 KČ) ──
+    // ── FAKTUROID FAKTURA (POUZE PRO PLACENÉ OBJEDNÁVKY > 0 KČ) ──
     if (!isZeroPayment) {
       let lineName = sluzbaNazev;
       if (isGift) {
@@ -162,7 +162,6 @@ export async function onRequestPost(context) {
       const invoiceData = await invoiceRes.json();
       createdInvoiceId = invoiceData.id;
 
-      // Fakturoid odešle zálohovou fakturu k úhradě
       await fetch(`https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${createdInvoiceId}/message.json`, {
         method: 'POST',
         headers: {
