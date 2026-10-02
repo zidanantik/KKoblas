@@ -105,7 +105,7 @@
       border-radius: 4px;
     }
 
-    /* Ikony pro sezóny */
+    /* Sezónní ikony a grafika */
     .season-icon { display: none; }
     
     .xmas-cap {
@@ -131,13 +131,36 @@
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
 
+    .easter-whip {
+      position: absolute;
+      right: -16px;
+      bottom: -12px;
+      width: 65px;
+      height: 75px;
+      pointer-events: none;
+      z-index: 1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+    }
+
+    .summer-shape {
+      position: absolute;
+      right: -14px;
+      bottom: -10px;
+      width: 75px;
+      height: 75px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.9;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+    }
+
     .code-wrapper {
       position: relative;
       display: inline-block;
       margin: 12px auto;
     }
 
-    /* ── 1. VÁNOČNÍ: NORDIC SNOW (Bílá + Stromeček + Modro-červená čepička) ── */
+    /* ── 1. VÁNOČNÍ: NORDIC SNOW ── */
     .tpl-nordic-snow {
       background: #ffffff;
       color: #1a1a1a;
@@ -157,7 +180,47 @@
     .tpl-nordic-snow .instructions { font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.5; }
     .tpl-nordic-snow a { color: #1c7ed6; font-weight: 600; text-decoration: none; }
 
-    /* ── 2. NOVÝ ROK: NEW YEAR KICKSTART (Zlatá & Restart) ── */
+    /* ── 2. JARO & VELIKONOCE: VELIKONOČNÍ RESTART ── */
+    .tpl-easter {
+      background: #fdfdf9;
+      color: #1a1a1a;
+      border: 2px solid #51cf66;
+      border-radius: 6px;
+      padding: 24px 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+    .tpl-easter .easter-whip { display: block !important; }
+    .tpl-easter .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-easter .brand-sub { font-family: monospace; font-size: 10px; color: #555; letter-spacing: 2px; margin-top: 2px; }
+    .tpl-easter .badge-type { background: #ebfbee; border: 1.5px solid #51cf66; color: #2b8a3e; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+    .tpl-easter .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .tpl-easter .service-desc { color: #2b8a3e; font-size: 13.5px; font-weight: 600; }
+    .tpl-easter .code-box { position: relative; z-index: 2; padding: 10px 24px; background: rgba(255, 255, 255, 0.95); border: 2px dashed #51cf66; border-radius: 6px; display: inline-block; }
+    .tpl-easter .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #2b8a3e; letter-spacing: 5px; }
+    .tpl-easter .instructions { font-size: 11px; color: #666; border-top: 1px solid #e2f0d9; padding-top: 10px; line-height: 1.5; }
+    .tpl-easter a { color: #2b8a3e; font-weight: bold; }
+
+    /* ── 3. LÉTO: LÉTO V ŠEJPU / BEACH BODY ── */
+    .tpl-summer-shape {
+      background: linear-gradient(135deg, #071e22 0%, #1d2d44 100%);
+      color: #fff;
+      border: 2px solid #00b4d8;
+      border-radius: 6px;
+      padding: 24px 30px;
+      box-shadow: 0 10px 35px rgba(0, 180, 216, 0.25);
+    }
+    .tpl-summer-shape .summer-shape { display: block !important; }
+    .tpl-summer-shape .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 22px; color: #90e0ef; margin: 0; letter-spacing: 1px; }
+    .tpl-summer-shape .brand-sub { font-family: monospace; font-size: 10px; color: #caf0f8; letter-spacing: 2px; margin-top: 2px; }
+    .tpl-summer-shape .badge-type { background: rgba(0, 180, 216, 0.2); border: 1.5px solid #00b4d8; color: #90e0ef; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+    .tpl-summer-shape .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .tpl-summer-shape .service-desc { color: #00b4d8; font-size: 13.5px; font-weight: 600; letter-spacing: 1px; }
+    .tpl-summer-shape .code-box { position: relative; z-index: 2; padding: 10px 24px; background: rgba(10, 25, 47, 0.88); border: 2px dashed #00b4d8; border-radius: 6px; display: inline-block; }
+    .tpl-summer-shape .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #90e0ef; letter-spacing: 5px; }
+    .tpl-summer-shape .instructions { font-size: 11px; color: #a0c4e2; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 10px; line-height: 1.5; }
+    .tpl-summer-shape a { color: #00b4d8; font-weight: bold; }
+
+    /* ── 4. NOVÝ ROK ── */
     .tpl-new-year {
       background: #fafaf8;
       color: #111;
@@ -176,7 +239,7 @@
     .tpl-new-year .instructions { font-size: 11px; color: #666; border-top: 1px solid #ebd9b4; padding-top: 10px; line-height: 1.5; }
     .tpl-new-year a { color: #b8860b; font-weight: bold; }
 
-    /* ── 3. NAROZENINY & OSLAVA: BIRTHDAY SPECIAL (Champagne & Mašle) ── */
+    /* ── 5. NAROZENINY & OSLAVA ── */
     .tpl-birthday {
       background: #fdfbf7;
       color: #222;
@@ -196,7 +259,7 @@
     .tpl-birthday .instructions { font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.5; }
     .tpl-birthday a { color: #996515; font-weight: bold; }
 
-    /* ── 4. SPORTOVNÍ & FITNESS VÝKON: SPORT & ENERGY ── */
+    /* ── 6. SPORTOVNÍ & FITNESS VÝKON ── */
     .tpl-sport-energy {
       background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
       color: #fff;
@@ -219,7 +282,7 @@
     .tpl-sport-energy .instructions { font-size: 11px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 10px; line-height: 1.5; }
     .tpl-sport-energy a { color: #ff5500; font-weight: bold; }
 
-    /* ── 5. CELOROČNÍ PRESTIŽ: DARK GOLD ── */
+    /* ── 7. CELOROČNÍ PRESTIŽ: DARK GOLD ── */
     .tpl-dark-gold {
       background: #141414;
       color: #eee;
@@ -262,7 +325,6 @@
         position: relative !important;
       }
 
-      /* Ořezové vodicí linky s nůžkami */
       .voucher-card::after {
         content: "✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Zde odstřihněte pro formát DL (do obálky) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂";
         position: absolute;
@@ -283,8 +345,10 @@
   <div class="toolbar">
     <label>PŘÍLEŽITOST &amp; VZHLED:
       <select id="templateSelector" onchange="changeTemplate(this.value)">
-        <option value="tpl-nordic-snow">🎄 Vánoce &amp; Zima (Nordic Snow + Čepička + Stromeček)</option>
-        <option value="tpl-new-year">🚀 Nový rok (New Year Restart &amp; Zlato)</option>
+        <option value="tpl-nordic-snow">🎄 Vánoce (Nordic Snow + Čepička + Stromeček)</option>
+        <option value="tpl-easter">🐣 Jaro &amp; Velikonoce (Svěží restart + Pomlázka)</option>
+        <option value="tpl-summer-shape">☀️ Léto v šejpu (Beach body &amp; Shape)</option>
+        <option value="tpl-new-year">🚀 Nový rok (Restart &amp; Zlato)</option>
         <option value="tpl-birthday">🎂 Narozeniny &amp; Dárek (Champagne Special)</option>
         <option value="tpl-sport-energy">⚡ Sport &amp; Výkon (Fitness s činkou)</option>
         <option value="tpl-dark-gold">✨ Celoroční Dark Gold (Luxusní tmavá)</option>
@@ -322,7 +386,7 @@
         <svg class="season-icon icon-dumb" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M6 5H4v14h2V5zm14 0h-2v14h2V5zM2 8H1v8h1V8zm21 0h-1v8h1V8zM8 11h8v2H8v-2z" />
         </svg>
-        <!-- Ikona narozeninového dárku -->
+        <!-- Ikona narozenin -->
         <svg class="season-icon icon-bday" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M20 12V22H4V12H20ZM20 6H16.82C17.44 5.17 17.82 4.13 17.82 3C17.82 1.34 16.48 0 14.82 0C13.62 0 12.59 0.73 12.16 1.76L12 2.14L11.84 1.76C11.41 0.73 10.38 0 9.18 0C7.52 0 6.18 1.34 6.18 3C6.18 4.13 6.56 5.17 7.18 6H4C2.9 6 2 6.9 2 8V10H22V8C22 6.9 21.1 6 20 6ZM14.82 2C15.37 2 15.82 2.45 15.82 3C15.82 3.55 15.37 4 14.82 4C14.07 4 13.4 3.42 13.06 2.65C13.34 2.25 13.97 2 14.82 2ZM9.18 2C10.03 2 10.66 2.25 10.94 2.65C10.6 3.42 9.93 4 9.18 4C8.63 4 8.18 3.55 8.18 3C8.18 2.45 8.63 2 9.18 2Z"/>
         </svg>
@@ -351,6 +415,34 @@
           <circle cx="38" cy="62" r="3" fill="#e03131" />
           <circle cx="62" cy="60" r="3" fill="#ffffff" />
           <circle cx="50" cy="40" r="2.5" fill="#74c0fc" />
+        </svg>
+
+        <!-- Velikonoční pletená pomlázka se stuhami -->
+        <svg class="season-icon easter-whip" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Proutěný spletený prut -->
+          <path d="M15 105 Q 45 65 75 15" stroke="#b08968" stroke-width="6" stroke-linecap="round"/>
+          <path d="M18 105 Q 48 65 78 15" stroke="#8d6e63" stroke-width="3" stroke-dasharray="4,4"/>
+          <!-- Barevné stuhy nahoře -->
+          <path d="M75 15 C 85 10, 92 18, 96 12" fill="none" stroke="#e03131" stroke-width="3" stroke-linecap="round"/>
+          <path d="M75 15 C 80 25, 90 28, 92 38" fill="none" stroke="#ffd43b" stroke-width="3" stroke-linecap="round"/>
+          <path d="M75 15 C 72 26, 78 32, 82 42" fill="none" stroke="#4dabf7" stroke-width="3" stroke-linecap="round"/>
+          <!-- Mašlička na spoji -->
+          <circle cx="75" cy="16" r="3.5" fill="#ff6b6b"/>
+        </svg>
+
+        <!-- Léto v šejpu: Silueta trupu / břišního svalstva & letní slunce -->
+        <svg class="season-icon summer-shape" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Zářící letní slunce na pozadí -->
+          <circle cx="65" cy="35" r="20" fill="#ffd166" opacity="0.45" />
+          <!-- Paprsky -->
+          <path d="M65 8 L65 14 M65 56 L65 62 M38 35 L44 35 M86 35 L92 35" stroke="#ffd166" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+          <!-- V-Shape sportovní trup & břišní reliéf -->
+          <path d="M22 28 Q 38 24 54 28 L 50 78 Q 38 82 26 78 Z" fill="rgba(0, 180, 216, 0.25)" stroke="#00b4d8" stroke-width="2"/>
+          <!-- Reliéf žeber a sixpack linek -->
+          <path d="M38 36 L38 68" stroke="#90e0ef" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M30 44 Q 38 48 46 44" stroke="#90e0ef" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M31 54 Q 38 58 45 54" stroke="#90e0ef" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M33 63 Q 38 66 43 63" stroke="#90e0ef" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
       </div>
     </div>
