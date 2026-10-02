@@ -22,8 +22,8 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="sluzby.css">
   <style>
-    /* Zářící stávající tlačítko pro uplatnění voucheru / kódu */
-    #promoToggleBtn {
+    /* POUZE PŘI UZAMČENÍ: Výrazné pulzování a záře horního tlačítka */
+    .promo-toggle-link--alert {
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -41,13 +41,13 @@
       cursor: pointer;
     }
 
-    #promoToggleBtn span {
+    .promo-toggle-link--alert span {
       color: #ccc;
       font-size: 12px;
       font-weight: normal;
     }
 
-    #promoToggleBtn strong {
+    .promo-toggle-link--alert strong {
       background: #ff9900 !important;
       color: #000 !important;
       padding: 4px 10px !important;
@@ -58,7 +58,7 @@
       display: inline-block;
     }
 
-    #promoToggleBtn:hover {
+    .promo-toggle-link--alert:hover {
       background: rgba(255, 153, 0, 0.25) !important;
       box-shadow: 0 6px 26px rgba(255, 153, 0, 0.5) !important;
       transform: translateY(-1px) !important;
@@ -183,7 +183,7 @@
         <!-- Rozbalovací lišta na kód nahoře nad balíčky -->
         <div class="promo-bar-wrap">
           <button type="button" class="promo-toggle-link" id="promoToggleBtn">
-            🎁 MÁŠ DÁRKOVÝ POUKAZ NEBO KÓD? <span>(Místo máš předplacené)</span> <strong>UPLATNIT ZDE ▾</strong>
+            🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>
           </button>
           <div class="promo-bar" id="promoBar" hidden>
             <div class="promo-bar__inputs">
@@ -487,6 +487,26 @@
       // Uchováme si původní stav zamčení z backendu
       var originalClosedMap = { startup: false, mentoring: false, ultimate: false };
 
+      function updatePromoToggleAppearance() {
+        var promoToggle = document.getElementById('promoToggleBtn');
+        var promoBar = document.getElementById('promoBar');
+        if (!promoToggle) return;
+
+        var isAnyClosed = originalClosedMap.startup || originalClosedMap.mentoring || originalClosedMap.ultimate;
+
+        if (isAnyClosed) {
+          promoToggle.classList.add('promo-toggle-link--alert');
+          if (promoBar && promoBar.hidden) {
+            promoToggle.innerHTML = '🎁 MÁŠ DÁRKOVÝ POUKAZ? <span>(Místo máš předplacené)</span> <strong>UPLATNIT ZDE ▾</strong>';
+          }
+        } else {
+          promoToggle.classList.remove('promo-toggle-link--alert');
+          if (promoBar && promoBar.hidden) {
+            promoToggle.innerHTML = '🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>';
+          }
+        }
+      }
+
       function renderBasePrices() {
         set('price-startup',   fmtKc(currentPrices.startup.jed));
         set('price-mentoring', fmtKc(currentPrices.mentoring.jed));
@@ -559,6 +579,8 @@
           bUlSpl.textContent = 'Chci na splátky – 1. platba ' + fmtKc(currentPrices.ultimate.spl); 
           bUlSpl.href = 'objednavka.html?sluzba=ultimate&platba=splatky'; 
         }
+
+        updatePromoToggleAppearance();
       }
 
       fetch('/api/status', { cache: 'no-store' })
@@ -598,9 +620,19 @@
         promoToggleBtn.addEventListener('click', function() {
           var isHidden = promoBar.hidden;
           promoBar.hidden = !isHidden;
-          promoToggleBtn.innerHTML = isHidden 
-            ? '🎁 Zadej kód poukazu nebo slevy <strong>▴ Zavřít</strong>' 
-            : '🎁 MÁŠ DÁRKOVÝ POUKAZ NEBO KÓD? <span>(Místo máš předplacené)</span> <strong>UPLATNIT ZDE ▾</strong>';
+
+          var isAnyClosed = originalClosedMap.startup || originalClosedMap.mentoring || originalClosedMap.ultimate;
+
+          if (isHidden) {
+            promoToggleBtn.innerHTML = '🎁 Zadej kód poukazu nebo slevy <strong>▴ Zavřít</strong>';
+          } else {
+            if (isAnyClosed) {
+              promoToggleBtn.innerHTML = '🎁 MÁŠ DÁRKOVÝ POUKAZ? <span>(Místo máš předplacené)</span> <strong>UPLATNIT ZDE ▾</strong>';
+            } else {
+              promoToggleBtn.innerHTML = '🎁 Máš dárkový poukaz nebo slevový kód? <strong>Uplatnit zde ▾</strong>';
+            }
+          }
+
           if (isHidden && promoInput) promoInput.focus();
         });
       }
