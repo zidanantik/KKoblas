@@ -12,7 +12,8 @@ var deployMsg  = document.getElementById('deployMsg');
 
 var currentStatus = {
   startup: 'volny', mentoring: 'volny', ultimate: 'volny',
-  event: { active: false, name: '', popis: '', odkaz: '' },
+  capacity: { mode: 'total', totalLimit: 10, limits: { startup: 0, mentoring: 0, ultimate: 0 } },
+  event: { active: false, name: '', popis: '', cena: '', odkaz: '' },
   prices: {
     startup:   { jednorizove: '6 900 Kč' },
     mentoring: { jednorizove: '14 700 Kč', splatky: '7 500 Kč (1. splátka)' },
@@ -29,6 +30,7 @@ function unlock() {
   loadStatus();
   loadAnalytics();
   loadPromoCodes();
+  loadClients();
 }
 
 if (sessionStorage.getItem(SESSION_KEY) === '1') {
@@ -74,6 +76,7 @@ async function loadStatus() {
     var data = await res.json();
     currentStatus = data;
     renderAll();
+    updateCapacityDisplay(data);
     deployBar.hidden = true;
   } catch {
     setDeploy('Chyba načítání — funguje jen na živém webu', 'error');
@@ -125,7 +128,7 @@ function renderAll() {
 
 function renderPrices() {
   var p  = currentStatus.prices || {};
-  var su = p.startup   || {};
+  var su = p.startup    || {};
   var me = p.mentoring || {};
   var ul = p.ultimate  || {};
   var el;
@@ -185,7 +188,7 @@ async function setAll(val) {
 document.getElementById('masterClose').addEventListener('click', function () { setAll('uzavreny'); });
 document.getElementById('masterOpen').addEventListener('click',  function () { setAll('volny'); });
 
-// ── Event toggle ─────────────────────────────────
+// ── Event toggle & save ──────────────────────────
 document.getElementById('btn-event').addEventListener('click', async function () {
   var ev = currentStatus.event || {};
   currentStatus.event = Object.assign({}, ev, { active: !ev.active });
@@ -193,84 +196,16 @@ document.getElementById('btn-event').addEventListener('click', async function ()
   await saveStatus();
 });
 
-// ── Analytics ────────────────────────────────────
-async function loadAnalytics() {
-  var body = document.getElementById('anBody');
-  if (!body) return;
-  body.innerHTML = '<span class="an-loading">Načítám...</span>';
-  var btn = document.getElementById('anRefresh');
-  if (btn) { btn.disabled = true; btn.textContent = '↻ ...'; }
-  try {
-    var r = await fetch('/api/analytics?t=' + Date.now(), { cache: 'no-store' });
-    var d = await r.json();
-    if (!d.ok) {
-      body.innerHTML = '<div class="an-err-box">'
-        + '<span class="an-err-icon">⚠</span>'
-        + '<span class="an-err-msg">' + (d.error || 'Neznámá chyba') + '</span>'
-        + '</div>';
-      return;
-    }
-    body.innerHTML = buildAnHTML(d);
-    if (d.warning) {
-      body.innerHTML += '<div class="an-warn-box">'
-        + '<span class="an-err-icon">ℹ</span>'
-        + '<span class="an-err-msg">' + d.warning + '</span>'
-        + '</div>';
-    }
-  } catch (e) {
-    body.innerHTML = '<div class="an-err-box">'
-      + '<span class="an-err-icon">⚠</span>'
-      + '<span class="an-err-msg">Chyba: ' + e.message + ' — analytics funguje jen na živém webu (Cloudflare Pages)</span>'
-      + '</div>';
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '↻ OBNOVIT'; }
-  }
-}
-
-document.getElementById('anRefresh').addEventListener('click', loadAnalytics);
-
-function buildAnHTML(d) {
-  function bars(data, lblFn) {
-    var max = 1;
-    for (var i = 0; i < data.length; i++) if (data[i].count > max) max = data[i].count;
-    return data.map(function(x) {
-      var h = Math.max(2, Math.round(x.count / max * 100));
-      return '<div class="an-bar"><div class="an-bar__fill" style="height:' + h + '%"></div>'
-           + '<span class="an-bar__lbl">' + lblFn(x) + '</span></div>';
-    }).join('');
-  }
-
-  var pageNames = {'/':'Úvod','/sluzby.html':'Služby','/omne.html':'O mně',
-    '/jakpracuji.html':'Jak pracuji','/faq.html':'FAQ','/kontakt.html':'Kontakt',
-    '/objednavka.html':'Objednávka','/dekujeme.html':'Děkujeme'};
-  var deviceNames = {'Desktop':'Desktop','Mobile':'Mobil','Tablet':'Tablet','Bot':'Bot'};
-
-  var pagesHTML = (d.topPages || []).map(function(p) {
-    return '<li class="an-page-row"><span class="an-page-name">' + (pageNames[p.path] || p.path) + '</span>'
-         + '<span class="an-page-count">' + p.count + '</span></li>';
-  }).join('') || '<li class="an-page-row"><span style="color:var(--sub);font-size:.7rem">žádná data</span></li>';
-
-  var devicesHTML = (d.devices || []).map(function(x) {
-    return '<li class="an-dev-row"><span class="an-dev-name">' + (deviceNames[x.type] || x.type) + '</span>'
-         + '<span class="an-dev-bar"><span class="an-dev-fill" style="width:' + x.pct + '%"></span></span>'
-         + '<span class="an-dev-pct">' + x.pct + '%</span></li>';
-  }).join('') || '<li class="an-dev-row"><span style="color:var(--sub);font-size:.7rem">žádná data</span></li>';
-
-  return '<div class="an-charts">'
-    + '<div class="an-chart">'
-    +   '<div class="an-chart__title">DNES &mdash; <b>' + (d.todayPv || 0) + '</b> zobrazení</div>'
-    +   '<div class="an-bars">' + bars(d.hours || [], function(x) { return x.hour % 6 === 0 ? x.hour + 'h' : ''; }) + '</div>'
-    + '</div>'
-    + '<div class="an-chart">'
-    +   '<div class="an-chart__title">7 DNÍ &mdash; <b>' + (d.pageviews || 0) + '</b> zobrazení</div>'
-    +   '<div class="an-bars">' + bars(d.days || [], function(x) { return x.date.slice(5).replace('-', '/'); }) + '</div>'
-    + '</div>'
-    + '</div>'
-    + '<div class="an-details">'
-    +   '<div class="an-block"><div class="an-block__title">TOP STRÁNKY</div><ul class="an-pages">' + pagesHTML + '</ul></div>'
-    +   '<div class="an-block"><div class="an-block__title">ZAŘÍZENÍ</div><ul class="an-devs">' + devicesHTML + '</ul></div>'
-    + '</div>';
-}
+document.getElementById('eventSave').addEventListener('click', async function () {
+  currentStatus.event = {
+    active: (currentStatus.event || {}).active === true,
+    name:   document.getElementById('eventName').value.trim(),
+    popis:  document.getElementById('eventPopis').value.trim(),
+    cena:   document.getElementById('eventCena').value.trim(),
+    odkaz:  document.getElementById('eventOdkaz').value.trim()
+  };
+  await saveStatus();
+});
 
 // ── Price save ───────────────────────────────────
 document.getElementById('priceSave').addEventListener('click', async function () {
@@ -288,17 +223,229 @@ document.getElementById('priceSave').addEventListener('click', async function ()
   await saveStatus();
 });
 
-// ── Event save ───────────────────────────────────
-document.getElementById('eventSave').addEventListener('click', async function () {
-  currentStatus.event = {
-    active: (currentStatus.event || {}).active === true,
-    name:   document.getElementById('eventName').value.trim(),
-    popis:  document.getElementById('eventPopis').value.trim(),
-    cena:   document.getElementById('eventCena').value.trim(),
-    odkaz:  document.getElementById('eventOdkaz').value.trim()
-  };
+// ── Kapacita ─────────────────────────────────────
+function handleCapacityModeChange() {
+  var mode = document.getElementById('capacityMode').value;
+  var wrap = document.getElementById('capTotalWrapper');
+  if (wrap) wrap.style.display = mode === 'total' ? 'flex' : 'none';
+}
+
+async function saveCapacitySettings() {
+  var mode = document.getElementById('capacityMode').value;
+  var limit = parseInt(document.getElementById('capTotalLimit').value, 10) || 10;
+
+  if (!currentStatus.capacity) currentStatus.capacity = {};
+  currentStatus.capacity.mode = mode;
+  currentStatus.capacity.totalLimit = limit;
+
   await saveStatus();
-});
+  await loadStatus();
+}
+
+function updateCapacityDisplay(data) {
+  var cap = data.capacity || { mode: 'total', totalLimit: 10 };
+  var counts = data.counts || { startup: 0, mentoring: 0, ultimate: 0, total: 0 };
+
+  var modeSelect = document.getElementById('capacityMode');
+  if (modeSelect) modeSelect.value = cap.mode || 'total';
+
+  var limitInput = document.getElementById('capTotalLimit');
+  if (limitInput) limitInput.value = cap.totalLimit || 10;
+
+  handleCapacityModeChange();
+
+  var countStartup = document.getElementById('count-startup');
+  if (countStartup) countStartup.textContent = counts.startup;
+
+  var countMentoring = document.getElementById('count-mentoring');
+  if (countMentoring) countMentoring.textContent = counts.mentoring;
+
+  var countUltimate = document.getElementById('count-ultimate');
+  if (countUltimate) countUltimate.textContent = counts.ultimate;
+
+  var badge = document.getElementById('capacityBadge');
+  var display = document.getElementById('capCountDisplay');
+  if (display) {
+    if (cap.mode === 'total') {
+      display.textContent = counts.total + ' / ' + cap.totalLimit;
+      var isFull = counts.total >= cap.totalLimit;
+      badge.style.background = isFull ? 'rgba(255,34,34,0.15)' : 'rgba(0,255,100,0.1)';
+      badge.style.borderColor = isFull ? '#ff2222' : '#00ff66';
+      badge.style.color = isFull ? '#ff2222' : '#00ff66';
+    } else {
+      display.textContent = counts.total + ' (celkem)';
+    }
+  }
+}
+
+// ── Tabulka klientů ───────────────────────────────
+var loadedClientsCache = [];
+
+async function loadClients() {
+  var tbody = document.getElementById('clientsTableBody');
+  if (!tbody) return;
+
+  var pass = getAdminAuthPass();
+  if (!pass) return;
+
+  tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">Načítám klienty...</td></tr>';
+
+  try {
+    var res = await fetch('/api/clients', {
+      headers: { 'x-admin-pass': pass }
+    });
+    if (!res.ok) throw new Error('Chyba autorizace');
+    var clients = await res.json();
+    loadedClientsCache = clients || [];
+    renderClientsTable();
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání: ' + err.message + '</td></tr>';
+  }
+}
+
+function filterClientsTable() {
+  renderClientsTable();
+}
+
+function renderClientsTable() {
+  var tbody = document.getElementById('clientsTableBody');
+  if (!tbody) return;
+
+  var filter = document.getElementById('clientFilter') ? document.getElementById('clientFilter').value : 'active';
+  var todayStr = new Date().toISOString().split('T')[0];
+
+  var filtered = loadedClientsCache.filter(function(c) {
+    if (filter === 'all') return true;
+    var isActive = c.status === 'aktivni' && (!c.end_date || c.end_date >= todayStr);
+    if (filter === 'active') return isActive;
+    if (filter === 'ended') return c.status === 'ukonceno' || (c.end_date && c.end_date < todayStr);
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #666;">Žádní klienti pro vybraný filtr.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(function(c) {
+    var kup = c.kupujici || {};
+    var platce = c.platce || kup;
+    var isGiftRedeemed = c.is_gift_redemption === true;
+
+    var cleanPhone = (kup.telefon || '').replace(/[^\d+]/g, '');
+    var waUrl = cleanPhone.startsWith('+') ? 'https://wa.me/' + cleanPhone.replace('+', '') : 'https://wa.me/420' + cleanPhone;
+
+    var clientHtml = '<div style="font-weight: bold; color: #fff; font-size: 13px;">' + (kup.jmeno || 'Neznámé jméno') + '</div>'
+      + '<div style="font-size: 11px; color: #aaa; margin-top: 2px;">'
+      +   '<a href="' + waUrl + '" target="_blank" style="color: #25D366; text-decoration: none; margin-right: 8px;">💬 WA: ' + (kup.telefon || '—') + '</a> '
+      +   '<a href="mailto:' + (kup.email || '') + '" style="color: #66b3ff; text-decoration: none;">' + (kup.email || '—') + '</a>'
+      + '</div>';
+
+    if (isGiftRedeemed && platce && platce.jmeno !== kup.jmeno) {
+      clientHtml += '<div style="font-size: 10px; color: #ff9900; margin-top: 4px; background: rgba(255,153,0,0.1); padding: 3px 6px; border-radius: 3px; display: inline-block;">'
+        + '🎁 Zaplatil dárce: <strong>' + platce.jmeno + '</strong> (' + (platce.email || '') + ')'
+        + '</div>';
+    } else if (c.is_gift && !isGiftRedeemed) {
+      clientHtml = '<div style="font-weight: bold; color: #ff9900;">DÁRKOVÝ POUKAZ (Čeká na obdarovaného)</div>'
+        + '<div style="font-size: 11px; color: #aaa;">Koupil: ' + (kup.jmeno || '') + ' (' + (kup.email || '') + ')</div>'
+        + '<div style="font-size: 10px; color: #777;">Kód: ' + (c.kod_voucheru || '—') + '</div>';
+    }
+
+    var diag = c.diagnostika || {};
+    var diagText = diag.vek ? (diag.vek + ' let · ' + diag.vyska + ' cm · ' + diag.vaha + ' kg' + (diag.zprava ? ' | Cíl: ' + diag.zprava : '')) : '';
+
+    var startDateVal = c.start_date || (c.datum_platby ? c.datum_platby.split('T')[0] : '');
+    var endDateVal = c.end_date || '';
+
+    var daysLeft = '';
+    if (endDateVal) {
+      var diffDays = Math.ceil((new Date(endDateVal) - new Date()) / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) daysLeft = ' <span style="color:#00ff66;font-size:10px;">(zbývá ' + diffDays + ' dní)</span>';
+      else daysLeft = ' <span style="color:#ff5555;font-size:10px;">(vypršelo)</span>';
+    }
+
+    var idKey = c.id || c.fakturoid_id;
+
+    return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">'
+      + '<td style="padding: 12px 10px;">' + clientHtml + (diagText ? '<div style="font-size: 10px; color: #777; margin-top: 4px;">' + diagText + '</div>' : '') + '</td>'
+      + '<td style="padding: 12px 10px; color: #ff9900; font-weight: bold;">' + (c.sluzba_nazev || c.sluzba) + '<br><span style="font-size:10px;color:#888;">' + (c.is_installment ? 'Splátky (' + (c.current_installment || 1) + '/' + (c.total_installments || 1) + ')' : 'Jednorázově') + '</span></td>'
+      + '<td style="padding: 12px 10px;"><input type="date" id="start-' + idKey + '" value="' + startDateVal + '" onchange="handleStartDateChange(\'' + idKey + '\', \'' + (c.sluzba || '') + '\')" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;"></td>'
+      + '<td style="padding: 12px 10px;"><input type="date" id="end-' + idKey + '" value="' + endDateVal + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;">' + daysLeft + '</td>'
+      + '<td style="padding: 12px 10px;">'
+      +   '<select id="status-' + idKey + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0;">'
+      +     '<option value="aktivni"' + (c.status === 'aktivni' ? ' selected' : '') + '>● Aktivní</option>'
+      +     '<option value="ceka_na_platbu"' + (c.status === 'ceka_na_platbu' ? ' selected' : '') + '>○ Čeká na platbu</option>'
+      +     '<option value="ukonceno"' + (c.status === 'ukonceno' ? ' selected' : '') + '>× Ukončeno</option>'
+      +   '</select>'
+      + '</td>'
+      + '<td style="padding: 12px 10px; text-align: right; white-space: nowrap;">'
+      +   '<button onclick="saveClientRow(\'' + idKey + '\')" class="event-save-btn" style="margin: 0 4px; padding: 4px 10px; font-size: 11px;">💾 Uložit</button>'
+      +   '<button onclick="deleteClientRow(\'' + idKey + '\')" style="background: rgba(255,0,0,0.1); border: 1px solid #ff2222; color: #ff2222; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Smazat</button>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function handleStartDateChange(idKey, sluzba) {
+  var startInput = document.getElementById('start-' + idKey);
+  var endInput = document.getElementById('end-' + idKey);
+  if (!startInput || !endInput || !startInput.value) return;
+
+  var d = new Date(startInput.value);
+  var s = String(sluzba || '').toLowerCase();
+  var months = 1;
+  if (s.includes('ultimate')) months = 6;
+  else if (s.includes('mentor')) months = 4;
+
+  d.setMonth(d.getMonth() + months);
+  endInput.value = d.toISOString().split('T')[0];
+}
+
+async function saveClientRow(idKey) {
+  var startVal = document.getElementById('start-' + idKey).value;
+  var endVal = document.getElementById('end-' + idKey).value;
+  var statusVal = document.getElementById('status-' + idKey).value;
+
+  try {
+    var res = await fetch('/api/clients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pass': getAdminAuthPass()
+      },
+      body: JSON.stringify({
+        id: idKey,
+        start_date: startVal,
+        end_date: endVal,
+        status: statusVal
+      })
+    });
+    if (!res.ok) throw new Error('Chyba při ukládání');
+    await loadClients();
+    await loadStatus();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function deleteClientRow(idKey) {
+  if (!confirm('Opravdu trvale smazat tohoto klienta?')) return;
+  try {
+    var res = await fetch('/api/clients', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pass': getAdminAuthPass()
+      },
+      body: JSON.stringify({ id: idKey })
+    });
+    if (!res.ok) throw new Error('Chyba při mazání');
+    await loadClients();
+    await loadStatus();
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
 // ── Slevové a dárkové kódy ───────────────────────
 var loadedCodesCache = [];
@@ -651,7 +798,6 @@ function renderPromoCodesList(codes) {
     var pkgs = (c.packages || []).map(function(p) { return p.toUpperCase(); }).join(', ');
     if (!pkgs) pkgs = 'VŠECHNY';
 
-    // Výpis počtu použití
     var count = Number(c.usedCount || 0);
     if (!c.usedCount && c.used) count = 1;
 
@@ -670,7 +816,6 @@ function renderPromoCodesList(codes) {
 
     var printBtn = '<button onclick="printVoucherModal(\'' + c.id + '\')" title="Tisk / PDF voucher" style="background: #151515; border: 1px solid #c88a2c; color: #ff9900; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">🖨 TISK</button>';
 
-    // Přesné formátování data a času vygenerování
     var timeStr = '';
     if (c.createdAt) {
       var d = new Date(c.createdAt);
@@ -811,4 +956,83 @@ async function deletePromoCode(id) {
   } catch (err) {
     alert('Chyba při mazání: ' + err.message);
   }
+}
+
+// ── Analytics ────────────────────────────────────
+async function loadAnalytics() {
+  var body = document.getElementById('anBody');
+  if (!body) return;
+  body.innerHTML = '<span class="an-loading">Načítám...</span>';
+  var btn = document.getElementById('anRefresh');
+  if (btn) { btn.disabled = true; btn.textContent = '↻ ...'; }
+  try {
+    var r = await fetch('/api/analytics?t=' + Date.now(), { cache: 'no-store' });
+    var d = await r.json();
+    if (!d.ok) {
+      body.innerHTML = '<div class="an-err-box">'
+        + '<span class="an-err-icon">⚠</span>'
+        + '<span class="an-err-msg">' + (d.error || 'Neznámá chyba') + '</span>'
+        + '</div>';
+      return;
+    }
+    body.innerHTML = buildAnHTML(d);
+    if (d.warning) {
+      body.innerHTML += '<div class="an-warn-box">'
+        + '<span class="an-err-icon">ℹ</span>'
+        + '<span class="an-err-msg">' + d.warning + '</span>'
+        + '</div>';
+    }
+  } catch (e) {
+    body.innerHTML = '<div class="an-err-box">'
+      + '<span class="an-err-icon">⚠</span>'
+      + '<span class="an-err-msg">Chyba: ' + e.message + ' — analytics funguje jen na živém webu (Cloudflare Pages)</span>'
+      + '</div>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ OBNOVIT'; }
+  }
+}
+
+document.getElementById('anRefresh').addEventListener('click', loadAnalytics);
+
+function buildAnHTML(d) {
+  function bars(data, lblFn) {
+    var max = 1;
+    for (var i = 0; i < data.length; i++) if (data[i].count > max) max = data[i].count;
+    return data.map(function(x) {
+      var h = Math.max(2, Math.round(x.count / max * 100));
+      return '<div class="an-bar"><div class="an-bar__fill" style="height:' + h + '%"></div>'
+           + '<span class="an-bar__lbl">' + lblFn(x) + '</span></div>';
+    }).join('');
+  }
+
+  var pageNames = {'/':'Úvod','/sluzby.html':'Služby','/omne.html':'O mně',
+    '/jakpracuji.html':'Jak pracuji','/faq.html':'FAQ','/kontakt.html':'Kontakt',
+    '/objednavka.html':'Objednávka','/dekujeme.html':'Děkujeme'};
+  var deviceNames = {'Desktop':'Desktop','Mobile':'Mobil','Tablet':'Tablet','Bot':'Bot'};
+
+  var pagesHTML = (d.topPages || []).map(function(p) {
+    return '<li class="an-page-row"><span class="an-page-name">' + (pageNames[p.path] || p.path) + '</span>'
+         + '<span class="an-page-count">' + p.count + '</span></li>';
+  }).join('') || '<li class="an-page-row"><span style="color:var(--sub);font-size:.7rem">žádná data</span></li>';
+
+  var devicesHTML = (d.devices || []).map(function(x) {
+    return '<li class="an-dev-row"><span class="an-dev-name">' + (deviceNames[x.type] || x.type) + '</span>'
+         + '<span class="an-dev-bar"><span class="an-dev-fill" style="width:' + x.pct + '%"></span></span>'
+         + '<span class="an-dev-pct">' + x.pct + '%</span></li>';
+  }).join('') || '<li class="an-dev-row"><span style="color:var(--sub);font-size:.7rem">žádná data</span></li>';
+
+  return '<div class="an-charts">'
+    + '<div class="an-chart">'
+    +   '<div class="an-chart__title">DNES &mdash; <b>' + (d.todayPv || 0) + '</b> zobrazení</div>'
+    +   '<div class="an-bars">' + bars(d.hours || [], function(x) { return x.hour % 6 === 0 ? x.hour + 'h' : ''; }) + '</div>'
+    + '</div>'
+    + '<div class="an-chart">'
+    +   '<div class="an-chart__title">7 DNÍ &mdash; <b>' + (d.pageviews || 0) + '</b> zobrazení</div>'
+    +   '<div class="an-bars">' + bars(d.days || [], function(x) { return x.date.slice(5).replace('-', '/'); }) + '</div>'
+    + '</div>'
+    + '</div>'
+    + '<div class="an-details">'
+    +   '<div class="an-block"><div class="an-block__title">TOP STRÁNKY</div><ul class="an-pages">' + pagesHTML + '</ul></div>'
+    +   '<div class="an-block"><div class="an-block__title">ZAŘÍZENÍ</div><ul class="an-devs">' + devicesHTML + '</ul></div>'
+    + '</div>';
 }
