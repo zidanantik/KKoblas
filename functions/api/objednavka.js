@@ -145,9 +145,16 @@ export async function onRequestPost(context) {
 
     const sluzbaNazev = body.Sluzba_Nazev || body.Sluzba || 'Nutriční balíček';
 
-    // Zjištění, zda jde o uplatnění dárkového poukazu
+    // ── Zjištění, zda jde o uplatnění dárkového poukazu ──
     let isGiftRedemption = false;
     let originalBuyerInfo = null;
+    let existingGiftClientIndex = -1;
+    let clients = [];
+
+    if (store) {
+      const rawClients = await store.get('CLIENTS');
+      clients = rawClients ? JSON.parse(rawClients) : [];
+    }
 
     if (body.Pouzity_kod) {
       const promoUpper = body.Pouzity_kod.trim().toUpperCase();
@@ -157,12 +164,9 @@ export async function onRequestPost(context) {
         const foundPromo = codes.find(c => c.code && c.code.trim().toUpperCase() === promoUpper);
         if (foundPromo && foundPromo.type === 'gift') {
           isGiftRedemption = true;
-          // Zjistíme kupujícího z databáze klientů
-          const rawClients = await store.get('CLIENTS');
-          const existingClients = rawClients ? JSON.parse(rawClients) : [];
-          const buyerRecord = existingClients.find(c => c.kod_voucheru && c.kod_voucheru.toUpperCase() === promoUpper);
-          if (buyerRecord && buyerRecord.kupujici) {
-            originalBuyerInfo = buyerRecord.kupujici;
+          existingGiftClientIndex = clients.findIndex(c => c.kod_voucheru && c.kod_voucheru.toUpperCase() === promoUpper);
+          if (existingGiftClientIndex > -1) {
+            originalBuyerInfo = clients[existingGiftClientIndex].kupujici;
           } else if (foundPromo.note) {
             originalBuyerInfo = { jmeno: foundPromo.note };
           }
@@ -187,7 +191,7 @@ export async function onRequestPost(context) {
 
     let createdInvoiceId = null;
 
-    // Vystavení proformy ve Fakturoidu (jen pokud se platí > 0 Kč)
+    // Vystavení proformy ve Fakturoidu (jen pro nákupy > 0 Kč)
     if (!isZeroPayment) {
       const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
       const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
@@ -277,13 +281,11 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Uložení do KV
+    // Uložení / Aktualizace klienta v KV
     if (store) {
-      const rawClients = await store.get('CLIENTS');
-      let clients = rawClients ? JSON.parse(rawClients) : [];
       const todayStr = new Date().toISOString().split('T')[0];
 
-      const newClientRecord = {
+      const clientData = {
         id: crypto.randomUUID(),
         fakturoid_id: createdInvoiceId || (isGiftRedemption ? `POUKAZ-${body.Pouzity_kod}` : 'POUKAZ-ZDARMA'),
         invoice_ids: createdInvoiceId ? [createdInvoiceId] : [],
@@ -329,7 +331,15 @@ export async function onRequestPost(context) {
         created_at: new Date().toISOString()
       };
 
-      clients.unshift(newClientRecord);
+      // Pokud obdarovaný uplatnil voucher, nahradíme původní záznam dárce, ať se kapacita nezdvojí
+      if (isGiftRedemption && existingGiftClientIndex > -1) {
+        clientData.id = clients[existingGiftClientIndex].id || clientData.id;
+        clientData.kod_voucheru = clients[existingGiftClientIndex].kod_voucheru;
+        clients[existingGiftClientIndex] = clientData;
+      } else {
+        clients.unshift(clientData);
+      }
+
       await store.put('CLIENTS', JSON.stringify(clients));
     }
 
