@@ -80,159 +80,166 @@
     }
     .btn-back:hover { color: #fff; border-color: #666; }
 
+    /* ── PRÉMIOVÝ FORMÁT DL POUKAZU (210 x 98 mm) ── */
     .voucher-card {
       width: 100%;
-      max-width: 680px;
-      min-height: 420px;
+      max-width: 760px;
+      min-height: 350px;
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
-    /* Brand logo & Čepička */
     .voucher-brand-badge {
       position: relative;
       display: inline-flex;
       align-items: center;
     }
     .voucher-logo-img {
-      height: 44px;
+      height: 42px;
       width: auto;
       object-fit: contain;
       display: block;
       border-radius: 4px;
     }
+
+    /* Ikony pro sezóny */
+    .season-icon { display: none; }
+    
     .xmas-cap {
       position: absolute;
-      top: -16px;
-      left: -14px;
-      width: 34px;
-      height: 34px;
+      top: -15px;
+      left: -13px;
+      width: 32px;
+      height: 32px;
       transform: rotate(-15deg);
       pointer-events: none;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-      display: none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     }
 
-    .sport-dumbbell {
-      display: none;
-      width: 24px;
-      height: 24px;
-      vertical-align: middle;
-      margin-left: 8px;
-    }
-
-    /* Kontejner pro kód a stromeček */
-    .code-wrapper {
-      position: relative;
-      display: inline-block;
-      margin: 18px auto;
-    }
     .xmas-tree-bg {
-      display: none;
       position: absolute;
-      right: -28px;
+      right: -24px;
       bottom: -15px;
-      width: 75px;
-      height: 85px;
+      width: 70px;
+      height: 80px;
       pointer-events: none;
       z-index: 1;
       opacity: 0.85;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
 
-    /* ── ŠABLONA 1: Nordic Snow (Bílá + modro-červená čepička + stromeček) ── */
+    .code-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 12px auto;
+    }
+
+    /* ── 1. VÁNOČNÍ: NORDIC SNOW (Bílá + Stromeček + Modro-červená čepička) ── */
     .tpl-nordic-snow {
       background: #ffffff;
       color: #1a1a1a;
       border: 2px solid #d4af37;
-      border-radius: 8px;
-      padding: 30px 35px;
+      border-radius: 6px;
+      padding: 24px 30px;
       box-shadow: 0 10px 35px rgba(0,0,0,0.1);
     }
-    .tpl-nordic-snow .xmas-cap { display: block !important; }
-    .tpl-nordic-snow .xmas-tree-bg { display: block !important; }
-    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 22px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 10.5px; color: #666; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-nordic-snow .badge-type { background: #f0f7ff; border: 1.5px solid #74c0fc; color: #1c7ed6; font-family: monospace; font-size: 11px; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
-    .tpl-nordic-snow .service-name { font-size: 19px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-    .tpl-nordic-snow .service-desc { color: #555; font-size: 14px; }
-    .tpl-nordic-snow .code-box { 
-      position: relative; 
-      z-index: 2; 
-      padding: 12px 28px; 
-      background: rgba(255, 255, 255, 0.92); 
-      border: 2px dashed #d4af37; 
-      border-radius: 6px; 
-      display: inline-block;
-      backdrop-filter: blur(2px);
-    }
-    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #111; letter-spacing: 5px; }
-    .tpl-nordic-snow .instructions { margin-top: 15px; font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 14px; line-height: 1.5; }
+    .tpl-nordic-snow .xmas-cap, .tpl-nordic-snow .xmas-tree-bg { display: block !important; }
+    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 10px; color: #666; letter-spacing: 2px; margin-top: 2px; }
+    .tpl-nordic-snow .badge-type { background: #f0f7ff; border: 1.5px solid #74c0fc; color: #1c7ed6; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+    .tpl-nordic-snow .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .tpl-nordic-snow .service-desc { color: #555; font-size: 13.5px; }
+    .tpl-nordic-snow .code-box { position: relative; z-index: 2; padding: 10px 24px; background: rgba(255, 255, 255, 0.94); border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
+    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #111; letter-spacing: 5px; }
+    .tpl-nordic-snow .instructions { font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.5; }
     .tpl-nordic-snow a { color: #1c7ed6; font-weight: 600; text-decoration: none; }
 
-    /* ── ŠABLONA 2: Dark Gold (Klasik) ── */
-    .tpl-dark-gold {
-      background: #141414;
-      color: #eee;
-      border: 2px solid #c88a2c;
-      border-radius: 10px;
-      padding: 30px 35px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-      background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
+    /* ── 2. NOVÝ ROK: NEW YEAR KICKSTART (Zlatá & Restart) ── */
+    .tpl-new-year {
+      background: #fafaf8;
+      color: #111;
+      border: 2px solid #b8860b;
+      border-radius: 6px;
+      padding: 24px 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
-    .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 22px; color: #ff9900; margin: 0; }
-    .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 10.5px; color: #888; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 11px; padding: 5px 10px; border-radius: 4px; }
-    .tpl-dark-gold .service-name { font-size: 19px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-    .tpl-dark-gold .service-desc { color: #aaa; font-size: 14px; }
-    .tpl-dark-gold .code-box { padding: 12px 24px; background: #080808; border: 1px dashed #ff9900; border-radius: 6px; display: inline-block; }
-    .tpl-dark-gold .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #ff9900; letter-spacing: 5px; }
-    .tpl-dark-gold .instructions { margin-top: 15px; font-size: 11px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; line-height: 1.5; }
-    .tpl-dark-gold a { color: #ff9900; }
+    .tpl-new-year .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-new-year .brand-sub { font-family: monospace; font-size: 10px; color: #777; letter-spacing: 2px; margin-top: 2px; }
+    .tpl-new-year .badge-type { background: #fff8e1; border: 1.5px solid #b8860b; color: #996515; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+    .tpl-new-year .service-name { font-size: 18px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .tpl-new-year .service-desc { color: #b8860b; font-size: 13.5px; font-weight: 600; }
+    .tpl-new-year .code-box { padding: 10px 24px; background: #ffffff; border: 2px solid #b8860b; border-radius: 6px; display: inline-block; }
+    .tpl-new-year .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #b8860b; letter-spacing: 5px; }
+    .tpl-new-year .instructions { font-size: 11px; color: #666; border-top: 1px solid #ebd9b4; padding-top: 10px; line-height: 1.5; }
+    .tpl-new-year a { color: #b8860b; font-weight: bold; }
 
-    /* ── ŠABLONA 3: Sport & Energy ── */
+    /* ── 3. NAROZENINY & OSLAVA: BIRTHDAY SPECIAL (Champagne & Mašle) ── */
+    .tpl-birthday {
+      background: #fdfbf7;
+      color: #222;
+      border: 2px solid #d4af37;
+      border-radius: 6px;
+      padding: 24px 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+    .tpl-birthday .icon-bday { display: inline-block !important; width: 16px; height: 16px; vertical-align: middle; margin-left: 6px; }
+    .tpl-birthday .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-birthday .brand-sub { font-family: monospace; font-size: 10px; color: #888; letter-spacing: 2px; margin-top: 2px; }
+    .tpl-birthday .badge-type { background: #ffffff; border: 1.5px solid #d4af37; color: #996515; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+    .tpl-birthday .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .tpl-birthday .service-desc { color: #666; font-size: 13.5px; }
+    .tpl-birthday .code-box { padding: 10px 24px; background: #ffffff; border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
+    .tpl-birthday .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #996515; letter-spacing: 5px; }
+    .tpl-birthday .instructions { font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.5; }
+    .tpl-birthday a { color: #996515; font-weight: bold; }
+
+    /* ── 4. SPORTOVNÍ & FITNESS VÝKON: SPORT & ENERGY ── */
     .tpl-sport-energy {
-      background: linear-gradient(135deg, #0f0f0f 0%, #1b1b1b 100%);
+      background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
       color: #fff;
       border-left: 6px solid #ff5500;
       border-top: 1px solid #333;
       border-right: 1px solid #333;
       border-bottom: 1px solid #333;
       border-radius: 6px;
-      padding: 30px 35px;
+      padding: 24px 30px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.8);
+    }
+    .tpl-sport-energy .icon-dumb { display: inline-block !important; width: 16px; height: 16px; vertical-align: middle; margin-left: 6px; }
+    .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 22px; color: #ff5500; margin: 0; letter-spacing: 1px; }
+    .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 10px; color: #999; letter-spacing: 2px; margin-top: 2px; }
+    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 3px; font-weight: bold; }
+    .tpl-sport-energy .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .tpl-sport-energy .service-desc { color: #ccc; font-size: 13.5px; }
+    .tpl-sport-energy .code-box { padding: 10px 24px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
+    .tpl-sport-energy .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #ff5500; letter-spacing: 5px; }
+    .tpl-sport-energy .instructions { font-size: 11px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 10px; line-height: 1.5; }
+    .tpl-sport-energy a { color: #ff5500; font-weight: bold; }
+
+    /* ── 5. CELOROČNÍ PRESTIŽ: DARK GOLD ── */
+    .tpl-dark-gold {
+      background: #141414;
+      color: #eee;
+      border: 2px solid #c88a2c;
+      border-radius: 8px;
+      padding: 24px 30px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
     }
-    .tpl-sport-energy .sport-dumbbell { display: inline-block !important; }
-    .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 24px; color: #ff5500; margin: 0; letter-spacing: 1px; }
-    .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 10.5px; color: #999; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 3px; font-weight: bold; display: inline-flex; align-items: center; }
-    .tpl-sport-energy .service-name { font-size: 19px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-    .tpl-sport-energy .service-desc { color: #ccc; font-size: 14px; }
-    .tpl-sport-energy .code-box { padding: 12px 24px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
-    .tpl-sport-energy .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #ff5500; letter-spacing: 5px; }
-    .tpl-sport-energy .instructions { margin-top: 15px; font-size: 11px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 14px; line-height: 1.5; }
-    .tpl-sport-energy a { color: #ff5500; }
+    .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 21px; color: #ff9900; margin: 0; }
+    .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 10px; color: #888; letter-spacing: 2px; margin-top: 2px; }
+    .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; }
+    .tpl-dark-gold .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .tpl-dark-gold .service-desc { color: #aaa; font-size: 13.5px; }
+    .tpl-dark-gold .code-box { padding: 10px 24px; background: #080808; border: 1px dashed #ff9900; border-radius: 6px; display: inline-block; }
+    .tpl-dark-gold .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #ff9900; letter-spacing: 5px; }
+    .tpl-dark-gold .instructions { font-size: 11px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; line-height: 1.5; }
+    .tpl-dark-gold a { color: #ff9900; font-weight: bold; }
 
-    /* ── ŠABLONA 4: Clean Minimal ── */
-    .tpl-clean-white {
-      background: #ffffff;
-      color: #111111;
-      border: 2px solid #111111;
-      border-radius: 4px;
-      padding: 30px 35px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-    }
-    .tpl-clean-white .brand-title { font-family: Georgia, serif; font-size: 22px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-clean-white .brand-sub { font-family: monospace; font-size: 10.5px; color: #555; letter-spacing: 2px; margin-top: 3px; }
-    .tpl-clean-white .badge-type { background: #111; border: 1px solid #111; color: #fff; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 2px; }
-    .tpl-clean-white .service-name { font-size: 19px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-    .tpl-clean-white .service-desc { color: #444; font-size: 14px; }
-    .tpl-clean-white .code-box { padding: 12px 24px; background: #f4f4f4; border: 2px solid #111; border-radius: 4px; display: inline-block; }
-    .tpl-clean-white .code-text { font-family: monospace; font-size: 28px; font-weight: bold; color: #000; letter-spacing: 5px; }
-    .tpl-clean-white .instructions { margin-top: 15px; font-size: 11px; color: #555; border-top: 1px solid #ddd; padding-top: 14px; line-height: 1.5; }
-    .tpl-clean-white a { color: #111; font-weight: bold; }
-
-    /* Tisková pravidla na půlku A4 */
+    /* ── TISKOVÁ PRAVIDLA (DL FORMÁT NA A4 S OŘEZOVOU ČAROU A NŮŽKAMI) ── */
     @media print {
       body {
         background: transparent !important;
@@ -241,27 +248,32 @@
         display: block !important;
       }
       .toolbar { display: none !important; }
+      
       .voucher-card {
-        width: 190mm !important;
-        height: 128mm !important;
+        width: 200mm !important;
+        height: 94mm !important;
         min-height: auto !important;
         max-width: none !important;
-        margin: 0 auto !important;
+        margin: 5mm auto 0 auto !important;
         box-shadow: none !important;
         page-break-inside: avoid !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        position: relative !important;
       }
+
+      /* Ořezové vodicí linky s nůžkami */
       .voucher-card::after {
-        content: "- - - - - - - - - - - - - - - - - - - - Zde přeložte nebo odstřihněte - - - - - - - - - - - - - - - - - - - -";
+        content: "✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Zde odstřihněte pro formát DL (do obálky) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂";
         position: absolute;
-        bottom: -22mm;
+        bottom: -9mm;
         left: 0;
         width: 100%;
         text-align: center;
         font-family: monospace;
-        font-size: 9px;
-        color: #bbb;
+        font-size: 8.5px;
+        color: #888;
+        letter-spacing: 1px;
       }
     }
   </style>
@@ -269,12 +281,13 @@
 <body>
 
   <div class="toolbar">
-    <label>VZHLED CERTIFIKÁTU:
+    <label>PŘÍLEŽITOST &amp; VZHLED:
       <select id="templateSelector" onchange="changeTemplate(this.value)">
-        <option value="tpl-nordic-snow">❄️ Nordic Snow (Bílá + Stromeček + Čepička)</option>
-        <option value="tpl-dark-gold">Dark Gold (Prémiová tmavá)</option>
-        <option value="tpl-sport-energy">⚡ Sport &amp; Energy (Fitness s činkou)</option>
-        <option value="tpl-clean-white">Clean Minimal (Černobílý tisk)</option>
+        <option value="tpl-nordic-snow">🎄 Vánoce &amp; Zima (Nordic Snow + Čepička + Stromeček)</option>
+        <option value="tpl-new-year">🚀 Nový rok (New Year Restart &amp; Zlato)</option>
+        <option value="tpl-birthday">🎂 Narozeniny &amp; Dárek (Champagne Special)</option>
+        <option value="tpl-sport-energy">⚡ Sport &amp; Výkon (Fitness s činkou)</option>
+        <option value="tpl-dark-gold">✨ Celoroční Dark Gold (Luxusní tmavá)</option>
       </select>
     </label>
     <button class="btn-print" onclick="window.print()">🖨 STÁHNOUT JAKO PDF / TISK</button>
@@ -282,13 +295,14 @@
   </div>
 
   <div id="voucherContainer" class="voucher-card tpl-nordic-snow">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 20px;">
+    <!-- Horní část (Brand & Typ) -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 1px solid rgba(125,125,125,0.2);">
       <div style="display: flex; align-items: center; gap: 14px;">
-        <!-- Logo s čepičkou -->
         <div class="voucher-brand-badge">
           <img src="LOGO nové.webp" alt="KKoblas logo" class="voucher-logo-img">
           
-          <svg class="xmas-cap" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Vánoční čepička -->
+          <svg class="season-icon xmas-cap" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 44 C 18 20, 38 12, 52 18 C 50 26, 44 38, 48 44 Z" fill="#e03131" stroke="#c92a2a" stroke-width="1.5"/>
             <path d="M52 18 C 56 20, 58 26, 56 30" fill="none" stroke="#e03131" stroke-width="4.5" stroke-linecap="round"/>
             <circle cx="56" cy="31" r="5.5" fill="#a5d8ff" stroke="#74c0fc" stroke-width="1.2"/>
@@ -304,32 +318,33 @@
 
       <div class="badge-type">
         <span>DÁRKOVÝ POUKAZ</span>
-        <svg class="sport-dumbbell" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ikona činky -->
+        <svg class="season-icon icon-dumb" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M6 5H4v14h2V5zm14 0h-2v14h2V5zM2 8H1v8h1V8zm21 0h-1v8h1V8zM8 11h8v2H8v-2z" />
+        </svg>
+        <!-- Ikona narozeninového dárku -->
+        <svg class="season-icon icon-bday" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 12V22H4V12H20ZM20 6H16.82C17.44 5.17 17.82 4.13 17.82 3C17.82 1.34 16.48 0 14.82 0C13.62 0 12.59 0.73 12.16 1.76L12 2.14L11.84 1.76C11.41 0.73 10.38 0 9.18 0C7.52 0 6.18 1.34 6.18 3C6.18 4.13 6.56 5.17 7.18 6H4C2.9 6 2 6.9 2 8V10H22V8C22 6.9 21.1 6 20 6ZM14.82 2C15.37 2 15.82 2.45 15.82 3C15.82 3.55 15.37 4 14.82 4C14.07 4 13.4 3.42 13.06 2.65C13.34 2.25 13.97 2 14.82 2ZM9.18 2C10.03 2 10.66 2.25 10.94 2.65C10.6 3.42 9.93 4 9.18 4C8.63 4 8.18 3.55 8.18 3C8.18 2.45 8.63 2 9.18 2Z"/>
         </svg>
       </div>
     </div>
 
-    <div style="text-align: center; margin: 20px 0;">
+    <!-- Střední část (Název programu & Kód) -->
+    <div style="text-align: center; margin: 10px 0;">
       <div class="service-name" id="voucherService">VŠECHNY SLUŽBY</div>
       <div class="service-desc" id="voucherDesc">100% Uhrazeno dárkovým certifikátem</div>
 
-      <!-- Kód s vánočním stromečkem zasahujícím z rohu -->
       <div class="code-wrapper">
         <div class="code-box">
           <div class="code-text" id="voucherCode">DAR-XXXXX</div>
         </div>
 
-        <!-- Vektorový stromeček s ozdobami -->
-        <svg class="xmas-tree-bg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Kmen -->
+        <!-- Vánoční stromeček -->
+        <svg class="season-icon xmas-tree-bg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="44" y="98" width="12" height="18" rx="2" fill="#795548" />
-          <!-- Patra jehličí -->
           <polygon points="50,15 20,52 35,52 12,80 30,80 5,102 95,102 70,80 88,80 65,52 80,52" fill="#2b8a3e" />
           <polygon points="50,15 28,48 40,48 20,74 38,74 15,98 85,98 62,74 80,74 60,48 72,48" fill="#2f9e44" />
-          <!-- Zlatá hvězda na špici -->
           <polygon points="50,4 53,13 62,13 55,18 57,27 50,22 43,27 45,18 38,13 47,13" fill="#fcc419" />
-          <!-- Barevné baňky -->
           <circle cx="34" cy="90" r="3.5" fill="#e03131" />
           <circle cx="66" cy="88" r="3.5" fill="#74c0fc" />
           <circle cx="48" cy="72" r="3.5" fill="#fcc419" />
@@ -338,11 +353,12 @@
           <circle cx="50" cy="40" r="2.5" fill="#74c0fc" />
         </svg>
       </div>
+    </div>
 
-      <div class="instructions">
-        Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong> a v objednávce zadejte tento kód.<br>
-        Přímý odkaz: <a id="voucherRedeemLink" href="https://koblas-nutricni.cz/sluzby.html">koblas-nutricni.cz/sluzby.html</a>
-      </div>
+    <!-- Spodní instrukce -->
+    <div class="instructions" style="text-align: center;">
+      Pro aktivaci navštivte <strong>koblas-nutricni.cz</strong> a zadejte kód.<br>
+      Přímý odkaz: <a id="voucherRedeemLink" href="https://koblas-nutricni.cz/sluzby.html">koblas-nutricni.cz/sluzby.html</a>
     </div>
   </div>
 
