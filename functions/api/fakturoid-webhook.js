@@ -20,6 +20,19 @@ function normalizePkg(str) {
   return s.trim();
 }
 
+function computeEndDate(startDateStr, pkgName) {
+  if (!startDateStr) return null;
+  const d = new Date(startDateStr);
+  const s = String(pkgName || '').toLowerCase();
+  let months = 1;
+  if (s.includes('ultimate')) months = 6;
+  else if (s.includes('mentor')) months = 4;
+  else months = 1;
+
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split('T')[0];
+}
+
 export async function onRequestPost(context) {
   try {
     const payload = await context.request.json();
@@ -49,7 +62,7 @@ export async function onRequestPost(context) {
 
     const client = clients[clientIndex];
 
-    // Ochrana proti duplikacím
+    // Ochrana proti duplicitním webhookům
     if (!Array.isArray(client.paid_invoice_ids)) {
       client.paid_invoice_ids = [];
     }
@@ -230,7 +243,7 @@ export async function onRequestPost(context) {
         }
 
       } else {
-        // Mezi-splátka byla uhrazena -> Naplánujeme datum té další na +30 dní odteď
+        // Mezi-splátka byla uhrazena -> Naplánujeme termín té další na +30 dní odteď
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 30);
         client.next_installment_date = nextDate.toISOString().split('T')[0];
@@ -296,7 +309,12 @@ export async function onRequestPost(context) {
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
 
-    // Pokud jde o splátky, naplánujeme 2. splátku přesně na +30 dní
+    // Automatický výpočet termínů začátku a ukončení
+    const todayYMD = new Date().toISOString().split('T')[0];
+    client.start_date = todayYMD;
+    client.end_date = computeEndDate(todayYMD, client.sluzba_nazev || client.sluzba);
+
+    // Pokud jde o splátky, naplánujeme 2. splátku na +30 dní
     if (client.is_installment && client.total_installments > 1) {
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + 30);
