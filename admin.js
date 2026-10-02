@@ -160,15 +160,36 @@ function renderEvent() {
   if (odkazEl) odkazEl.value = ev.odkaz || '';
 }
 
-// ── Toggle ───────────────────────────────────────
+// ── Toggle služeb ────────────────────────────────
 async function toggle(sluzba) {
-  var prev   = currentStatus[sluzba] || 'volny';
-  var next   = prev === 'volny' ? 'uzavreny' : 'volny';
+  var prev = currentStatus[sluzba] || 'volny';
+  var next = prev === 'volny' ? 'uzavreny' : 'volny';
   var action = next === 'uzavreny' ? 'UZAVŘÍT' : 'OTEVŘÍT';
   if (!confirm(action + ' službu ' + sluzba.toUpperCase() + '?')) return;
-  currentStatus[sluzba] = next;
-  renderStation(sluzba);
-  await saveStatus();
+
+  var pass = ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
+  var payload = Object.assign({ password: pass }, currentStatus);
+  payload[sluzba] = next;
+  payload.singleToggle = sluzba;
+
+  setDeploy('⚡ Ukládám...', 'loading');
+  try {
+    var res = await fetch('/api/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(res.status);
+
+    currentStatus = data.status;
+    renderAll();
+    updateCapacityDisplay(data.status);
+    setDeploy('✓ Uloženo', 'ok');
+    setTimeout(function () { deployBar.hidden = true; }, 3000);
+  } catch (e) {
+    setDeploy('✗ Chyba: ' + e.message, 'error');
+  }
 }
 
 SERVICES.forEach(function (sluzba) {
@@ -180,9 +201,35 @@ SERVICES.forEach(function (sluzba) {
 async function setAll(val) {
   var action = val === 'uzavreny' ? 'Uzavřít VŠECHNY?' : 'Otevřít VŠECHNY?';
   if (!confirm(action)) return;
-  SERVICES.forEach(function (s) { currentStatus[s] = val; });
-  renderAll();
-  await saveStatus();
+
+  var isClosed = val === 'uzavreny';
+  var pass = ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
+  var payload = Object.assign({ password: pass }, currentStatus);
+  payload.manualOverride = {
+    startup: isClosed,
+    mentoring: isClosed,
+    ultimate: isClosed
+  };
+  SERVICES.forEach(function (s) { payload[s] = val; });
+
+  setDeploy('⚡ Ukládám...', 'loading');
+  try {
+    var res = await fetch('/api/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(res.status);
+
+    currentStatus = data.status;
+    renderAll();
+    updateCapacityDisplay(data.status);
+    setDeploy('✓ Vše uloženo', 'ok');
+    setTimeout(function () { deployBar.hidden = true; }, 3000);
+  } catch (e) {
+    setDeploy('✗ Chyba: ' + e.message, 'error');
+  }
 }
 
 document.getElementById('masterClose').addEventListener('click', function () { setAll('uzavreny'); });
@@ -223,7 +270,7 @@ document.getElementById('priceSave').addEventListener('click', async function ()
   await saveStatus();
 });
 
-// ── Kapacita ─────────────────────────────────────
+// ── Správa kapacity ──────────────────────────────
 function handleCapacityModeChange() {
   var mode = document.getElementById('capacityMode').value;
   var wrap = document.getElementById('capTotalWrapper');
@@ -238,8 +285,32 @@ async function saveCapacitySettings() {
   currentStatus.capacity.mode = mode;
   currentStatus.capacity.totalLimit = limit;
 
-  await saveStatus();
-  await loadStatus();
+  var pass = ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
+  setDeploy('⚡ Ukládám kapacitu...', 'loading');
+
+  try {
+    var payload = Object.assign({ password: pass }, currentStatus);
+    delete payload.startup;
+    delete payload.mentoring;
+    delete payload.ultimate;
+
+    var res = await fetch('/api/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(res.status);
+
+    currentStatus = data.status;
+    renderAll();
+    updateCapacityDisplay(data.status);
+
+    setDeploy('✓ Kapacita uložena — balíčky se automaticky přizpůsobily', 'ok');
+    setTimeout(function () { deployBar.hidden = true; }, 3000);
+  } catch (e) {
+    setDeploy('✗ Chyba: ' + e.message, 'error');
+  }
 }
 
 function updateCapacityDisplay(data) {
@@ -269,9 +340,11 @@ function updateCapacityDisplay(data) {
     if (cap.mode === 'total') {
       display.textContent = counts.total + ' / ' + cap.totalLimit;
       var isFull = counts.total >= cap.totalLimit;
-      badge.style.background = isFull ? 'rgba(255,34,34,0.15)' : 'rgba(0,255,100,0.1)';
-      badge.style.borderColor = isFull ? '#ff2222' : '#00ff66';
-      badge.style.color = isFull ? '#ff2222' : '#00ff66';
+      if (badge) {
+        badge.style.background = isFull ? 'rgba(255,34,34,0.15)' : 'rgba(0,255,100,0.1)';
+        badge.style.borderColor = isFull ? '#ff2222' : '#00ff66';
+        badge.style.color = isFull ? '#ff2222' : '#00ff66';
+      }
     } else {
       display.textContent = counts.total + ' (celkem)';
     }
@@ -316,9 +389,15 @@ function renderClientsTable() {
 
   var filtered = loadedClientsCache.filter(function(c) {
     if (filter === 'all') return true;
+    
     var isActive = c.status === 'aktivni' && (!c.end_date || c.end_date >= todayStr);
-    if (filter === 'active') return isActive;
-    if (filter === 'ended') return c.status === 'ukonceno' || (c.end_date && c.end_date < todayStr);
+    var isWaiting = c.status === 'ceka_na_platbu';
+    var isEnded = c.status === 'ukonceno' || (c.end_date && c.end_date < todayStr);
+
+    if (filter === 'active') return isActive || isWaiting;
+    if (filter === 'only_active') return isActive;
+    if (filter === 'waiting') return isWaiting;
+    if (filter === 'ended') return isEnded;
     return true;
   });
 
@@ -358,7 +437,7 @@ function renderClientsTable() {
     var endDateVal = c.end_date || '';
 
     var daysLeft = '';
-    if (endDateVal) {
+    if (endDateVal && c.status === 'aktivni') {
       var diffDays = Math.ceil((new Date(endDateVal) - new Date()) / (1000 * 60 * 60 * 24));
       if (diffDays > 0) daysLeft = ' <span style="color:#00ff66;font-size:10px;">(zbývá ' + diffDays + ' dní)</span>';
       else daysLeft = ' <span style="color:#ff5555;font-size:10px;">(vypršelo)</span>';
@@ -532,7 +611,7 @@ function copyCodeToClipboard(code, btn) {
   });
 }
 
-// ── Tisk a výběr šablon ───────────────────────────
+// ── Tisk a výběr šablon voucherů ─────────────────
 function printVoucherModal(id) {
   var c = loadedCodesCache.find(function(item) { return item.id === id; });
   if (!c) return;
