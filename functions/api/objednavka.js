@@ -12,27 +12,28 @@ function normalizeCountry(country) {
   return country.length === 2 ? country.toUpperCase() : 'CZ';
 }
 
+function computeEndDate(startDateStr, pkgName) {
+  if (!startDateStr) return null;
+  const d = new Date(startDateStr);
+  const s = String(pkgName || '').toLowerCase();
+  let months = 1;
+  if (s.includes('ultimate')) months = 6;
+  else if (s.includes('mentor')) months = 4;
+  else months = 1;
+
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split('T')[0];
+}
+
 function getInstallmentConfig(pkgName, firstPrice) {
   const s = String(pkgName || '').toLowerCase();
   if (s.includes('ultimate')) {
-    return {
-      totalInstallments: 6,
-      firstAmount: firstPrice || 11900,
-      subsequentAmount: 2000
-    };
+    return { totalInstallments: 6, firstAmount: firstPrice || 11900, subsequentAmount: 2000 };
   }
   if (s.includes('mentor')) {
-    return {
-      totalInstallments: 4,
-      firstAmount: firstPrice || 7500,
-      subsequentAmount: 2800
-    };
+    return { totalInstallments: 4, firstAmount: firstPrice || 7500, subsequentAmount: 2800 };
   }
-  return {
-    totalInstallments: 2,
-    firstAmount: firstPrice || 0,
-    subsequentAmount: firstPrice || 0
-  };
+  return { totalInstallments: 2, firstAmount: firstPrice || 0, subsequentAmount: firstPrice || 0 };
 }
 
 async function getFakturoidToken(clientId, clientSecret, userAgent) {
@@ -108,6 +109,7 @@ async function getOrCreateSubject(slug, token, body, userAgent) {
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
+    const store = context.env.STATUS_STORE;
     const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
 
     const isInstallment = 
@@ -141,12 +143,33 @@ export async function onRequestPost(context) {
       sender = `Kryštof Koblas <${cleanEmail}>`;
     }
 
-    const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
-    const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
-
     const sluzbaNazev = body.Sluzba_Nazev || body.Sluzba || 'Nutriční balíček';
-    
-    // Bezpečné vytažení první částky
+
+    // Zjištění, zda jde o uplatnění dárkového poukazu
+    let isGiftRedemption = false;
+    let originalBuyerInfo = null;
+
+    if (body.Pouzity_kod) {
+      const promoUpper = body.Pouzity_kod.trim().toUpperCase();
+      if (store) {
+        const rawCodes = await store.get('PROMO_CODES');
+        const codes = rawCodes ? JSON.parse(rawCodes) : [];
+        const foundPromo = codes.find(c => c.code && c.code.trim().toUpperCase() === promoUpper);
+        if (foundPromo && foundPromo.type === 'gift') {
+          isGiftRedemption = true;
+          // Zjistíme kupujícího z databáze klientů
+          const rawClients = await store.get('CLIENTS');
+          const existingClients = rawClients ? JSON.parse(rawClients) : [];
+          const buyerRecord = existingClients.find(c => c.kod_voucheru && c.kod_voucheru.toUpperCase() === promoUpper);
+          if (buyerRecord && buyerRecord.kupujici) {
+            originalBuyerInfo = buyerRecord.kupujici;
+          } else if (foundPromo.note) {
+            originalBuyerInfo = { jmeno: foundPromo.note };
+          }
+        }
+      }
+    }
+
     let parsedPrice = 0;
     const priceMatch = String(body.Cena || '').match(/([\d\s]+)\s*Kč/);
     if (priceMatch) {
@@ -155,9 +178,8 @@ export async function onRequestPost(context) {
       parsedPrice = parseInt(String(body.Cena || '').replace(/[^\d]/g, ''), 10) || 0;
     }
 
-    const isZeroPayment = parsedPrice === 0 || (body.Pouzity_kod && !isInstallment);
+    const isZeroPayment = isGiftRedemption || parsedPrice === 0;
 
-    // Konfigurace podle balíčku
     const instConfig = getInstallmentConfig(sluzbaNazev, parsedPrice);
     const totalInstallments = isInstallment ? instConfig.totalInstallments : 1;
     const firstInstallmentAmount = isInstallment ? instConfig.firstAmount : parsedPrice;
@@ -165,8 +187,11 @@ export async function onRequestPost(context) {
 
     let createdInvoiceId = null;
 
-    // ── FAKTUROID FAKTURA (POKUD CENA > 0 KČ) ──
+    // Vystavení proformy ve Fakturoidu (jen pokud se platí > 0 Kč)
     if (!isZeroPayment) {
+      const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
+      const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
+
       let lineName = sluzbaNazev;
       if (isGift) {
         lineName += ' (Dárkový poukaz)';
@@ -234,135 +259,50 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── 1. NOTIFIKACE PRO TEBE PŘI VYTVOŘENÍ OBJEDNÁVKY ──
-    if (resendKey) {
-      let typeLabel = isGift ? 'Dárkový poukaz' : (isInstallment ? `Splátky (1. splátka: ${firstInstallmentAmount} Kč, pak ${totalInstallments - 1}× ${subsequentAmount} Kč)` : 'Jednorázová platba');
-      let ownerSubject = `Nová objednávka (ČEKÁ NA ÚHRADU) – ${sluzbaNazev} – ${body.Jmeno}`;
-      let statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: ČEKÁ NA PLATBU. Klientovi byla vystavena zálohová faktura na ${firstInstallmentAmount} Kč. Jakmile ji uhradí, přijde ti e-mail s potvrzením o zaplacení.</div>`;
-
-      if (isGift) {
-        ownerSubject = `Nová objednávka (DÁREK – ČEKÁ NA ÚHRADU) – ${sluzbaNazev}`;
-        statusBanner = `<div style="background:#fff3cd;color:#856404;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">⏳ STAV: DÁREK ČEKÁ NA PLATBU. Kód se vygeneruje automaticky až po úhradě.</div>`;
-      } else if (isZeroPayment) {
-        ownerSubject = `Poukaz uplatněn (UHRAZENO) – ${sluzbaNazev} – ${body.Jmeno}`;
-        statusBanner = `<div style="background:#d4edda;color:#155724;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">✅ STAV: AKTIVNÍ (Uplatněn dárkový poukaz). Klientovi byl odeslán uvítací e-mail se ZOFem a InBody.</div>`;
-      }
-
-      const diagnosticRows = !isGift ? `
-        <tr><td colspan="2" style="background:#1a1a1a;color:#2ecc71;padding:10px 14px;font-weight:bold;">Vstupní diagnostika</td></tr>
-        <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Věk</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vek || '—'}</td></tr>
-        <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Pohlaví</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Pohlavi || '—'}</td></tr>
-        <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Výška</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vyska_cm ? body.Vyska_cm + ' cm' : '—'}</td></tr>
-        <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Váha</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vaha_kg ? body.Vaha_kg + ' kg' : '—'}</td></tr>
-        ${body.Duvod_zmeny ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cíl / zpráva</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Duvod_zmeny}</td></tr>` : ''}
-      ` : '';
-
-      const ownerHtml = `
-        <div style="font-family:sans-serif;max-width:640px;color:#222;">
-          <h2 style="color:#222;margin-top:0;">${ownerSubject}</h2>
-          ${statusBanner}
-          <table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:20px;">
-            <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Objednaná služba</td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;width:35%;">Služba</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${sluzbaNazev}</td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">1. splátka k úhradě</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${firstInstallmentAmount} Kč</td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Typ platby</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${typeLabel}</td></tr>
-            ${body.Pouzity_kod ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Uplatněný kód</td><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#ff9900;font-weight:bold;">${body.Pouzity_kod}</td></tr>` : ''}
-            
-            <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Kontaktní údaje klienta</td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Jméno</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Jmeno}</td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">E-mail</td><td style="padding:8px 14px;border-bottom:1px solid #eee;"><a href="mailto:${body.Email}">${body.Email}</a></td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Telefon</td><td style="padding:8px 14px;border-bottom:1px solid #eee;"><a href="tel:${body.Telefon}">${body.Telefon}</a></td></tr>
-            <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Adresa</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Ulice}, ${body.Mesto}, ${body.PSC} (${body.Zeme || 'CZ'})</td></tr>
-
-            ${diagnosticRows}
-          </table>
-        </div>
-      `;
-
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${resendKey}`, 
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({
-          from: sender,
-          to: [OWNER_EMAIL],
-          reply_to: body.Email,
-          subject: ownerSubject,
-          html: ownerHtml
-        })
-      });
-    }
-
-    // ── 2. UVÍTACÍ E-MAIL PRO 0 Kč POUKAZ ──
+    // Uvítací e-mail obdarovanému (0 Kč poukaz)
     if (isZeroPayment && resendKey && body.Email) {
-      await new Promise(r => setTimeout(r, 600));
-
       const subjectClient = `Podklady pro zahájení spolupráce – ${sluzbaNazev}`;
-      const plainText = `Ahoj ${body.Jmeno},\n\ntvůj poukaz na balíček ${sluzbaNazev} byl úspěšně aktivován a pouštíme se do práce.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace. Můžeš mi samozřejmě napsat i sám/sama.\n- WhatsApp používáme primárně pro zprávy.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
-
-      const htmlClient = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; color: #222; line-height: 1.6; font-size: 15px;">
-          <p>Ahoj ${body.Jmeno},</p>
-          <p>tvůj poukaz na balíček <strong>${sluzbaNazev}</strong> byl úspěšně aktivován. Oficiálně tak odmáváme startovní čáru a jdeme na to.</p>
-          
-          <p style="font-weight: bold; margin-top: 20px;">Dva důležité úkoly před naší první online schůzkou:</p>
-          <ol style="padding-left: 20px;">
-            <li style="margin-bottom: 8px;"><strong>Zápis jídelníčku:</strong> Měj ready aspoň 3 dny zápisu v aplikaci <a href="https://www.zofapp.cz/" style="color: #0066cc;">zofapp.cz</a> (čím víc dní zvládneš zapsat, tím lépe pro úvodní analýzu).</li>
-            <li style="margin-bottom: 8px;"><strong>Měření InBody:</strong> Zařiď si prosím ve svém okolí měření na InBody a výsledky mi pošli na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</li>
-          </ol>
-
-          <p style="font-weight: bold; margin-top: 25px;">Jak budeme v kontaktu:</p>
-          <ul style="padding-left: 20px;">
-            <li style="margin-bottom: 6px;"><strong>WhatsApp:</strong> Co nejdříve se ti ozvu přímo na WhatsApp (+420 774 143 176), abychom se domluvili na termínu první schůzky. Klidně mi napiš i první, pokud chceš začátek urychlit.</li>
-            <li style="margin-bottom: 6px;">Číslo používej primárně pro textové a hlasové zprávy. Jakmile mám prostor mezi klienty, hned odepisuju.</li>
-            <li style="margin-bottom: 6px;">Následně se propojíme přímo v aplikaci ZOF.</li>
-          </ul>
-
-          <p style="font-weight: bold; margin-top: 25px;">Férová dohoda o počítání času:</p>
-          <ul style="padding-left: 20px;">
-            <li style="margin-bottom: 6px;">Čas balíčku ti začínám oficiálně počítat až ode dne naší první online schůzky. Do té doby ladíme pouze diagnostiku a podklady.</li>
-            <li style="margin-bottom: 6px;">Když se termín schůzky včas omluví a přesune, o nic nepřicházíš.</li>
-          </ul>
-
-          <p style="margin-top: 30px;">Těším se na spolupráci a na tvé výsledky!<br><br><strong>Kryštof Koblas</strong><br><span style="color: #666; font-size: 13px;">Nutriční poradce | koblas-nutricni.cz</span></p>
-        </div>
-      `;
+      const plainText = `Ahoj ${body.Jmeno},\n\ntvůj poukaz na balíček ${sluzbaNazev} byl úspěšně aktivován a pouštíme se do práce.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
 
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${resendKey}`, 
-          'Content-Type': 'application/json' 
-        },
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: sender,
           to: [body.Email],
           reply_to: OWNER_EMAIL,
           subject: subjectClient,
-          text: plainText,
-          html: htmlClient
+          text: plainText
         })
       });
     }
 
-    // ── 3. ULOŽENÍ DO KV DATABÁZE SE SLEDOVÁNÍM SPLÁTEK ──
-    const store = context.env.STATUS_STORE;
+    // Uložení do KV
     if (store) {
       const rawClients = await store.get('CLIENTS');
       let clients = rawClients ? JSON.parse(rawClients) : [];
+      const todayStr = new Date().toISOString().split('T')[0];
 
       const newClientRecord = {
-        fakturoid_id: createdInvoiceId || 'POUKAZ-ZDARMA',
+        id: crypto.randomUUID(),
+        fakturoid_id: createdInvoiceId || (isGiftRedemption ? `POUKAZ-${body.Pouzity_kod}` : 'POUKAZ-ZDARMA'),
         invoice_ids: createdInvoiceId ? [createdInvoiceId] : [],
         paid_invoice_ids: [],
         status: isZeroPayment ? 'aktivni' : 'ceka_na_platbu',
         pocita_se: isZeroPayment,
         datum_platby: isZeroPayment ? new Date().toISOString() : null,
+        start_date: isZeroPayment ? todayStr : null,
+        end_date: isZeroPayment ? computeEndDate(todayStr, sluzbaNazev) : null,
         sluzba: body.Sluzba || '',
         sluzba_nazev: sluzbaNazev,
         is_gift: isGift,
+        is_gift_redemption: isGiftRedemption,
+        pouzity_kod: body.Pouzity_kod || null,
+        platce: isGiftRedemption && originalBuyerInfo ? originalBuyerInfo : {
+          jmeno: body.Jmeno,
+          email: body.Email,
+          telefon: body.Telefon
+        },
         is_installment: isInstallment,
         total_installments: totalInstallments,
         current_installment: 1,
@@ -399,7 +339,6 @@ export async function onRequestPost(context) {
     });
 
   } catch (err) {
-    console.error('HLAVNÍ CHYBA:', err.message);
     return new Response(JSON.stringify({ ok: false, error: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
