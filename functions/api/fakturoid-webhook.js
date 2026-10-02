@@ -2,6 +2,9 @@
 
 const OWNER_EMAIL = 'koblas.nutricni@gmail.com';
 
+// ── VÝBER PREDVOLENEJ ŠABLÓNY (tpl-dark-gold | tpl-xmas-gold | tpl-clean-white | tpl-sport-energy) ──
+const DEFAULT_VOUCHER_TEMPLATE = 'tpl-dark-gold';
+
 function generateGiftCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let res = '';
@@ -33,6 +36,168 @@ function computeEndDate(startDateStr, pkgName) {
   return d.toISOString().split('T')[0];
 }
 
+// ── ŠABLÓNA PRE PDF PREVODNÍK ──
+function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
+  const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
+
+  return `
+    <!DOCTYPE html>
+    <html lang="cs">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body {
+          margin: 0; padding: 20px; background: #0d0d0d;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          display: flex; align-items: center; justify-content: center; min-height: 95vh;
+        }
+
+        .voucher-brand-badge { position: relative; display: inline-flex; align-items: center; }
+        .voucher-logo-img { height: 46px; width: auto; object-fit: contain; display: block; border-radius: 4px; }
+        .xmas-cap {
+          position: absolute; top: -16px; left: -14px; width: 34px; height: 34px;
+          transform: rotate(-15deg); pointer-events: none;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+          display: none;
+        }
+
+        /* ── Šablona: Dark Gold ── */
+        .tpl-dark-gold {
+          width: 740px; background: #141414; color: #eee; border: 2px solid #c88a2c;
+          border-radius: 12px; padding: 38px 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+          background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
+        }
+        .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 24px; color: #ff9900; margin: 0; }
+        .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 11px; color: #888; letter-spacing: 2px; margin-top: 3px; }
+        .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; }
+        .tpl-dark-gold .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-dark-gold .service-desc { color: #aaa; font-size: 15px; }
+        .tpl-dark-gold .code-box { margin: 24px auto; padding: 16px 28px; background: #080808; border: 1px dashed #ff9900; border-radius: 8px; display: inline-block; }
+        .tpl-dark-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff9900; letter-spacing: 6px; }
+        .tpl-dark-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
+        .tpl-dark-gold a { color: #ff9900; }
+
+        /* ── Šablona: Vánoční Dark Gold ── */
+        .tpl-xmas-gold {
+          width: 740px; background: #141414; color: #eee; border: 2px solid #e74c3c;
+          border-radius: 12px; padding: 38px 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 25px rgba(231,76,60,0.15);
+          background-image: radial-gradient(circle at 100% 0%, rgba(231,76,60,0.15) 0%, transparent 60%);
+        }
+        .tpl-xmas-gold .xmas-cap { display: block !important; }
+        .tpl-xmas-gold .brand-title { font-family: Georgia, serif; font-size: 24px; color: #ffaa22; margin: 0; }
+        .tpl-xmas-gold .brand-sub { font-family: monospace; font-size: 11px; color: #aaa; letter-spacing: 2px; margin-top: 3px; }
+        .tpl-xmas-gold .badge-type { background: rgba(231,76,60,0.2); border: 1px solid #e74c3c; color: #ff7875; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
+        .tpl-xmas-gold .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-xmas-gold .service-desc { color: #bbb; font-size: 15px; }
+        .tpl-xmas-gold .code-box { margin: 24px auto; padding: 16px 28px; background: #080808; border: 1px dashed #e74c3c; border-radius: 8px; display: inline-block; }
+        .tpl-xmas-gold .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ffaa22; letter-spacing: 6px; }
+        .tpl-xmas-gold .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px; line-height: 1.6; }
+        .tpl-xmas-gold a { color: #ffaa22; }
+
+        /* ── Šablona: Clean Minimal ── */
+        .tpl-clean-white {
+          width: 740px; background: #ffffff; color: #111111; border: 3px solid #111111;
+          border-radius: 4px; padding: 38px 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .tpl-clean-white .brand-title { font-family: Georgia, serif; font-size: 26px; color: #111; margin: 0; font-weight: bold; }
+        .tpl-clean-white .brand-sub { font-family: monospace; font-size: 11px; color: #555; letter-spacing: 2px; margin-top: 3px; }
+        .tpl-clean-white .badge-type { background: #111; border: 1px solid #111; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 2px; }
+        .tpl-clean-white .service-name { font-size: 20px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-clean-white .service-desc { color: #444; font-size: 15px; }
+        .tpl-clean-white .code-box { margin: 24px auto; padding: 16px 28px; background: #f4f4f4; border: 2px solid #111; border-radius: 4px; display: inline-block; }
+        .tpl-clean-white .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; }
+        .tpl-clean-white .instructions { margin-top: 20px; font-size: 12px; color: #555; border-top: 1px solid #ddd; padding-top: 18px; line-height: 1.6; }
+
+        /* ── Šablona: Sport & Energy ── */
+        .tpl-sport-energy {
+          width: 740px; background: linear-gradient(135deg, #0f0f0f 0%, #1b1b1b 100%);
+          color: #fff; border-left: 8px solid #ff5500; border-top: 1px solid #333; border-right: 1px solid #333; border-bottom: 1px solid #333;
+          border-radius: 6px; padding: 38px 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 28px; color: #ff5500; margin: 0; }
+        .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 11px; color: #999; letter-spacing: 2px; margin-top: 3px; }
+        .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 12px; padding: 5px 12px; border-radius: 3px; font-weight: bold; }
+        .tpl-sport-energy .service-name { font-size: 20px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 6px; }
+        .tpl-sport-energy .service-desc { color: #ccc; font-size: 15px; }
+        .tpl-sport-energy .code-box { margin: 24px auto; padding: 16px 28px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
+        .tpl-sport-energy .code-text { font-family: monospace; font-size: 32px; font-weight: bold; color: #ff5500; letter-spacing: 6px; }
+        .tpl-sport-energy .instructions { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 18px; line-height: 1.6; }
+      </style>
+    </head>
+    <body>
+      <div class="voucher-card ${templateClass}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 1px solid rgba(125,125,125,0.2); margin-bottom: 25px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="voucher-brand-badge">
+              <img src="https://koblas-nutricni.cz/LOGO%20nov%C3%A9.webp" alt="KKoblas logo" class="voucher-logo-img">
+              <svg class="xmas-cap" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 44 C 18 20, 38 12, 52 18 C 50 26, 44 38, 48 44 Z" fill="#e74c3c" stroke="#c0392b" stroke-width="1.5"/>
+                <path d="M52 18 C 56 20, 58 26, 56 30" fill="none" stroke="#e74c3c" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="56" cy="31" r="5" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+                <rect x="8" y="40" width="44" height="10" rx="5" fill="#ffffff" stroke="#eee" stroke-width="1"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="brand-title">KRYŠTOF KOBLAS</h1>
+              <div class="brand-sub">NUTRIČNÍ ANALÝZA &amp; PORADENSTVÍ</div>
+            </div>
+          </div>
+          <div class="badge-type">DÁRKOVÝ POUKAZ</div>
+        </div>
+
+        <div style="text-align: center; margin: 25px 0;">
+          <div class="service-name">${packageName.toUpperCase()}</div>
+          <div class="service-desc">100% Uhrazeno dárkovým certifikátem</div>
+
+          <div class="code-box">
+            <div class="code-text">${giftCode}</div>
+          </div>
+
+          <div class="instructions">
+            Pro aktivaci poukazu navštivte <strong>koblas-nutricni.cz</strong> a v objednávce zadejte tento kód.<br>
+            Přímý odkaz: <a href="${redeemUrl}">${redeemUrl}</a>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// ── PREVOD HTML NA PDF CEZ PDFSHIFT API ──
+async function convertHtmlToPdfBase64(htmlString, apiKey) {
+  if (!apiKey) return null;
+  const auth = btoa(`api:${apiKey.trim()}`);
+  const res = await fetch('https://api.pdfshift.com/v3/convert/pdf', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      source: htmlString,
+      landscape: true,
+      use_print: true
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`PDFShift chyba (${res.status}): ${errText}`);
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  let binary = '';
+  const bytes = new Uint8Array(arrayBuffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 export async function onRequestPost(context) {
   try {
     const payload = await context.request.json();
@@ -62,7 +227,7 @@ export async function onRequestPost(context) {
 
     const client = clients[clientIndex];
 
-    // Ochrana proti duplicitním webhookům
+    // Ochrana proti duplicitným webhookom
     if (!Array.isArray(client.paid_invoice_ids)) {
       client.paid_invoice_ids = [];
     }
@@ -72,6 +237,7 @@ export async function onRequestPost(context) {
     client.paid_invoice_ids.push(String(invoiceId));
 
     const resendKey = context.env.RESEND_API_KEY;
+    const pdfshiftKey = context.env.PDFSHIFT_API_KEY;
 
     let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
     if (!sender.includes('<')) {
@@ -82,7 +248,7 @@ export async function onRequestPost(context) {
     const pkgSlug = normalizePkg(client.sluzba || client.sluzba_nazev);
     const packageName = client.sluzba_nazev || 'nutriční program';
 
-    // ── SCÉNÁŘ A: DÁRKOVÝ POUKAZ ──
+    // ── SCÉNÁR A: DARČEKOVÝ POUKAZ ──
     if (client.is_gift) {
       client.status = 'aktivni';
       client.pocita_se = true;
@@ -118,24 +284,62 @@ export async function onRequestPost(context) {
 
       if (resendKey && client.kupujici && client.kupujici.email) {
         const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
+        const voucherWebUrl = `https://koblas-nutricni.cz/voucher.html?kod=${encodeURIComponent(giftCode)}`;
 
-        const plainTextGift = `Ahoj ${client.kupujici.jmeno},\n\nděkuji za úhradu dárkového poukazu na službu ${packageName}.\n\nKód dárkového poukazu:\n${giftCode}\n\nObdarovaný poukaz aktivuje na adrese:\n${redeemUrl}\n\nTento kód stačí obdarovanému předat. Všechny další kroky a diagnostiku už vyřeším přímo s ním.\n\nS pozdravem,\nKryštof Koblas`;
+        // Pokus o prevod do PDF
+        let pdfBase64 = null;
+        let pdfGenerationFailed = false;
+
+        try {
+          const voucherHtml = buildVoucherHtml(giftCode, packageName, pkgSlug, DEFAULT_VOUCHER_TEMPLATE);
+          pdfBase64 = await convertHtmlToPdfBase64(voucherHtml, pdfshiftKey);
+        } catch (pdfErr) {
+          console.error('PDF generovanie zlyhalo, prepínam na fallback:', pdfErr);
+          pdfGenerationFailed = true;
+        }
+
+        const attachments = [];
+        if (pdfBase64) {
+          attachments.push({
+            filename: `Darkovy_poukaz_${giftCode}.pdf`,
+            content: pdfBase64
+          });
+        }
+
+        const plainTextGift = `Ahoj ${client.kupujici.jmeno},\n\nděkuji za úhradu dárkového poukazu na službu ${packageName}.\n\n`
+          + (pdfBase64 ? `Dárkový poukaz ve formátu PDF najdeš přímo v příloze tohoto e-mailu.\n\n` : `Dárkový poukaz si můžeš otevřít a stáhnout zde:\n${voucherWebUrl}\n\n`)
+          + `Kód dárkového poukazu: ${giftCode}\n`
+          + `Obdarovaný poukaz aktivuje na adrese:\n${redeemUrl}\n\n`
+          + `S pozdravem,\nKryštof Koblas`;
 
         const htmlGift = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; color: #222; line-height: 1.6; font-size: 15px;">
             <p>Ahoj ${client.kupujici.jmeno},</p>
             <p>děkuji za úhradu dárkového poukazu na službu <strong>${packageName}</strong>.</p>
             
-            <div style="background: #f7f7f7; border: 1px solid #ddd; padding: 20px; border-radius: 6px; margin: 25px 0;">
-              <div style="font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Kód dárkového poukazu:</div>
-              <div style="font-family: monospace; font-size: 26px; font-weight: bold; color: #111; margin: 8px 0;">${giftCode}</div>
-              <p style="margin: 10px 0 0 0; font-size: 14px;">
-                Přímý odkaz pro aktivaci:<br>
-                <a href="${redeemUrl}" style="color: #0066cc; word-break: break-all;">${redeemUrl}</a>
-              </p>
+            ${pdfBase64 ? `
+              <div style="background: rgba(46,204,113,0.1); border-left: 4px solid #2ecc71; padding: 14px 18px; border-radius: 4px; margin: 20px 0;">
+                📎 <strong>Dárkový certifikát byl vygenerován a přiložen v PDF k tomuto e-mailu.</strong>
+              </div>
+            ` : ''}
+
+            <div style="background: #141414; border: 2px solid #c88a2c; padding: 25px; border-radius: 8px; margin: 25px 0; text-align: center; color: #fff;">
+              <div style="font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 2px;">Kód dárkového poukazu</div>
+              <div style="font-family: monospace; font-size: 28px; font-weight: bold; color: #ff9900; letter-spacing: 4px; margin: 10px 0;">${giftCode}</div>
+              
+              <div style="margin-top: 18px;">
+                <a href="${voucherWebUrl}" target="_blank" style="display: inline-block; background: #ff9900; color: #000; font-weight: bold; font-family: monospace; font-size: 13px; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
+                  🖨 OTEVŘÍT / VYTISKNOUT POUKAZ ON-LINE →
+                </a>
+              </div>
             </div>
 
-            <p>Tento kód a odkaz stačí předat obdarovanému. Jakmile formulář vyplní, převezmu si ho a celou spolupráci už povedu přímo s ním.</p>
+            <p style="font-size: 14px; color: #555;">
+              Obdarovaný si může balíček aktivovat na adrese:<br>
+              <a href="${redeemUrl}" style="color: #0066cc; word-break: break-all;">${redeemUrl}</a>
+            </p>
+
+            <p>Poukaz stačí obdarovanému předat (vytisknout nebo poslat PDF). Jakmile formulář odešle, převezmu si ho a diagnostiku i konzultace už vyřeším přímo s ním.</p>
             <p style="margin-top: 30px;">S pozdravem,<br><strong>Kryštof Koblas</strong><br><span style="color: #666; font-size: 13px;">koblas-nutricni.cz</span></p>
           </div>
         `;
@@ -150,12 +354,14 @@ export async function onRequestPost(context) {
             from: sender,
             to: [client.kupujici.email],
             reply_to: OWNER_EMAIL,
-            subject: `Dárkový poukaz – kód: ${giftCode}`,
+            subject: `Dárkový poukaz – ${packageName} (Kód: ${giftCode})`,
             text: plainTextGift,
-            html: htmlGift
+            html: htmlGift,
+            attachments: attachments
           })
         });
 
+        // Notifikácia na Gmail
         await new Promise(r => setTimeout(r, 600));
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -172,7 +378,9 @@ export async function onRequestPost(context) {
               <div style="font-family:sans-serif;max-width:600px;color:#222;">
                 <h3 style="color:#2ecc71;">Platba za dárkový poukaz byla přijata!</h3>
                 <p>Kupující <strong>${client.kupujici.jmeno}</strong> (${client.kupujici.email}) uhradil fakturu za dárkový poukaz.</p>
-                <p>Byl vygenerován a odeslán kód: <strong>${giftCode}</strong></p>
+                <p>Byl vygenerován kód: <strong>${giftCode}</strong></p>
+                <p>Stav PDF přílohy: <strong>${pdfBase64 ? 'Vygenerována a odeslána v příloze' : 'Záložní režim (bez PDF, odeslán odkaz)'}</strong></p>
+                ${pdfGenerationFailed ? '<p style="color:#e74c3c;">⚠️ PDF generátor vrátil chybu nebo chybí platný klíč PDFSHIFT_API_KEY.</p>' : ''}
               </div>
             `
           })
@@ -183,7 +391,7 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ok: true, giftActivated: true }), { status: 200 });
     }
 
-    // ── SCÉNÁŘ B: NÁSLEDNÁ SPLÁTKA (2., 3., 4., 5., 6.) ──
+    // ── SCÉNÁR B: NÁSLEDNÁ SPLÁTKA (2., 3., 4., 5., 6.) ──
     if (client.is_installment && client.status === 'aktivni') {
       const paidInstallmentNum = client.current_installment;
       const isFinal = paidInstallmentNum >= client.total_installments;
@@ -243,12 +451,10 @@ export async function onRequestPost(context) {
         }
 
       } else {
-        // Mezi-splátka byla uhrazena -> Naplánujeme termín té další na +30 dní odteď
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 30);
         client.next_installment_date = nextDate.toISOString().split('T')[0];
 
-        // Potvrzení klientovi o přijetí mezisplátky
         if (resendKey && client.kupujici && client.kupujici.email) {
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -274,7 +480,6 @@ export async function onRequestPost(context) {
           });
         }
 
-        // Notifikace tobě
         if (resendKey) {
           await new Promise(r => setTimeout(r, 600));
           await fetch('https://api.resend.com/emails', {
@@ -304,17 +509,15 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ok: true, installmentPaid: paidInstallmentNum }), { status: 200 });
     }
 
-    // ── SCÉNÁŘ C: PRVNÍ PLATBA (PŘÍMÝ NÁKUP NEBO 1. SPLÁTKA) ──
+    // ── SCÉNÁR C: PRVÁ PLATBA (PRIAMY NÁKUP ALEBO 1. SPLÁTKA) ──
     client.status = 'aktivni';
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
 
-    // Automatický výpočet termínů začátku a ukončení
     const todayYMD = new Date().toISOString().split('T')[0];
     client.start_date = todayYMD;
     client.end_date = computeEndDate(todayYMD, client.sluzba_nazev || client.sluzba);
 
-    // Pokud jde o splátky, naplánujeme 2. splátku na +30 dní
     if (client.is_installment && client.total_installments > 1) {
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + 30);
@@ -322,7 +525,6 @@ export async function onRequestPost(context) {
       client.next_installment_num = 2;
     }
 
-    // 1. Uvítací e-mail klientovi (se ZOFem a InBody)
     if (resendKey && client.kupujici && client.kupujici.email) {
       const plainTextClient = `Ahoj ${client.kupujici.jmeno},\n\ntvoje platba za balíček ${packageName} v pořádku dorazila. Oficiálně odmáváme startovní čáru a jdeme na to.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace. Můžeš mi samozřejmě napsat i sám/sama.\n- WhatsApp používáme primárně pro zprávy.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
 
@@ -371,7 +573,6 @@ export async function onRequestPost(context) {
       });
     }
 
-    // 2. Notifikace tobě na Gmail
     if (resendKey) {
       await new Promise(r => setTimeout(r, 600));
 
