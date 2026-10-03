@@ -22,7 +22,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #0a0a0a;
+      background: #0d0d0d;
       color: #e5e5e5;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.6;
@@ -287,6 +287,20 @@
       background: rgba(255, 153, 0, 0.05);
     }
 
+    /* Zvýraznené dárkové tlačidlo pri darekOnly kóde */
+    .btn-gift-highlight {
+      background: #c88a2c !important;
+      color: #000 !important;
+      font-weight: 700 !important;
+      border: none !important;
+      font-size: 14px !important;
+      padding: 13px 18px !important;
+      box-shadow: 0 0 15px rgba(255, 153, 0, 0.35);
+    }
+    .btn-gift-highlight:hover {
+      background: #ffaa22 !important;
+    }
+
     /* Vizuální stav disabled pro neaktivní tlačítko */
     .btn-disabled-dim {
       opacity: 0.25 !important;
@@ -510,7 +524,7 @@
           console.warn('Nelze načíst status kapacity:', e);
         });
 
-      // 2. Logika slevového kódu, ztlumení tlačítek a funkce zrušit
+      // 2. Logika slevového kódu a dynamického zvýraznění tlačítek
       var promoInput = document.getElementById('landingPromoInput');
       var promoBtn   = document.getElementById('landingPromoBtn');
       var clearBtn   = document.getElementById('landingClearBtn');
@@ -541,6 +555,7 @@
           box.classList.remove('pkg-card--voucher-match', 'is-dimmed');
           btn.classList.remove('btn-disabled-dim');
           btnGift.classList.remove('btn-disabled-dim');
+          btnGift.classList.remove('btn-gift-highlight');
 
           priceEl.textContent = formatKc(basePrices[pkg]);
           btn.textContent = 'Objednat ' + (pkg === 'startup' ? 'Start-up' : (pkg === 'mentoring' ? 'Mentoring' : 'Ultimate')) + ' →';
@@ -586,6 +601,7 @@
             box.classList.remove('pkg-card--voucher-match', 'is-dimmed');
             btn.classList.remove('btn-disabled-dim');
             btnGift.classList.remove('btn-disabled-dim');
+            btnGift.classList.remove('btn-gift-highlight');
 
             if (allowed.includes(pkg)) {
               if (isGiftVoucher) {
@@ -595,19 +611,21 @@
                 var orig = basePrices[pkg];
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> 0 Kč';
                 
-                // Objednat se aktivuje jako 0 Kč voucher, dárek ztmavíme
                 btn.textContent = 'Aktivovat voucher (0 Kč) →';
                 btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
-                btnGift.classList.add('btn-disabled-dim');
+                btnGift.classList.add('btn-disabled-dim'); // Ztmavení dárku
 
               } else if (isDarekOnly) {
-                // Kód je jen pro dárek -> ztmavíme běžnou objednávku, dárek dostane slevu
+                // Kód je len pro dárek -> ztmavíme běžnou objednávku a zvýrazníme dárkové tlačítko
                 var orig = basePrices[pkg];
                 var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
                 var finalP = Math.max(0, orig - disc);
 
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
-                btn.classList.add('btn-disabled-dim');
+                btn.classList.add('btn-disabled-dim'); // Ztmavení běžné objednávky
+                
+                // Zvýraznění dárkového tlačítka
+                btnGift.classList.add('btn-gift-highlight');
                 btnGift.textContent = '🎁 Objednat dárek se slevou →';
                 btnGift.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&darek=1&kod=' + data.code);
 
@@ -620,7 +638,7 @@
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
                 btn.textContent = 'Objednat se slevou →';
                 btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
-                btnGift.classList.add('btn-disabled-dim');
+                btnGift.classList.add('btn-disabled-dim'); // Ztmavení dárku
               }
             } else {
               box.classList.add('is-dimmed');
