@@ -8,7 +8,7 @@
   <style>
     @page { 
       size: A4 portrait; 
-      margin: 10mm; 
+      margin: 3mm 5mm 0 5mm; 
     }
     * { box-sizing: border-box; }
     body {
@@ -80,7 +80,7 @@
     }
     .btn-back:hover { color: #fff; border-color: #666; }
 
-    /* ── PRÉMIOVÝ FORMÁT DL POUKAZU (200 x 94 mm) ── */
+    /* ── PRÉMIOVÝ FORMÁT DL POUKAZU (200 x 86 mm) ── */
     .print-wrapper {
       position: relative;
       display: flex;
@@ -90,30 +90,31 @@
 
     .voucher-card {
       width: 760px;
-      min-height: 350px;
+      min-height: 330px;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      box-sizing: border-box;
     }
 
     /* Rohové tiskařské ořezové značky */
     .crop-mark {
       position: absolute;
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       pointer-events: none;
-      opacity: 0.55;
+      opacity: 0.65;
     }
-    .crop-tl { top: -6px; left: -6px; border-top: 2px solid #888; border-left: 2px solid #888; }
-    .crop-tr { top: -6px; right: -6px; border-top: 2px solid #888; border-right: 2px solid #888; }
-    .crop-bl { bottom: -6px; left: -6px; border-bottom: 2px solid #888; border-left: 2px solid #888; }
-    .crop-br { bottom: -6px; right: -6px; border-bottom: 2px solid #888; border-right: 2px solid #888; }
+    .crop-tl { top: -4px; left: -4px; border-top: 2px solid #888; border-left: 2px solid #888; }
+    .crop-tr { top: -4px; right: -4px; border-top: 2px solid #888; border-right: 2px solid #888; }
+    .crop-bl { bottom: -4px; left: -4px; border-bottom: 2px solid #888; border-left: 2px solid #888; }
+    .crop-br { bottom: -4px; right: -4px; border-bottom: 2px solid #888; border-right: 2px solid #888; }
 
     /* Spodní střižná čára přes celou šířku s nůžkami */
     .cut-line-banner {
       width: 760px;
-      margin-top: 22px;
+      margin-top: 18px;
       position: relative;
       border-top: 1.5px dashed #777;
       height: 1px;
@@ -135,7 +136,7 @@
       align-items: center;
     }
     .voucher-logo-img {
-      height: 42px;
+      height: 38px;
       width: auto;
       object-fit: contain;
       display: block;
@@ -147,10 +148,10 @@
     
     .xmas-cap {
       position: absolute;
-      top: -15px;
-      left: -13px;
-      width: 32px;
-      height: 32px;
+      top: -14px;
+      left: -12px;
+      width: 28px;
+      height: 28px;
       transform: rotate(-15deg);
       pointer-events: none;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
@@ -158,10 +159,10 @@
 
     .xmas-tree-bg {
       position: absolute;
-      right: -24px;
-      bottom: -15px;
-      width: 70px;
-      height: 80px;
+      right: -20px;
+      bottom: -12px;
+      width: 62px;
+      height: 72px;
       pointer-events: none;
       z-index: 1;
       opacity: 0.85;
@@ -170,10 +171,10 @@
 
     .easter-whip {
       position: absolute;
-      right: -16px;
-      bottom: -12px;
-      width: 65px;
-      height: 75px;
+      right: -14px;
+      bottom: -10px;
+      width: 58px;
+      height: 68px;
       pointer-events: none;
       z-index: 1;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
@@ -181,10 +182,10 @@
 
     .summer-shape {
       position: absolute;
-      right: -14px;
-      bottom: -10px;
-      width: 75px;
-      height: 75px;
+      right: -12px;
+      bottom: -8px;
+      width: 66px;
+      height: 66px;
       pointer-events: none;
       z-index: 1;
       opacity: 0.9;
@@ -194,7 +195,7 @@
     .code-wrapper {
       position: relative;
       display: inline-block;
-      margin: 12px auto;
+      margin: 6px auto;
     }
 
     /* ── 1. VÁNOČNÍ: NORDIC SNOW ── */
@@ -203,18 +204,18 @@
       color: #1a1a1a;
       border: 2px solid #d4af37;
       border-radius: 6px;
-      padding: 24px 30px;
+      padding: 18px 26px;
       box-shadow: 0 10px 35px rgba(0,0,0,0.1);
     }
     .tpl-nordic-snow .xmas-cap, .tpl-nordic-snow .xmas-tree-bg { display: block !important; }
-    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 10px; color: #666; letter-spacing: 2px; margin-top: 2px; }
-    .tpl-nordic-snow .badge-type { background: #f0f7ff; border: 1.5px solid #74c0fc; color: #1c7ed6; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-    .tpl-nordic-snow .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-    .tpl-nordic-snow .service-desc { color: #555; font-size: 13.5px; }
-    .tpl-nordic-snow .code-box { position: relative; z-index: 2; padding: 10px 24px; background: rgba(255, 255, 255, 0.94); border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
-    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #111; letter-spacing: 5px; }
-    .tpl-nordic-snow .instructions { font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.5; }
+    .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 19px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 9.5px; color: #666; letter-spacing: 2px; margin-top: 1px; }
+    .tpl-nordic-snow .badge-type { background: #f0f7ff; border: 1.5px solid #74c0fc; color: #1c7ed6; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .tpl-nordic-snow .service-name { font-size: 16.5px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+    .tpl-nordic-snow .service-desc { color: #555; font-size: 12.5px; }
+    .tpl-nordic-snow .code-box { position: relative; z-index: 2; padding: 6px 20px; background: rgba(255, 255, 255, 0.94); border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
+    .tpl-nordic-snow .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #111; letter-spacing: 4px; }
+    .tpl-nordic-snow .instructions { font-size: 10.5px; color: #666; border-top: 1px solid #eee; padding-top: 6px; line-height: 1.35; }
     .tpl-nordic-snow a { color: #1c7ed6; font-weight: 600; text-decoration: none; }
 
     /* ── 2. JARO & VELIKONOCE ── */
@@ -223,18 +224,18 @@
       color: #1a1a1a;
       border: 2px solid #51cf66;
       border-radius: 6px;
-      padding: 24px 30px;
+      padding: 18px 26px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.06);
     }
     .tpl-easter .easter-whip { display: block !important; }
-    .tpl-easter .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-easter .brand-sub { font-family: monospace; font-size: 10px; color: #555; letter-spacing: 2px; margin-top: 2px; }
-    .tpl-easter .badge-type { background: #ebfbee; border: 1.5px solid #51cf66; color: #2b8a3e; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-    .tpl-easter .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-    .tpl-easter .service-desc { color: #2b8a3e; font-size: 13.5px; font-weight: 600; }
-    .tpl-easter .code-box { position: relative; z-index: 2; padding: 10px 24px; background: rgba(255, 255, 255, 0.95); border: 2px dashed #51cf66; border-radius: 6px; display: inline-block; }
-    .tpl-easter .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #2b8a3e; letter-spacing: 5px; }
-    .tpl-easter .instructions { font-size: 11px; color: #666; border-top: 1px solid #e2f0d9; padding-top: 10px; line-height: 1.5; }
+    .tpl-easter .brand-title { font-family: Georgia, serif; font-size: 19px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-easter .brand-sub { font-family: monospace; font-size: 9.5px; color: #555; letter-spacing: 2px; margin-top: 1px; }
+    .tpl-easter .badge-type { background: #ebfbee; border: 1.5px solid #51cf66; color: #2b8a3e; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .tpl-easter .service-name { font-size: 16.5px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+    .tpl-easter .service-desc { color: #2b8a3e; font-size: 12.5px; font-weight: 600; }
+    .tpl-easter .code-box { position: relative; z-index: 2; padding: 6px 20px; background: rgba(255, 255, 255, 0.95); border: 2px dashed #51cf66; border-radius: 6px; display: inline-block; }
+    .tpl-easter .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #2b8a3e; letter-spacing: 4px; }
+    .tpl-easter .instructions { font-size: 10.5px; color: #666; border-top: 1px solid #e2f0d9; padding-top: 6px; line-height: 1.35; }
     .tpl-easter a { color: #2b8a3e; font-weight: bold; }
 
     /* ── 3. LÉTO V ŠEJPU ── */
@@ -243,18 +244,18 @@
       color: #fff;
       border: 2px solid #00b4d8;
       border-radius: 6px;
-      padding: 24px 30px;
+      padding: 18px 26px;
       box-shadow: 0 10px 35px rgba(0, 180, 216, 0.25);
     }
     .tpl-summer-shape .summer-shape { display: block !important; }
-    .tpl-summer-shape .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 22px; color: #90e0ef; margin: 0; letter-spacing: 1px; }
-    .tpl-summer-shape .brand-sub { font-family: monospace; font-size: 10px; color: #caf0f8; letter-spacing: 2px; margin-top: 2px; }
-    .tpl-summer-shape .badge-type { background: rgba(0, 180, 216, 0.2); border: 1.5px solid #00b4d8; color: #90e0ef; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-    .tpl-summer-shape .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-    .tpl-summer-shape .service-desc { color: #00b4d8; font-size: 13.5px; font-weight: 600; letter-spacing: 1px; }
-    .tpl-summer-shape .code-box { position: relative; z-index: 2; padding: 10px 24px; background: rgba(10, 25, 47, 0.88); border: 2px dashed #00b4d8; border-radius: 6px; display: inline-block; }
-    .tpl-summer-shape .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #90e0ef; letter-spacing: 5px; }
-    .tpl-summer-shape .instructions { font-size: 11px; color: #a0c4e2; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 10px; line-height: 1.5; }
+    .tpl-summer-shape .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 20px; color: #90e0ef; margin: 0; letter-spacing: 1px; }
+    .tpl-summer-shape .brand-sub { font-family: monospace; font-size: 9.5px; color: #caf0f8; letter-spacing: 2px; margin-top: 1px; }
+    .tpl-summer-shape .badge-type { background: rgba(0, 180, 216, 0.2); border: 1.5px solid #00b4d8; color: #90e0ef; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .tpl-summer-shape .service-name { font-size: 16.5px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+    .tpl-summer-shape .service-desc { color: #00b4d8; font-size: 12.5px; font-weight: 600; letter-spacing: 1px; }
+    .tpl-summer-shape .code-box { position: relative; z-index: 2; padding: 6px 20px; background: rgba(10, 25, 47, 0.88); border: 2px dashed #00b4d8; border-radius: 6px; display: inline-block; }
+    .tpl-summer-shape .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #90e0ef; letter-spacing: 4px; }
+    .tpl-summer-shape .instructions { font-size: 10.5px; color: #a0c4e2; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 6px; line-height: 1.35; }
     .tpl-summer-shape a { color: #00b4d8; font-weight: bold; }
 
     /* ── 4. NOVÝ ROK ── */
@@ -263,17 +264,17 @@
       color: #111;
       border: 2px solid #b8860b;
       border-radius: 6px;
-      padding: 24px 30px;
+      padding: 18px 26px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
-    .tpl-new-year .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-new-year .brand-sub { font-family: monospace; font-size: 10px; color: #777; letter-spacing: 2px; margin-top: 2px; }
-    .tpl-new-year .badge-type { background: #fff8e1; border: 1.5px solid #b8860b; color: #996515; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-    .tpl-new-year .service-name { font-size: 18px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-    .tpl-new-year .service-desc { color: #b8860b; font-size: 13.5px; font-weight: 600; }
-    .tpl-new-year .code-box { padding: 10px 24px; background: #ffffff; border: 2px solid #b8860b; border-radius: 6px; display: inline-block; }
-    .tpl-new-year .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #b8860b; letter-spacing: 5px; }
-    .tpl-new-year .instructions { font-size: 11px; color: #666; border-top: 1px solid #ebd9b4; padding-top: 10px; line-height: 1.5; }
+    .tpl-new-year .brand-title { font-family: Georgia, serif; font-size: 19px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-new-year .brand-sub { font-family: monospace; font-size: 9.5px; color: #777; letter-spacing: 2px; margin-top: 1px; }
+    .tpl-new-year .badge-type { background: #fff8e1; border: 1.5px solid #b8860b; color: #996515; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .tpl-new-year .service-name { font-size: 16.5px; letter-spacing: 2px; color: #000; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+    .tpl-new-year .service-desc { color: #b8860b; font-size: 12.5px; font-weight: 600; }
+    .tpl-new-year .code-box { padding: 6px 20px; background: #ffffff; border: 2px solid #b8860b; border-radius: 6px; display: inline-block; }
+    .tpl-new-year .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #b8860b; letter-spacing: 4px; }
+    .tpl-new-year .instructions { font-size: 10.5px; color: #666; border-top: 1px solid #ebd9b4; padding-top: 6px; line-height: 1.35; }
     .tpl-new-year a { color: #b8860b; font-weight: bold; }
 
     /* ── 5. NAROZENINY & DÁREK ── */
@@ -282,18 +283,18 @@
       color: #222;
       border: 2px solid #d4af37;
       border-radius: 6px;
-      padding: 24px 30px;
+      padding: 18px 26px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.06);
     }
-    .tpl-birthday .icon-bday { display: inline-block !important; width: 16px; height: 16px; vertical-align: middle; margin-left: 6px; }
-    .tpl-birthday .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
-    .tpl-birthday .brand-sub { font-family: monospace; font-size: 10px; color: #888; letter-spacing: 2px; margin-top: 2px; }
-    .tpl-birthday .badge-type { background: #ffffff; border: 1.5px solid #d4af37; color: #996515; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-    .tpl-birthday .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-    .tpl-birthday .service-desc { color: #666; font-size: 13.5px; }
-    .tpl-birthday .code-box { padding: 10px 24px; background: #ffffff; border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
-    .tpl-birthday .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #996515; letter-spacing: 5px; }
-    .tpl-birthday .instructions { font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.5; }
+    .tpl-birthday .icon-bday { display: inline-block !important; width: 14px; height: 14px; vertical-align: middle; margin-left: 6px; }
+    .tpl-birthday .brand-title { font-family: Georgia, serif; font-size: 19px; color: #111; margin: 0; font-weight: bold; }
+    .tpl-birthday .brand-sub { font-family: monospace; font-size: 9.5px; color: #888; letter-spacing: 2px; margin-top: 1px; }
+    .tpl-birthday .badge-type { background: #ffffff; border: 1.5px solid #d4af37; color: #996515; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .tpl-birthday .service-name { font-size: 16.5px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+    .tpl-birthday .service-desc { color: #666; font-size: 12.5px; }
+    .tpl-birthday .code-box { padding: 6px 20px; background: #ffffff; border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
+    .tpl-birthday .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #996515; letter-spacing: 4px; }
+    .tpl-birthday .instructions { font-size: 10.5px; color: #777; border-top: 1px solid #eee; padding-top: 6px; line-height: 1.35; }
     .tpl-birthday a { color: #996515; font-weight: bold; }
 
     /* ── 6. SPORTOVNÍ & VÝKON ── */
@@ -305,18 +306,18 @@
       border-right: 1px solid #333;
       border-bottom: 1px solid #333;
       border-radius: 6px;
-      padding: 24px 30px;
+      padding: 18px 26px;
       box-shadow: 0 10px 35px rgba(0,0,0,0.8);
     }
-    .tpl-sport-energy .icon-dumb { display: inline-block !important; width: 16px; height: 16px; vertical-align: middle; margin-left: 6px; }
-    .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 22px; color: #ff5500; margin: 0; letter-spacing: 1px; }
-    .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 10px; color: #999; letter-spacing: 2px; margin-top: 2px; }
-    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 3px; font-weight: bold; }
-    .tpl-sport-energy .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-    .tpl-sport-energy .service-desc { color: #ccc; font-size: 13.5px; }
-    .tpl-sport-energy .code-box { padding: 10px 24px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
-    .tpl-sport-energy .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #ff5500; letter-spacing: 5px; }
-    .tpl-sport-energy .instructions { font-size: 11px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 10px; line-height: 1.5; }
+    .tpl-sport-energy .icon-dumb { display: inline-block !important; width: 14px; height: 14px; vertical-align: middle; margin-left: 6px; }
+    .tpl-sport-energy .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 20px; color: #ff5500; margin: 0; letter-spacing: 1px; }
+    .tpl-sport-energy .brand-sub { font-family: monospace; font-size: 9.5px; color: #999; letter-spacing: 2px; margin-top: 1px; }
+    .tpl-sport-energy .badge-type { background: #ff5500; color: #fff; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 3px; font-weight: bold; }
+    .tpl-sport-energy .service-name { font-size: 16.5px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+    .tpl-sport-energy .service-desc { color: #ccc; font-size: 12.5px; }
+    .tpl-sport-energy .code-box { padding: 6px 20px; background: #000; border: 2px solid #ff5500; border-radius: 4px; display: inline-block; }
+    .tpl-sport-energy .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #ff5500; letter-spacing: 4px; }
+    .tpl-sport-energy .instructions { font-size: 10.5px; color: #888; border-top: 1px solid #2a2a2a; padding-top: 6px; line-height: 1.35; }
     .tpl-sport-energy a { color: #ff5500; font-weight: bold; }
 
     /* ── 7. CELOROČNÍ DARK GOLD ── */
@@ -324,22 +325,22 @@
       background: #141414;
       color: #eee;
       border: 2px solid #c88a2c;
-      border-radius: 8px;
-      padding: 24px 30px;
+      border-radius: 6px;
+      padding: 18px 26px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8);
       background-image: radial-gradient(circle at 100% 0%, rgba(200,138,44,0.12) 0%, transparent 60%);
     }
-    .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 21px; color: #ff9900; margin: 0; }
-    .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 10px; color: #888; letter-spacing: 2px; margin-top: 2px; }
-    .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; }
-    .tpl-dark-gold .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-    .tpl-dark-gold .service-desc { color: #aaa; font-size: 13.5px; }
-    .tpl-dark-gold .code-box { padding: 10px 24px; background: #080808; border: 1px dashed #ff9900; border-radius: 6px; display: inline-block; }
-    .tpl-dark-gold .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #ff9900; letter-spacing: 5px; }
-    .tpl-dark-gold .instructions { font-size: 11px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; line-height: 1.5; }
+    .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 19px; color: #ff9900; margin: 0; }
+    .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 9.5px; color: #888; letter-spacing: 2px; margin-top: 1px; }
+    .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; }
+    .tpl-dark-gold .service-name { font-size: 16.5px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+    .tpl-dark-gold .service-desc { color: #aaa; font-size: 12.5px; }
+    .tpl-dark-gold .code-box { padding: 6px 20px; background: #080808; border: 1px dashed #ff9900; border-radius: 6px; display: inline-block; }
+    .tpl-dark-gold .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #ff9900; letter-spacing: 4px; }
+    .tpl-dark-gold .instructions { font-size: 10.5px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; line-height: 1.35; }
     .tpl-dark-gold a { color: #ff9900; font-weight: bold; }
 
-    /* ── TISKOVÁ PRAVIDLA (DL FORMÁT NA A4) ── */
+    /* ── TISKOVÁ PRAVIDLA (DL FORMÁT NA 1 ROVNÝ STŘIH DO OBÁLKY) ── */
     @media print {
       body {
         background: transparent !important;
@@ -350,13 +351,13 @@
       .toolbar { display: none !important; }
       
       .print-wrapper {
-        margin: 8mm auto 0 auto !important;
+        margin: 2mm auto 0 auto !important;
         width: 200mm !important;
       }
 
       .voucher-card {
         width: 200mm !important;
-        height: 94mm !important;
+        height: 86mm !important;
         min-height: auto !important;
         box-shadow: none !important;
         page-break-inside: avoid !important;
@@ -371,7 +372,7 @@
 
       .cut-line-banner {
         width: 200mm !important;
-        margin-top: 7mm !important;
+        margin-top: 4mm !important;
         border-top: 1.5px dashed #666 !important;
         display: block !important;
         visibility: visible !important;
@@ -409,8 +410,8 @@
       <div class="crop-mark crop-br"></div>
 
       <!-- Horní část (Brand & Typ) -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 1px solid rgba(125,125,125,0.2);">
-        <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 1px solid rgba(125,125,125,0.2);">
+        <div style="display: flex; align-items: center; gap: 12px;">
           <div class="voucher-brand-badge">
             <img src="LOGO nové.webp" alt="KKoblas logo" class="voucher-logo-img">
             
@@ -443,7 +444,7 @@
       </div>
 
       <!-- Střední část (Název programu & Kód) -->
-      <div style="text-align: center; margin: 10px 0;">
+      <div style="text-align: center; margin: 4px 0;">
         <div class="service-name" id="voucherService">VŠECHNY SLUŽBY</div>
         <div class="service-desc" id="voucherDesc">100% Uhrazeno dárkovým certifikátem</div>
 
