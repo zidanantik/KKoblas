@@ -2,7 +2,7 @@
 
 const OWNER_EMAIL = 'koblas.nutricni@gmail.com';
 
-// ── VÝBER PREDVOLENEJ ŠABLÓNY (tpl-dark-gold | tpl-xmas-gold | tpl-clean-white | tpl-sport-energy) ──
+// ── VÝBĚR PŘEDVOLENÉ ŠABLONY (tpl-dark-gold | tpl-xmas-gold | tpl-clean-white | tpl-sport-energy) ──
 const DEFAULT_VOUCHER_TEMPLATE = 'tpl-dark-gold';
 
 function generateGiftCode() {
@@ -36,7 +36,7 @@ function computeEndDate(startDateStr, pkgName) {
   return d.toISOString().split('T')[0];
 }
 
-// ── ŠABLÓNA PRE PDF PREVODNÍK ──
+// ── ŠABLONA PRO PDF PŘEVODNÍK ──
 function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
   const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
 
@@ -166,14 +166,18 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
   `;
 }
 
-// ── PREVOD HTML NA PDF CEZ PDFSHIFT API ──
+// ── PŘEVOD HTML NA PDF PŘES PDFSHIFT API (v3 api.pdfshift.io) ──
 async function convertHtmlToPdfBase64(htmlString, apiKey) {
-  if (!apiKey) return null;
-  const auth = btoa(`api:${apiKey.trim()}`);
-  const res = await fetch('https://api.pdfshift.com/v3/convert/pdf', {
+  if (!apiKey) {
+    throw new Error('Chybí proměnná prostředí PDFSHIFT_API_KEY v Cloudflare.');
+  }
+
+  const cleanKey = apiKey.trim();
+  // PDFShift v3 vyžaduje koncovku .io a hlavičku X-API-Key
+  const res = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${auth}`,
+      'X-API-Key': cleanKey,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -185,7 +189,7 @@ async function convertHtmlToPdfBase64(htmlString, apiKey) {
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`PDFShift chyba (${res.status}): ${errText}`);
+    throw new Error(`PDFShift HTTP ${res.status}: ${errText}`);
   }
 
   const arrayBuffer = await res.arrayBuffer();
@@ -227,7 +231,7 @@ export async function onRequestPost(context) {
 
     const client = clients[clientIndex];
 
-    // Ochrana proti duplicitným webhookom
+    // Ochrana proti duplicitním webhookům
     if (!Array.isArray(client.paid_invoice_ids)) {
       client.paid_invoice_ids = [];
     }
@@ -248,7 +252,7 @@ export async function onRequestPost(context) {
     const pkgSlug = normalizePkg(client.sluzba || client.sluzba_nazev);
     const packageName = client.sluzba_nazev || 'nutriční program';
 
-    // ── SCÉNÁR A: DARČEKOVÝ POUKAZ ──
+    // ── SCÉNÁŘ A: DÁRKOVÝ POUKAZ ──
     if (client.is_gift) {
       client.status = 'aktivni';
       client.pocita_se = true;
@@ -286,16 +290,18 @@ export async function onRequestPost(context) {
         const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
         const voucherWebUrl = `https://koblas-nutricni.cz/voucher.html?kod=${encodeURIComponent(giftCode)}`;
 
-        // Pokus o prevod do PDF
+        // Pokus o převod do PDF přes PDFShift
         let pdfBase64 = null;
         let pdfGenerationFailed = false;
+        let pdfErrorDetail = '';
 
         try {
           const voucherHtml = buildVoucherHtml(giftCode, packageName, pkgSlug, DEFAULT_VOUCHER_TEMPLATE);
           pdfBase64 = await convertHtmlToPdfBase64(voucherHtml, pdfshiftKey);
         } catch (pdfErr) {
-          console.error('PDF generovanie zlyhalo, prepínam na fallback:', pdfErr);
+          console.error('PDF generování selhalo, přepínám na fallback:', pdfErr);
           pdfGenerationFailed = true;
+          pdfErrorDetail = pdfErr.message || String(pdfErr);
         }
 
         const attachments = [];
@@ -361,7 +367,7 @@ export async function onRequestPost(context) {
           })
         });
 
-        // Notifikácia na Gmail
+        // Notifikace na Gmail majitele
         await new Promise(r => setTimeout(r, 600));
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -380,7 +386,7 @@ export async function onRequestPost(context) {
                 <p>Kupující <strong>${client.kupujici.jmeno}</strong> (${client.kupujici.email}) uhradil fakturu za dárkový poukaz.</p>
                 <p>Byl vygenerován kód: <strong>${giftCode}</strong></p>
                 <p>Stav PDF přílohy: <strong>${pdfBase64 ? 'Vygenerována a odeslána v příloze' : 'Záložní režim (bez PDF, odeslán odkaz)'}</strong></p>
-                ${pdfGenerationFailed ? '<p style="color:#e74c3c;">⚠️ PDF generátor vrátil chybu nebo chybí platný klíč PDFSHIFT_API_KEY.</p>' : ''}
+                ${pdfGenerationFailed ? `<p style="color:#e74c3c;">⚠️ PDF generátor selhal.<br><small style="color:#666;">Důvod: ${pdfErrorDetail}</small></p>` : ''}
               </div>
             `
           })
@@ -391,7 +397,7 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ok: true, giftActivated: true }), { status: 200 });
     }
 
-    // ── SCÉNÁR B: NÁSLEDNÁ SPLÁTKA (2., 3., 4., 5., 6.) ──
+    // ── SCÉNÁŘ B: NÁSLEDNÁ SPLÁTKA (2., 3., 4., 5., 6.) ──
     if (client.is_installment && client.status === 'aktivni') {
       const paidInstallmentNum = client.current_installment;
       const isFinal = paidInstallmentNum >= client.total_installments;
@@ -509,7 +515,7 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ok: true, installmentPaid: paidInstallmentNum }), { status: 200 });
     }
 
-    // ── SCÉNÁR C: PRVÁ PLATBA (PRIAMY NÁKUP ALEBO 1. SPLÁTKA) ──
+    // ── SCÉNÁŘ C: PRVNÍ PLATBA (PŘÍMÝ NÁKUP NEBO 1. SPLÁTKA) ──
     client.status = 'aktivni';
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
