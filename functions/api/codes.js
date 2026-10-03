@@ -75,7 +75,7 @@ export async function onRequestGet(context) {
     const codeParam = (url.searchParams.get('code') || '').trim().toUpperCase();
     const pkgParam = normalizePkg(url.searchParams.get('package') || url.searchParams.get('sluzba') || '');
     const modeSplatky = url.searchParams.get('splatky') === 'true';
-    const modeDarek = url.searchParams.get('darek') === '1' || url.searchParams.get('darek') === 'true';
+    const modeDarek = url.searchParams.get('darek') === '1' || url.searchParams.get('darek') === 'true' || url.searchParams.get('darek') === 'ano';
 
     if (!codeParam) {
       return new Response(JSON.stringify({ valid: false, message: 'Chybí kód.' }), {
@@ -119,9 +119,17 @@ export async function onRequestGet(context) {
       });
     }
 
-    // Validace dárkového kódu (pouze pro dárkový voucher)
-    if (found.darekOnly && url.searchParams.has('darek') && !modeDarek) {
+    // ── STRIKTNÍ ODDĚLENÍ DÁRKŮ A BĚŽNÝCH NÁKUPŮ ──
+    // 1. Kód označený pouze na dárky nesmí projít na běžný program
+    if (found.darekOnly && !modeDarek) {
       return new Response(JSON.stringify({ valid: false, message: 'Tento kód lze uplatnit výhradně na nákup dárkového poukazu.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 2. Běžný slevový kód nesmí projít na nákup dárkového poukazu
+    if (!found.darekOnly && modeDarek && found.type !== 'gift') {
+      return new Response(JSON.stringify({ valid: false, message: 'Tento slevový kód platí pouze pro osobní programy, nelze jej uplatnit na dárkový poukaz.' }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
