@@ -489,10 +489,14 @@ export async function onRequestPost(context) {
         }
 
         const plainTextGift = `Ahoj ${client.kupujici.jmeno},\n\nděkuji za úhradu dárkového poukazu na službu ${packageName}.\n\n`
-          + (pdfBase64 ? `Dárkový poukaz ve formátu PDF (rozměr DL pro vytištění a odstřižení do obálky) najdeš přímo v příloze tohoto e-mailu.\n\n` : `Dárkový poukaz si můžeš otevřít a stáhnout zde:\n${voucherWebUrl}\n\n`)
+          + (pdfBase64 
+              ? `Dárkový certifikát v PDF (formát DL do obálky) najdeš přímo v příloze tohoto e-mailu.\n\nPokud bys chtěl jiný vzhled poukazu, na odkazu níže si můžeš vybrat z dalších předpřipravených stylů podle příležitosti:\n${voucherWebUrl}\n\n` 
+              : `Dárkový poukaz si můžeš otevřít, vybrat si z několika předpřipravených stylů podle příležitosti a stáhnout nebo vytisknout zde:\n${voucherWebUrl}\n\n`
+            )
           + `Kód dárkového poukazu: ${giftCode}\n`
           + `Obdarovaný poukaz aktivuje na adrese:\n${redeemUrl}\n\n`
-          + `S pozdravem,\nKryštof Koblas`;
+          + `Poukaz stačí obdarovanému předat (vytisknout nebo poslat PDF). Jakmile formulář odešle, převezmu si ho a diagnostiku i konzultace už vyřeším přímo s ním.\n\n`
+          + `S pozdravem,\nKryštof Koblas\nkoblas-nutricni.cz`;
 
         const htmlGift = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; color: #222; line-height: 1.6; font-size: 15px;">
@@ -501,10 +505,19 @@ export async function onRequestPost(context) {
             
             ${pdfBase64 ? `
               <div style="background: rgba(46,204,113,0.1); border-left: 4px solid #2ecc71; padding: 14px 18px; border-radius: 4px; margin: 20px 0;">
-                📎 <strong>Dárkový certifikát byl vygenerován a přiložen v PDF k tomuto e-mailu.</strong><br>
-                <small style="color: #555;">Je připraven k vytištění na A4 a odstřižení podél vyznačené linky přesně do podlouhlé DL obálky.</small>
+                📎 <strong>Dárkový certifikát máš přiložený v PDF přímo k tomuto e-mailu.</strong><br>
+                <span style="color: #444; font-size: 13.5px;">Je připravený k tisku na A4 a jednoduchému odstřižení podél vyznačené linky přesně do podlouhlé DL obálky.</span>
               </div>
-            ` : ''}
+
+              <p style="font-size: 14px; color: #555; margin-bottom: 20px;">
+                💡 <strong>Chceš jiný vzhled?</strong> I když máš hotové PDF v příloze, na odkazu níže si můžeš v horní nabídce vybrat z několika dalších připravených stylů podle příležitosti a poukaz si stáhnout nebo vytisknout v jiném provedení.
+              </p>
+            ` : `
+              <div style="background: rgba(200,138,44,0.1); border-left: 4px solid #c88a2c; padding: 14px 18px; border-radius: 4px; margin: 20px 0;">
+                📄 <strong>Dárkový certifikát je připraven on-line.</strong><br>
+                <span style="color: #444; font-size: 13.5px;">Klikni na tlačítko níže, kde si můžeš vybrat z několika předpřipravených stylů podle příležitosti a poukaz rovnou vytisknout nebo uložit do PDF.</span>
+              </div>
+            `}
 
             <div style="background: #141414; border: 2px solid #c88a2c; padding: 25px; border-radius: 8px; margin: 25px 0; text-align: center; color: #fff;">
               <div style="font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 2px;">Kód dárkového poukazu</div>
@@ -512,7 +525,7 @@ export async function onRequestPost(context) {
               
               <div style="margin-top: 18px;">
                 <a href="${voucherWebUrl}" target="_blank" style="display: inline-block; background: #ff9900; color: #000; font-weight: bold; font-family: monospace; font-size: 13px; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
-                  🖨 OTEVŘÍT / VYTISKNOUT POUKAZ ON-LINE →
+                  🖨 OTEVŘÍT / VYBRAT JINÝ VZHLED ON-LINE →
                 </a>
               </div>
             </div>
