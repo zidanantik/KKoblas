@@ -162,6 +162,7 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      transition: all 0.3s ease;
     }
     .pkg-box--featured {
       border-color: #c88a2c;
@@ -245,28 +246,22 @@
       text-decoration: none;
       font-size: 14px;
       transition: all 0.2s ease;
-      margin-bottom: 8px;
     }
     .btn-buy:hover {
       background: #ffaa22;
       box-shadow: 0 0 15px rgba(255, 153, 0, 0.35);
     }
-    .btn-splatky {
-      display: block;
-      width: 100%;
-      text-align: center;
-      background: transparent;
-      border: 1px solid #444;
-      color: #ccc;
-      padding: 10px 14px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 12px;
-      transition: all 0.2s ease;
+
+    /* Vizuální stavy při uplatnění dárkového kódu jako na /sluzby.html */
+    .pkg-box.pkg-card--voucher-match {
+      border: 2px solid #ffaa22 !important;
+      background: linear-gradient(180deg, rgba(255, 170, 34, 0.08) 0%, #121212 100%) !important;
+      box-shadow: 0 0 30px rgba(255, 170, 34, 0.25) !important;
+      transform: translateY(-4px);
     }
-    .btn-splatky:hover {
-      border-color: #888;
-      color: #fff;
+    .pkg-box.is-dimmed {
+      opacity: 0.35;
+      filter: grayscale(40%);
     }
 
     /* Stopstav / Čekačka design */
@@ -344,7 +339,7 @@
       <div id="landingPromoMsg" class="promo-feedback" hidden></div>
     </div>
 
-    <!-- Přehled nabídek -->
+    <!-- Přehled nabídek (pouze jednorázové platby) -->
     <div class="packages-grid">
 
       <!-- START-UP -->
@@ -363,7 +358,7 @@
           <li>Podpora a asistence na WhatsAppu</li>
         </ul>
         <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=startup" class="btn-buy js-order-btn">Objednat Start-up →</a>
+          <a href="objednavka.html?sluzba=startup" class="btn-buy js-order-btn" id="btn-startup">Objednat Start-up →</a>
         </div>
         <div class="pkg-btns-closed">
           <p class="closed-notice">Kapacita je momentálně plná.</p>
@@ -388,8 +383,7 @@
           <li>Trvalé osvojení udržitelných návyků</li>
         </ul>
         <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn-buy js-order-btn">Objednat Mentoring →</a>
-          <a href="objednavka.html?sluzba=mentoring&platba=splatky" class="btn-splatky js-order-btn">Možnost platby na splátky (od 7 500 Kč)</a>
+          <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn-buy js-order-btn" id="btn-mentoring">Objednat Mentoring →</a>
         </div>
         <div class="pkg-btns-closed">
           <p class="closed-notice">Kapacita je momentálně plná.</p>
@@ -413,8 +407,7 @@
           <li>Kompletní servis a dlouhodobá adaptace</li>
         </ul>
         <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn-buy js-order-btn">Objednat Ultimate →</a>
-          <a href="objednavka.html?sluzba=ultimate&platba=splatky" class="btn-splatky js-order-btn">Možnost platby na splátky (od 11 900 Kč)</a>
+          <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn-buy js-order-btn" id="btn-ultimate">Objednat Ultimate →</a>
         </div>
         <div class="pkg-btns-closed">
           <p class="closed-notice">Kapacita je momentálně plná.</p>
@@ -470,11 +463,10 @@
           console.warn('Nelze načíst status kapacity:', e);
         });
 
-      // 2. Logika slevového kódu
+      // 2. Logika slevového kódu a grafického zvýraznění jako na /sluzby.html
       var promoInput = document.getElementById('landingPromoInput');
       var promoBtn   = document.getElementById('landingPromoBtn');
       var promoMsg   = document.getElementById('landingPromoMsg');
-      var orderBtns  = document.querySelectorAll('.js-order-btn');
 
       function formatKc(num) {
         return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
@@ -512,36 +504,42 @@
           ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
             var priceEl = document.getElementById('price-' + pkg);
             var box = document.getElementById('box-' + pkg);
-            if (!priceEl) return;
+            var btn = document.getElementById('btn-' + pkg);
+            if (!priceEl || !box || !btn) return;
+
+            // Reset grafiky před aplikací nového kódu
+            box.classList.remove('pkg-card--voucher-match', 'is-dimmed');
 
             if (allowed.includes(pkg)) {
-              // Pokud jde o 100% dárkový poukaz, odemkneme stopstav i při plné kapacitě
-              if (isGiftVoucher && box) {
-                box.classList.remove('is-closed');
-              }
-
-              var orig = basePrices[pkg];
-              var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
-              var finalP = Math.max(0, orig - disc);
-
               if (isGiftVoucher) {
+                // Voucher / 100% sleva: Zvýraznění karty a odemknutí VIP
+                if (closedMap[pkg]) {
+                  box.classList.remove('is-closed');
+                }
+                box.classList.add('pkg-card--voucher-match');
+
+                var orig = basePrices[pkg];
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> 0 Kč';
+                btn.textContent = 'Aktivovat voucher (0 Kč) →';
+                btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
               } else {
+                // Běžná sleva (procentuální nebo fixní)
+                var orig = basePrices[pkg];
+                var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
+                var finalP = Math.max(0, orig - disc);
+
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
+                btn.textContent = 'Objednat se slevou →';
+                btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&platba=jednorizove&kod=' + data.code);
               }
+            } else {
+              // Kód se na tento balíček nevztahuje -> zešedivění
+              box.classList.add('is-dimmed');
             }
           });
 
-          // Připojíme kód do odkazů tlačítek
-          orderBtns.forEach(function(btn) {
-            var currentHref = btn.getAttribute('href');
-            var url = new URL(currentHref, window.location.origin);
-            url.searchParams.set('kod', data.code);
-            btn.setAttribute('href', url.pathname + url.search);
-          });
-
-          var discountLabel = data.type === 'percent' ? data.value + ' %' : formatKc(data.value);
-          showMsg('✓ Sleva ' + discountLabel + ' byla započtena. Vyber balíček níže.', 'ok');
+          var discountLabel = data.type === 'percent' ? data.value + ' %' : (isGiftVoucher ? '100 % (Voucher)' : formatKc(data.value));
+          showMsg('✓ Kód uplatněn (' + discountLabel + '). Vyber balíček níže.', 'ok');
 
         } catch (e) {
           showMsg('Chyba při ověřování kódu.', 'err');
