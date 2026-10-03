@@ -567,17 +567,24 @@ async function deleteClientRow(idKey) {
 // ── Slevové a dárkové kódy ───────────────────────
 var loadedCodesCache = [];
 
-// Pomocná funkce pro rychlé testování (přidá k aktuálnímu času daný počet vteřin)
-function setQuickTestSeconds(sec) {
-  var d = new Date(Date.now() + sec * 1000);
-  var pad = function(n) { return (n < 10 ? '0' : '') + n; };
-  var val = d.getFullYear() + '-' 
-    + pad(d.getMonth() + 1) + '-' 
-    + pad(d.getDate()) + 'T' 
-    + pad(d.getHours()) + ':' 
-    + pad(d.getMinutes()) + ':' 
-    + pad(d.getSeconds());
+// Funkce pro chytré přičítání minut
+function addQuickTime(minutes) {
   var input = document.getElementById('newPromoValidUntil');
+  var base = new Date();
+  if (input && input.value) {
+    var existing = new Date(input.value);
+    if (!isNaN(existing.getTime()) && existing.getTime() > Date.now()) {
+      base = existing;
+    }
+  }
+  var target = new Date(base.getTime() + minutes * 60 * 1000);
+  var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+  var val = target.getFullYear() + '-' 
+    + pad(target.getMonth() + 1) + '-' 
+    + pad(target.getDate()) + 'T' 
+    + pad(target.getHours()) + ':' 
+    + pad(target.getMinutes()) + ':' 
+    + pad(target.getSeconds());
   if (input) input.value = val;
 }
 
@@ -1024,7 +1031,7 @@ async function createNewPromoCode() {
   var splatky = document.getElementById('newPromoSplatky') ? document.getElementById('newPromoSplatky').checked : false;
   var darekOnly = document.getElementById('newPromoDarekOnly') ? document.getElementById('newPromoDarekOnly').checked : false;
   var showInBanner = document.getElementById('newPromoShowInBanner') ? document.getElementById('newPromoShowInBanner').checked : false;
-  var validUntil = document.getElementById('newPromoValidUntil') ? document.getElementById('newPromoValidUntil').value : '';
+  var validUntilInput = document.getElementById('newPromoValidUntil') ? document.getElementById('newPromoValidUntil').value : '';
   var bannerLabel = document.getElementById('newPromoBannerLabel') ? document.getElementById('newPromoBannerLabel').value.trim() : '';
 
   var pkgCheckboxes = document.querySelectorAll('.promo-pkg-cb:checked');
@@ -1045,6 +1052,15 @@ async function createNewPromoCode() {
     return;
   }
 
+  // Převod na spolehlivý ISO UTC řetězec
+  var validUntil = null;
+  if (validUntilInput) {
+    var parsedD = new Date(validUntilInput);
+    if (!isNaN(parsedD.getTime())) {
+      validUntil = parsedD.toISOString();
+    }
+  }
+
   var payload = { 
     code: code, 
     type: type, 
@@ -1054,7 +1070,7 @@ async function createNewPromoCode() {
     darekOnly: darekOnly, 
     packages: packages,
     showInBanner: showInBanner,
-    validUntil: validUntil || null,
+    validUntil: validUntil,
     bannerLabel: bannerLabel,
     usedCount: 0
   };
