@@ -1,4 +1,4 @@
-// banner.js — Decentní horní informační lišta s živým odpočtem
+// banner.js — Horní informační lišta s živým odpočtem
 
 (function() {
   if (document.getElementById('kk-promo-banner')) return;
@@ -17,7 +17,6 @@
         return !isNaN(t) && t > nowMs;
       });
 
-      // Pokud už všechny mezitím vypršely, VŮBEC NIC NEVKLÁDÁME
       if (validItems.length === 0) return;
 
       var earliestExp = null;
@@ -37,17 +36,21 @@
         #kk-promo-banner {
           background: #0d0d0d;
           background: linear-gradient(90deg, #0d0d0d 0%, #171510 50%, #0d0d0d 100%);
-          border-bottom: 1px solid rgba(200, 138, 44, 0.5);
+          border-bottom: 1px solid rgba(200, 138, 44, 0.55);
           color: #e5e5e5;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
           font-size: 13.5px;
           line-height: 1.4;
           padding: 10px 16px;
           text-align: center;
-          position: relative;
-          z-index: 10001;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-          transition: all 0.4s ease;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          box-sizing: border-box;
+          z-index: 999999;
+          box-shadow: 0 4px 18px rgba(0,0,0,0.7);
+          transition: transform 0.4s ease, opacity 0.4s ease;
           overflow: hidden;
         }
         .kk-banner-inner {
@@ -119,20 +122,28 @@
       banner.innerHTML = '<div class="kk-banner-inner">' + itemsHtml + timerHtml + '</div>';
       document.body.prepend(banner);
 
-      // Přizpůsobení horní liště (pokud by měla pevnou pozici)
+      // Posun hlavičky a obsahu dolů o výšku banneru
+      var bH = banner.offsetHeight || 42;
       var header = document.querySelector('.site-header');
-      if (header) {
-        var headerPos = window.getComputedStyle(header).position;
-        if (headerPos === 'fixed') {
-          banner.style.position = 'fixed';
-          banner.style.top = '0';
-          banner.style.left = '0';
-          banner.style.width = '100%';
-          var bH = banner.offsetHeight || 38;
-          header.style.top = bH + 'px';
-          document.body.style.paddingTop = bH + 'px';
+
+      function adjustLayout(height) {
+        document.body.style.paddingTop = height + 'px';
+        if (header) {
+          var pos = window.getComputedStyle(header).position;
+          if (pos === 'fixed' || pos === 'absolute') {
+            header.style.top = height + 'px';
+          }
         }
       }
+
+      adjustLayout(bH);
+      // Přeměření po vykreslení fontů
+      setTimeout(function() {
+        var newH = banner.offsetHeight;
+        if (newH && newH !== bH) {
+          adjustLayout(newH);
+        }
+      }, 100);
 
       if (earliestExp) {
         var timerEl = document.getElementById('kk-timer-val');
@@ -144,13 +155,9 @@
           if (diff <= 0) {
             clearInterval(interval);
             banner.style.opacity = '0';
-            banner.style.maxHeight = '0';
-            banner.style.paddingTop = '0';
-            banner.style.paddingBottom = '0';
-            if (header && window.getComputedStyle(header).position === 'fixed') {
-              header.style.top = '0';
-              document.body.style.paddingTop = '';
-            }
+            banner.style.transform = 'translateY(-100%)';
+            document.body.style.paddingTop = '';
+            if (header) header.style.top = '';
             setTimeout(function() { banner.remove(); }, 400);
             return;
           }
