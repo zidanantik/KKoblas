@@ -464,7 +464,8 @@ function renderClientsTable() {
       else daysLeft = ' <span style="color:#ff5555;font-size:10px;">(vypršelo)</span>';
     }
 
-    var idKey = c.id || c.fakturoid_id;
+    var idKey = c.id || c.fakturoid_id || '';
+    var clientEmail = (kup.email || '').replace(/'/g, "\\'");
 
     var statusSelectHtml = '';
     if (isGiftDonorAlreadyClaimed) {
@@ -497,7 +498,7 @@ function renderClientsTable() {
       + '<td style="padding: 12px 10px;">' + statusSelectHtml + '</td>'
       + '<td style="padding: 12px 10px; text-align: right; white-space: nowrap;">'
       +   saveBtnHtml
-      +   '<button onclick="deleteClientRow(\'' + idKey + '\')" style="background: rgba(255,0,0,0.1); border: 1px solid #ff2222; color: #ff2222; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Smazat</button>'
+      +   '<button onclick="deleteClientRow(\'' + idKey + '\', \'' + clientEmail + '\')" style="background: rgba(255,0,0,0.1); border: 1px solid #ff2222; color: #ff2222; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Smazat</button>'
       + '</td>'
       + '</tr>';
   }).join('');
@@ -545,16 +546,16 @@ async function saveClientRow(idKey) {
   }
 }
 
-async function deleteClientRow(idKey) {
+async function deleteClientRow(idKey, email) {
   if (!confirm('Opravdu trvale smazat tohoto klienta?')) return;
   try {
     var res = await fetch('/api/clients', {
-      method: 'POST',
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'x-admin-pass': getAdminAuthPass()
       },
-      body: JSON.stringify({ id: idKey })
+      body: JSON.stringify({ id: idKey, email: email || '' })
     });
     if (!res.ok) throw new Error('Chyba při mazání');
     await loadClients();
@@ -567,7 +568,6 @@ async function deleteClientRow(idKey) {
 // ── Slevové a dárkové kódy ───────────────────────
 var loadedCodesCache = [];
 
-// Funkce pro chytré přičítání minut
 function addQuickTime(minutes) {
   var input = document.getElementById('newPromoValidUntil');
   var base = new Date();
@@ -1052,7 +1052,6 @@ async function createNewPromoCode() {
     return;
   }
 
-  // Převod na spolehlivý ISO UTC řetězec
   var validUntil = null;
   if (validUntilInput) {
     var parsedD = new Date(validUntilInput);
