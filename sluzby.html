@@ -485,7 +485,6 @@
         ultimate: 1600
       };
 
-      // Uchováme si původní stav zamčení z backendu
       var originalClosedMap = { startup: false, mentoring: false, ultimate: false };
 
       function updatePromoToggleAppearance() {
@@ -524,9 +523,7 @@
             var noteEl = card.querySelector('.pkg-card__price-note');
             if (noteEl) noteEl.style.display = '';
             card.classList.remove('pkg-card--voucher-match', 'is-dimmed');
-            // Vrátíme původní stav zamčení
             card.classList.toggle('plno', !!originalClosedMap[s]);
-            // Odstraníme případné nouzové VIP tlačítko
             var vipBtn = card.querySelector('.vip-override-btn');
             if (vipBtn) vipBtn.remove();
           }
@@ -772,7 +769,6 @@
               if (s === targetPkg) {
                 if (card) {
                   card.classList.add('pkg-card--voucher-match');
-                  // Odemkneme kartu i přes zamčenou kapacitu!
                   card.classList.remove('plno');
                 }
               } else {
@@ -839,7 +835,7 @@
             var targetEl = document.getElementById('card-' + targetPkg);
             if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-          // ── VARIACE D: BĚŽNÁ SLEVA ──
+          // ── VARIACE D: BĚŽNÁ SLEVA (POUZE PRO OSOBNÍ PROGRAMY) ──
           } else {
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
               var card = document.getElementById('card-' + s);
@@ -877,8 +873,11 @@
                   }
                 }
 
+                // DÁRKOVÝ POUKAZ ZŮSTÁVÁ BEZ KÓDU
                 var g = document.getElementById('btn-' + s + '-gift');
-                if (g) g.href = 'objednavka.html?sluzba=' + s + '&platba=jednorizove&darek=1&kod=' + encodeURIComponent(data.code);
+                if (g) {
+                  g.href = 'objednavka.html?sluzba=' + s + '&platba=jednorizove&darek=1';
+                }
 
               } else {
                 if (card) card.classList.add('is-dimmed');
@@ -889,7 +888,7 @@
 
             var discountLabel = data.type === 'percent' ? data.value + ' %' : fmtKc(data.value);
             var namesList = allowedPkgs.map(function(p){ return pkgTitles[p] || p.toUpperCase(); }).join(' a ');
-            showStatus('✓ Sleva ' + discountLabel + ' započtena pro: ' + namesList + ' (jednorázová platba).', 'ok');
+            showStatus('✓ Sleva ' + discountLabel + ' započtena pro: ' + namesList + ' (pouze osobní programy – neplatí na dárky).', 'ok');
 
             var firstCard = document.getElementById('card-' + allowedPkgs[0]) || document.getElementById('packages');
             if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
