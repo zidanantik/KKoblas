@@ -44,25 +44,6 @@ async function initOrder(serviceMap, rawStatus) {
   var svc  = serviceMap[sluzba] || serviceMap.startup;
   var info = svc[platba] || svc.jednorizove;
 
-  // ── Ověření kódu voucheru / slevy ──
-  var validPromo = null;
-  if (kodParam) {
-    try {
-      var checkUrl = '/api/codes?code=' + encodeURIComponent(kodParam) 
-        + '&package=' + encodeURIComponent(sluzba)
-        + (platba === 'splatky' ? '&splatky=true' : '');
-      var cRes = await fetch(checkUrl);
-      if (cRes.ok) {
-        var cData = await cRes.json();
-        if (cData && cData.valid) {
-          validPromo = cData;
-        }
-      }
-    } catch (e) {
-      console.warn('Ověření kódu selhalo:', e);
-    }
-  }
-
   // ── Kontrola kapacity a uzamčení balíčku ──
   var isClosed = false;
   if (rawStatus) {
@@ -75,38 +56,39 @@ async function initOrder(serviceMap, rawStatus) {
     }
   }
 
-  // Pokud je kapacita naplněná, ale klient má platný dárkový poukaz (100% sleva) -> VIP přístup povolen!
-  var isGiftVoucher = validPromo && validPromo.type === 'gift';
-  if (isClosed && !isGiftVoucher) {
+  // VIP ověření, pokud je kapacita plná
+  var isVipAllowed = false;
+  if (isClosed && kodParam) {
+    try {
+      var cRes = await fetch('/api/codes?code=' + encodeURIComponent(kodParam) + '&package=' + encodeURIComponent(sluzba));
+      if (cRes.ok) {
+        var cData = await cRes.json();
+        if (cData && cData.valid) isVipAllowed = true;
+      }
+    } catch (e) {
+      console.warn('VIP ověření kódu selhalo:', e);
+    }
+  }
+
+  if (isClosed && !isVipAllowed) {
     window.location.href = 'cekacka.html?sluzba=' + encodeURIComponent(sluzba);
     return;
   }
 
-  // ── Úprava cen a popisků podle typu poukazu ──
-  var finalPriceText = info.price;
-  var finalPaymentText = info.platba;
-
-  if (isGiftVoucher) {
-    finalPriceText = '0 Kč (Uhrazeno dárkovým poukazem)';
-    finalPaymentText = 'Dárkový poukaz (100% uhrazeno)';
-  } else if (validPromo) {
-    var rawNum = parseInt(info.price.replace(/[^\d]/g, ''), 10) || 0;
-    if (validPromo.type === 'percent') {
-      var disc = Math.round(rawNum * (1 - validPromo.value / 100));
-      finalPriceText = disc.toLocaleString('cs-CZ') + ' Kč (' + validPromo.value + ' % sleva)';
-    } else if (validPromo.type === 'fixed') {
-      var disc = Math.max(0, rawNum - Number(validPromo.value));
-      finalPriceText = disc.toLocaleString('cs-CZ') + ' Kč (-' + validPromo.value + ' Kč)';
-    }
-  }
+  // ── Nastavení čisté základní ceny bez duplicitního slevování ──
+  var basePriceText = info.price;
+  var basePaymentText = info.platba;
 
   var nameEl   = document.getElementById('orderServiceName');
   var platbaEl = document.getElementById('orderPlatba');
   var priceEl  = document.getElementById('orderPrice');
 
   if (nameEl)   nameEl.textContent   = svc.label;
-  if (platbaEl) platbaEl.textContent = finalPaymentText;
-  if (priceEl)  priceEl.textContent  = finalPriceText;
+  if (platbaEl) platbaEl.textContent = basePaymentText;
+  if (priceEl) {
+    priceEl.textContent = basePriceText;
+    priceEl.setAttribute('data-base-price', basePriceText);
+  }
 
   var hSluzba = document.getElementById('hiddenSluzba');
   var hPlatba = document.getElementById('hiddenPlatba');
@@ -114,8 +96,8 @@ async function initOrder(serviceMap, rawStatus) {
   var hSubj   = document.getElementById('emailSubject');
 
   if (hSluzba) hSluzba.value = svc.label;
-  if (hPlatba) hPlatba.value = finalPaymentText;
-  if (hPrice)  hPrice.value  = finalPriceText;
+  if (hPlatba) hPlatba.value = basePaymentText;
+  if (hPrice)  hPrice.value  = basePriceText;
   if (hSubj)   hSubj.value   = 'Nová objednávka – ' + svc.label;
 
   var form      = document.getElementById('orderForm');
@@ -124,22 +106,8 @@ async function initOrder(serviceMap, rawStatus) {
 
   if (!form) return;
 
-  // Úprava textu na tlačítku pro obdarované
-  if (isGiftVoucher && submitBtn) {
-    submitBtn.textContent = 'AKTIVOVAT POUKAZ A ODESLAT DIAGNOSTIKU';
-  }
-
-  // Zajištění předání uplatněného kódu ve formuláři
-  var promoInput = form.querySelector('input[name="Pouzity_kod"]') || document.getElementById('hiddenPromoCode');
-  if (!promoInput && kodParam) {
-    promoInput = document.createElement('input');
-    promoInput.type = 'hidden';
-    promoInput.name = 'Pouzity_kod';
-    form.appendChild(promoInput);
-  }
-  if (promoInput && kodParam) {
-    promoInput.value = kodParam;
-  }
+  // Informujeme objednávkový formulář, že základní cena je připravena
+  window.dispatchEvent(new CustomEvent('basePriceReady', { detail: { price: basePriceText } }));
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -158,9 +126,10 @@ async function initOrder(serviceMap, rawStatus) {
       var payload  = {};
       formData.forEach(function (val, key) { payload[key] = val; });
 
-      // Garance předání kódu v payloadu
-      if (kodParam && !payload.Pouzity_kod) {
-        payload.Pouzity_kod = kodParam;
+      var promoInput = document.getElementById('promoInput');
+      var codeToRedeem = (promoInput && promoInput.value ? promoInput.value : (payload.Pouzity_kod || kodParam)).trim().toUpperCase();
+      if (codeToRedeem) {
+        payload.Pouzity_kod = codeToRedeem;
       }
 
       var response = await fetch('/api/objednavka', {
@@ -171,8 +140,6 @@ async function initOrder(serviceMap, rawStatus) {
 
       var result = await response.json();
       if (response.ok && result.ok) {
-        // ── Záznam o uplatnění kódu v KV ──
-        var codeToRedeem = payload.Pouzity_kod || kodParam;
         if (codeToRedeem) {
           try {
             await fetch('/api/codes', {
@@ -196,7 +163,7 @@ async function initOrder(serviceMap, rawStatus) {
       }
     } catch (err) {
       submitBtn.disabled = false;
-      submitBtn.textContent = isGiftVoucher ? 'AKTIVOVAT POUKAZ A ODESLAT DIAGNOSTIKU' : 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
+      submitBtn.textContent = 'ZÁVAZNĚ ODESLAT ŽÁDOST O SLUŽBU';
       if (errorEl) { 
         errorEl.hidden = false; 
         errorEl.textContent = err.message || 'Chyba odesílání'; 
