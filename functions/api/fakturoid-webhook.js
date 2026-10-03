@@ -37,7 +37,7 @@ function computeEndDate(startDateStr, pkgName) {
   return d.toISOString().split('T')[0];
 }
 
-// ── ŠABLONA PRO PDF PŘEVODNÍK (PRÉMIOVÝ FORMÁT DL S OŘEZOVOU ČAROU A NŮŽKAMI) ──
+// ── ŠABLONA PRO PDF PŘEVODNÍK (ROZMĚRY OPTIMALIZOVANÉ PRO 1 ROVNÝ STŘIH DO DL OBÁLKY) ──
 function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
   const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
 
@@ -49,7 +49,7 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
       <style>
         @page { 
           size: A4 portrait; 
-          margin: 5mm; 
+          margin: 3mm 5mm 0 5mm; 
         }
         * { box-sizing: border-box; }
         body {
@@ -63,7 +63,7 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
 
         .print-wrapper {
           width: 200mm;
-          margin: 6mm auto 0 auto;
+          margin: 2mm auto 0 auto;
           position: relative;
           display: flex;
           flex-direction: column;
@@ -72,7 +72,7 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
 
         .voucher-card {
           width: 200mm;
-          height: 94mm;
+          height: 86mm;
           position: relative;
           display: flex;
           flex-direction: column;
@@ -85,20 +85,20 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
         /* Rohové ořezové značky */
         .crop-mark {
           position: absolute;
-          width: 14px;
-          height: 14px;
+          width: 12px;
+          height: 12px;
           pointer-events: none;
-          opacity: 0.8;
+          opacity: 0.75;
         }
-        .crop-tl { top: -6px; left: -6px; border-top: 2px solid #777; border-left: 2px solid #777; }
-        .crop-tr { top: -6px; right: -6px; border-top: 2px solid #777; border-right: 2px solid #777; }
-        .crop-bl { bottom: -6px; left: -6px; border-bottom: 2px solid #777; border-left: 2px solid #777; }
-        .crop-br { bottom: -6px; right: -6px; border-bottom: 2px solid #777; border-right: 2px solid #777; }
+        .crop-tl { top: -4px; left: -4px; border-top: 2px solid #777; border-left: 2px solid #777; }
+        .crop-tr { top: -4px; right: -4px; border-top: 2px solid #777; border-right: 2px solid #777; }
+        .crop-bl { bottom: -4px; left: -4px; border-bottom: 2px solid #777; border-left: 2px solid #777; }
+        .crop-br { bottom: -4px; right: -4px; border-bottom: 2px solid #777; border-right: 2px solid #777; }
 
-        /* Střižná čára přes celou šířku s nůžkami */
+        /* Střižná čára s nůžkami – celková výška proužku po odstřižení je cca 95 mm */
         .cut-line-banner {
           width: 200mm;
-          margin-top: 7mm;
+          margin-top: 4mm;
           position: relative;
           border-top: 1.5px dashed #666;
           height: 1px;
@@ -120,7 +120,7 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
           align-items: center;
         }
         .voucher-logo-img {
-          height: 42px;
+          height: 38px;
           width: auto;
           object-fit: contain;
           display: block;
@@ -131,10 +131,10 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
         
         .xmas-cap {
           position: absolute;
-          top: -15px;
-          left: -13px;
-          width: 32px;
-          height: 32px;
+          top: -14px;
+          left: -12px;
+          width: 28px;
+          height: 28px;
           transform: rotate(-15deg);
           pointer-events: none;
           filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
@@ -142,10 +142,10 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
 
         .xmas-tree-bg {
           position: absolute;
-          right: -24px;
-          bottom: -15px;
-          width: 70px;
-          height: 80px;
+          right: -20px;
+          bottom: -12px;
+          width: 60px;
+          height: 70px;
           pointer-events: none;
           z-index: 1;
           opacity: 0.85;
@@ -154,10 +154,10 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
 
         .easter-whip {
           position: absolute;
-          right: -16px;
-          bottom: -12px;
-          width: 65px;
-          height: 75px;
+          right: -14px;
+          bottom: -10px;
+          width: 55px;
+          height: 65px;
           pointer-events: none;
           z-index: 1;
           filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
@@ -165,10 +165,10 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
 
         .summer-shape {
           position: absolute;
-          right: -14px;
-          bottom: -10px;
-          width: 75px;
-          height: 75px;
+          right: -12px;
+          bottom: -8px;
+          width: 65px;
+          height: 65px;
           pointer-events: none;
           z-index: 1;
           opacity: 0.9;
@@ -178,89 +178,56 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
         .code-wrapper {
           position: relative;
           display: inline-block;
-          margin: 10px auto;
+          margin: 6px auto;
         }
 
-        /* ── 1. NORDIC SNOW (Bílá + Zlato + Stromeček) ── */
+        /* ── NORDIC SNOW ── */
         .tpl-nordic-snow {
           background: #ffffff;
           color: #1a1a1a;
           border: 2px solid #d4af37;
           border-radius: 6px;
-          padding: 20px 28px;
+          padding: 16px 24px;
         }
         .tpl-nordic-snow .xmas-cap, .tpl-nordic-snow .xmas-tree-bg { display: block !important; }
-        .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
-        .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 10px; color: #666; letter-spacing: 2px; margin-top: 2px; }
-        .tpl-nordic-snow .badge-type { background: #f0f7ff; border: 1.5px solid #74c0fc; color: #1c7ed6; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-        .tpl-nordic-snow .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-        .tpl-nordic-snow .service-desc { color: #555; font-size: 13.5px; }
-        .tpl-nordic-snow .code-box { position: relative; z-index: 2; padding: 8px 22px; background: rgba(255, 255, 255, 0.94); border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
-        .tpl-nordic-snow .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #111; letter-spacing: 5px; }
-        .tpl-nordic-snow .instructions { font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.4; }
+        .tpl-nordic-snow .brand-title { font-family: Georgia, serif; font-size: 19px; color: #111; margin: 0; font-weight: bold; }
+        .tpl-nordic-snow .brand-sub { font-family: monospace; font-size: 9.5px; color: #666; letter-spacing: 2px; margin-top: 1px; }
+        .tpl-nordic-snow .badge-type { background: #f0f7ff; border: 1.5px solid #74c0fc; color: #1c7ed6; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .tpl-nordic-snow .service-name { font-size: 16.5px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+        .tpl-nordic-snow .service-desc { color: #555; font-size: 12.5px; }
+        .tpl-nordic-snow .code-box { position: relative; z-index: 2; padding: 6px 18px; background: rgba(255, 255, 255, 0.94); border: 2px dashed #d4af37; border-radius: 6px; display: inline-block; }
+        .tpl-nordic-snow .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #111; letter-spacing: 4px; }
+        .tpl-nordic-snow .instructions { font-size: 10.5px; color: #666; border-top: 1px solid #eee; padding-top: 6px; line-height: 1.35; }
         .tpl-nordic-snow a { color: #1c7ed6; font-weight: 600; text-decoration: none; }
 
-        /* ── 2. JARO & VELIKONOCE ── */
-        .tpl-easter {
-          background: #fdfdf9; color: #1a1a1a; border: 2px solid #51cf66; border-radius: 6px; padding: 20px 28px;
-        }
-        .tpl-easter .easter-whip { display: block !important; }
-        .tpl-easter .brand-title { font-family: Georgia, serif; font-size: 21px; color: #111; margin: 0; font-weight: bold; }
-        .tpl-easter .brand-sub { font-family: monospace; font-size: 10px; color: #555; letter-spacing: 2px; margin-top: 2px; }
-        .tpl-easter .badge-type { background: #ebfbee; border: 1.5px solid #51cf66; color: #2b8a3e; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-        .tpl-easter .service-name { font-size: 18px; letter-spacing: 2px; color: #111; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-        .tpl-easter .service-desc { color: #2b8a3e; font-size: 13.5px; font-weight: 600; }
-        .tpl-easter .code-box { position: relative; z-index: 2; padding: 8px 22px; background: rgba(255, 255, 255, 0.95); border: 2px dashed #51cf66; border-radius: 6px; display: inline-block; }
-        .tpl-easter .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #2b8a3e; letter-spacing: 5px; }
-        .tpl-easter .instructions { font-size: 11px; color: #666; border-top: 1px solid #e2f0d9; padding-top: 8px; line-height: 1.4; }
-        .tpl-easter a { color: #2b8a3e; font-weight: bold; }
-
-        /* ── 3. LÉTO V ŠEJPU ── */
-        .tpl-summer-shape {
-          background: linear-gradient(135deg, #071e22 0%, #1d2d44 100%); color: #fff; border: 2px solid #00b4d8; border-radius: 6px; padding: 20px 28px;
-        }
-        .tpl-summer-shape .summer-shape { display: block !important; }
-        .tpl-summer-shape .brand-title { font-family: "Impact", "Arial Black", sans-serif; font-size: 22px; color: #90e0ef; margin: 0; letter-spacing: 1px; }
-        .tpl-summer-shape .brand-sub { font-family: monospace; font-size: 10px; color: #caf0f8; letter-spacing: 2px; margin-top: 2px; }
-        .tpl-summer-shape .badge-type { background: rgba(0, 180, 216, 0.2); border: 1.5px solid #00b4d8; color: #90e0ef; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-        .tpl-summer-shape .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-        .tpl-summer-shape .service-desc { color: #00b4d8; font-size: 13.5px; font-weight: 600; letter-spacing: 1px; }
-        .tpl-summer-shape .code-box { position: relative; z-index: 2; padding: 8px 22px; background: rgba(10, 25, 47, 0.88); border: 2px dashed #00b4d8; border-radius: 6px; display: inline-block; }
-        .tpl-summer-shape .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #90e0ef; letter-spacing: 5px; }
-        .tpl-summer-shape .instructions { font-size: 11px; color: #a0c4e2; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 8px; line-height: 1.4; }
-        .tpl-summer-shape a { color: #00b4d8; font-weight: bold; }
-
-        /* ── 4. CELOROČNÍ DARK GOLD ── */
+        /* ── DARK GOLD ── */
         .tpl-dark-gold {
-          background: #141414; color: #eee; border: 2px solid #c88a2c; border-radius: 8px; padding: 20px 28px;
+          background: #141414; color: #eee; border: 2px solid #c88a2c; border-radius: 6px; padding: 16px 24px;
         }
-        .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 21px; color: #ff9900; margin: 0; }
-        .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 10px; color: #888; letter-spacing: 2px; margin-top: 2px; }
-        .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; }
-        .tpl-dark-gold .service-name { font-size: 18px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-        .tpl-dark-gold .service-desc { color: #aaa; font-size: 13.5px; }
-        .tpl-dark-gold .code-box { padding: 8px 22px; background: #080808; border: 1px dashed #ff9900; border-radius: 6px; display: inline-block; }
-        .tpl-dark-gold .code-text { font-family: monospace; font-size: 26px; font-weight: bold; color: #ff9900; letter-spacing: 5px; }
-        .tpl-dark-gold .instructions { font-size: 11px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; line-height: 1.4; }
+        .tpl-dark-gold .brand-title { font-family: Georgia, serif; font-size: 19px; color: #ff9900; margin: 0; }
+        .tpl-dark-gold .brand-sub { font-family: monospace; font-size: 9.5px; color: #888; letter-spacing: 2px; margin-top: 1px; }
+        .tpl-dark-gold .badge-type { background: rgba(200,138,44,0.15); border: 1px solid #c88a2c; color: #ff9900; font-family: monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; }
+        .tpl-dark-gold .service-name { font-size: 16.5px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: bold; margin-bottom: 1px; }
+        .tpl-dark-gold .service-desc { color: #aaa; font-size: 12.5px; }
+        .tpl-dark-gold .code-box { padding: 6px 18px; background: #080808; border: 1px dashed #ff9900; border-radius: 6px; display: inline-block; }
+        .tpl-dark-gold .code-text { font-family: monospace; font-size: 24px; font-weight: bold; color: #ff9900; letter-spacing: 4px; }
+        .tpl-dark-gold .instructions { font-size: 10.5px; color: #888; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; line-height: 1.35; }
         .tpl-dark-gold a { color: #ff9900; font-weight: bold; }
       </style>
     </head>
     <body>
       <div class="print-wrapper">
         <div class="voucher-card ${templateClass}">
-          <!-- 4 rohové ořezové značky -->
           <div class="crop-mark crop-tl"></div>
           <div class="crop-mark crop-tr"></div>
           <div class="crop-mark crop-bl"></div>
           <div class="crop-mark crop-br"></div>
 
-          <!-- Horní část (Brand & Typ) -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid rgba(125,125,125,0.2);">
-            <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- Horní část -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 1px solid rgba(125,125,125,0.2);">
+            <div style="display: flex; align-items: center; gap: 12px;">
               <div class="voucher-brand-badge">
                 <img src="https://koblas-nutricni.cz/LOGO%20nov%C3%A9.webp" alt="KKoblas logo" class="voucher-logo-img">
-                
-                <!-- Vánoční čepička -->
                 <svg class="season-icon xmas-cap" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 44 C 18 20, 38 12, 52 18 C 50 26, 44 38, 48 44 Z" fill="#e03131" stroke="#c92a2a" stroke-width="1.5"/>
                   <path d="M52 18 C 56 20, 58 26, 56 30" fill="none" stroke="#e03131" stroke-width="4.5" stroke-linecap="round"/>
@@ -280,8 +247,8 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
             </div>
           </div>
 
-          <!-- Střední část (Název programu & Kód) -->
-          <div style="text-align: center; margin: 6px 0;">
+          <!-- Střední část -->
+          <div style="text-align: center; margin: 4px 0;">
             <div class="service-name">${packageName.toUpperCase()}</div>
             <div class="service-desc">100% Uhrazeno dárkovým certifikátem</div>
 
@@ -290,7 +257,6 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
                 <div class="code-text">${giftCode}</div>
               </div>
 
-              <!-- Vánoční stromeček -->
               <svg class="season-icon xmas-tree-bg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="44" y="98" width="12" height="18" rx="2" fill="#795548" />
                 <polygon points="50,15 20,52 35,52 12,80 30,80 5,102 95,102 70,80 88,80 65,52 80,52" fill="#2b8a3e" />
@@ -303,38 +269,17 @@ function buildVoucherHtml(giftCode, packageName, pkgSlug, templateClass) {
                 <circle cx="62" cy="60" r="3" fill="#ffffff" />
                 <circle cx="50" cy="40" r="2.5" fill="#74c0fc" />
               </svg>
-
-              <!-- Velikonoční pomlázka -->
-              <svg class="season-icon easter-whip" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 105 Q 45 65 75 15" stroke="#b08968" stroke-width="6" stroke-linecap="round"/>
-                <path d="M18 105 Q 48 65 78 15" stroke="#8d6e63" stroke-width="3" stroke-dasharray="4,4"/>
-                <path d="M75 15 C 85 10, 92 18, 96 12" fill="none" stroke="#e03131" stroke-width="3" stroke-linecap="round"/>
-                <path d="M75 15 C 80 25, 90 28, 92 38" fill="none" stroke="#ffd43b" stroke-width="3" stroke-linecap="round"/>
-                <path d="M75 15 C 72 26, 78 32, 82 42" fill="none" stroke="#4dabf7" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="75" cy="16" r="3.5" fill="#ff6b6b"/>
-              </svg>
-
-              <!-- Léto v šejpu -->
-              <svg class="season-icon summer-shape" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="65" cy="35" r="20" fill="#ffd166" opacity="0.45" />
-                <path d="M65 8 L65 14 M65 56 L65 62 M38 35 L44 35 M86 35 L92 35" stroke="#ffd166" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
-                <path d="M22 28 Q 38 24 54 28 L 50 78 Q 38 82 26 78 Z" fill="rgba(0, 180, 216, 0.25)" stroke="#00b4d8" stroke-width="2"/>
-                <path d="M38 36 L38 68" stroke="#90e0ef" stroke-width="1.8" stroke-linecap="round"/>
-                <path d="M30 44 Q 38 48 46 44" stroke="#90e0ef" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M31 54 Q 38 58 45 54" stroke="#90e0ef" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M33 63 Q 38 66 43 63" stroke="#90e0ef" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
             </div>
           </div>
 
-          <!-- Spodní instrukce -->
+          <!-- Spodní část -->
           <div class="instructions" style="text-align: center;">
             Pro aktivaci navštivte <strong>koblas-nutricni.cz</strong> a zadejte kód.<br>
             Přímý odkaz: <a href="${redeemUrl}">${redeemUrl}</a>
           </div>
         </div>
 
-        <!-- Čistá střižná linka s nůžkami přesně pod DL poukazem -->
+        <!-- Střižná linka přesně v úrovni pro obálku DL -->
         <div class="cut-line-banner"></div>
       </div>
     </body>
@@ -358,7 +303,7 @@ async function convertHtmlToPdfBase64(htmlString, apiKey) {
     body: JSON.stringify({
       source: htmlString,
       format: 'A4',
-      landscape: false, // A4 na výšku s ořezem nahoře
+      landscape: false,
       margin: '0px'
     })
   });
