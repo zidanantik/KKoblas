@@ -1,7 +1,7 @@
 // functions/api/objednavka.js
 
 const REQUIRED_CONTACT = ['Jmeno', 'Email', 'Telefon', 'Ulice', 'Mesto', 'PSC', 'Zeme'];
-const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg'];
+const REQUIRED_ANALYSIS = ['Vek', 'Pohlavi', 'Vyska_cm', 'Vaha_kg', 'Obvod_boku_cm', 'Obvod_pasu_cm'];
 const OWNER_EMAIL = 'koblas.nutricni@gmail.com';
 
 function normalizeCountry(country) {
@@ -110,7 +110,14 @@ export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
     const store = context.env.STATUS_STORE;
-    const isGift = body.Je_darek === 'ano' || body.Koupit_jako_darek === 'ano';
+
+    // Detekce dárkového nákupu
+    const isGift = Boolean(
+      body.Je_darek === 'ano' || body.Je_darek === true || body.Je_darek === 'true' || body.Je_darek === 'on' ||
+      body.Koupit_jako_darek === 'ano' || body.Koupit_jako_darek === true || body.Koupit_jako_darek === 'true' || body.Koupit_jako_darek === 'on' ||
+      body.darek === 'ano' || body.darek === true || body.darek === 'true' || body.darek === 'on' ||
+      body.is_gift === true || body.is_gift === 'true'
+    );
 
     const isInstallment = 
       body.Splatky === true || 
@@ -124,20 +131,22 @@ export async function onRequestPost(context) {
 
     for (const field of requiredFields) {
       if (!body[field] || String(body[field]).trim() === '') {
-        return new Response(JSON.stringify({ ok: false, error: `Chybí pole: ${field}` }), {
+        return new Response(JSON.stringify({ ok: false, error: `Chybí povinné pole: ${field}` }), {
           status: 400,
           headers: { 'Content-Type': 'application/json; charset=utf-8' }
         });
       }
     }
 
-    // Zistenie súhlasu s referenciami (akékoľvek bežné pomenovanie poľa z formulára)
+    // Přesné načtení souhlasu a motivace podle HTML atributů name
     const hasConsentReference = Boolean(
-      body.Souhlas_reference === true || body.Souhlas_reference === 'ano' || body.Souhlas_reference === 'on' ||
-      body.Souhlas_referencni === true || body.Souhlas_referencni === 'ano' || body.Souhlas_referencni === 'on' ||
-      body.Souhlas_marketing === true || body.Souhlas_marketing === 'ano' || body.Souhlas_marketing === 'on' ||
-      body.souhlas_reference === true || body.souhlas_reference === 'ano' || body.souhlas_reference === 'on'
+      body.Souhlas_anonymni === 'ano' || body.Souhlas_anonymni === true || body.Souhlas_anonymni === 'true' || body.Souhlas_anonymni === 'on' ||
+      body.Souhlas_reference === 'ano' || body.Souhlas_reference === true || body.Souhlas_reference === 'true' || body.Souhlas_reference === 'on'
     );
+
+    const clientNote = (body.Motivace || body.Duvod_zmeny || body.Proc_chces_zivotni_zmenu || body.Zprava || '').trim();
+    const obvodPasu = (body.Obvod_pasu_cm || '').toString().trim();
+    const obvodBoku = (body.Obvod_boku_cm || '').toString().trim();
 
     const slug = (context.env.FAKTUROID_SLUG || 'krystofkoblas').trim();
     const clientId = (context.env.FAKTUROID_CLIENT_ID || '').trim();
@@ -153,7 +162,7 @@ export async function onRequestPost(context) {
 
     const sluzbaNazev = body.Sluzba_Nazev || body.Sluzba || 'Nutriční balíček';
 
-    // ── Zistenie, či ide o uplatnenie darčekového poukazu ──
+    // ── Ověření uplatnění dárkového poukazu ──
     let isGiftRedemption = false;
     let originalBuyerInfo = null;
     let existingGiftClientIndex = -1;
@@ -200,7 +209,7 @@ export async function onRequestPost(context) {
 
     let createdInvoiceId = null;
 
-    // Vystavenie proformy vo Fakturoidu (iba pre nákupy > 0 Kč)
+    // Vystavení proformy ve Fakturoidu (jen pro nákupy > 0 Kč)
     if (!isZeroPayment) {
       const fToken = await getFakturoidToken(clientId, clientSecret, userAgent);
       const subjectId = await getOrCreateSubject(slug, fToken, body, userAgent);
@@ -272,13 +281,13 @@ export async function onRequestPost(context) {
       });
     }
 
-    // ── ODOSIELANIE E-MAILOV ──
+    // ── ODESÍLÁNÍ E-MAILŮ PŘES RESEND ──
     if (resendKey) {
       const cleanPhone = (body.Telefon || '').replace(/[^\d+]/g, '');
       const waLink = cleanPhone.startsWith('+') ? `https://wa.me/${cleanPhone.replace('+', '')}` : `https://wa.me/420${cleanPhone}`;
 
       if (isZeroPayment) {
-        // 1. Uvítací e-mail obdarovanému (klientovi)
+        // Klient aktivoval poukaz (0 Kč)
         if (body.Email) {
           const subjectClient = `Podklady pro zahájení spolupráce – ${sluzbaNazev}`;
           const plainTextClient = `Ahoj ${body.Jmeno},\n\ntvůj poukaz na balíček ${sluzbaNazev} byl úspěšně aktivován a pouštíme se do práce.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace. Můžeš mi samozřejmě napsat i sám/sama.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
@@ -323,7 +332,7 @@ export async function onRequestPost(context) {
           });
         }
 
-        // 2. Okamžitá notifikácia majiteľovi (Kryštofovi) o uplatnení darčeka
+        // Notifikace majiteli o uplatnění dárku
         await new Promise(r => setTimeout(r, 600));
 
         let buyerHtml = '';
@@ -353,14 +362,14 @@ export async function onRequestPost(context) {
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Pohlaví</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Pohlavi || '—'}</td></tr>
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Výška</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vyska_cm ? body.Vyska_cm + ' cm' : '—'}</td></tr>
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Váha</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vaha_kg ? body.Vaha_kg + ' kg' : '—'}</td></tr>
-              ${body.Obvod_pasu_cm ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod pasu</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Obvod_pasu_cm} cm</td></tr>` : ''}
-              ${body.Obvod_boku_cm ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod boků</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Obvod_boku_cm} cm</td></tr>` : ''}
-              ${body.Duvod_zmeny ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cíl / zpráva</td><td style="padding:8px 14px;border-bottom:1px solid #eee;line-height:1.5;">${body.Duvod_zmeny}</td></tr>` : ''}
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod pasu</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${obvodPasu || '—'} cm</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod boků</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${obvodBoku || '—'} cm</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Proč chce změnu / Cíl</td><td style="padding:8px 14px;border-bottom:1px solid #eee;line-height:1.5;font-weight:500;">${clientNote || '—'}</td></tr>
               
               <tr><td colspan="2" style="background:#1a1a1a;color:#f39c12;padding:10px 14px;font-weight:bold;">Marketingový souhlas (Reference)</td></tr>
               <tr>
                 <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Souhlas s referencemi</td>
-                <td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;color:${hasConsentReference ? '#2ecc71' : '#888'};">
+                <td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;color:${hasConsentReference ? '#2ecc71' : '#e74c3c'};">
                   ${hasConsentReference ? '✅ ANO (udělen – anonymní grafy/fotky)' : '❌ NE (neudělen)'}
                 </td>
               </tr>
@@ -381,19 +390,50 @@ export async function onRequestPost(context) {
         });
 
       } else {
-        // Notifikácia majiteľovi o bežnej novej objednávke
+        // Běžná nová objednávka NEBO nákup dárkového poukazu
+        const orderSubject = isGift
+          ? `Nová objednávka (DÁREK): ${sluzbaNazev} – ${body.Jmeno}`
+          : `Nová objednávka: ${sluzbaNazev} – ${body.Jmeno}`;
+
+        const bannerText = isGift
+          ? `🎁 Klient objednal DÁRKOVÝ POUKAZ. Fakturoid vystavil zálohovou fakturu. Po jejím zaplacení systém automaticky vygeneruje kód poukazu a pošle kupujícímu PDF.`
+          : `Klient odeslal objednávku s kompletní diagnostikou. Fakturoid vystavil zálohovou fakturu a čeká se na bankovní převod.`;
+
         const ownerOrderHtml = `
           <div style="font-family:sans-serif;max-width:640px;color:#222;">
-            <h2 style="color:#3498db;margin-top:0;">Nová objednávka: ${sluzbaNazev} – ${body.Jmeno}</h2>
-            <div style="background:#eaf2f8;color:#2980b9;padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">
-              Klient odeslal objednávku. Fakturoid vystavil zálohovou fakturu a čeká se na bankovní převod.
+            <h2 style="color:${isGift ? '#e67e22' : '#3498db'};margin-top:0;">${orderSubject}</h2>
+            <div style="background:${isGift ? '#fef9e7' : '#eaf2f8'};color:${isGift ? '#b7950b' : '#2980b9'};padding:12px 15px;border-radius:4px;margin-bottom:20px;font-weight:bold;">
+              ${bannerText}
             </div>
-            <table style="border-collapse:collapse;width:100%;font-size:14px;">
-              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;width:35%;">Klient</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Jmeno}</td></tr>
+
+            <table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:20px;">
+              <tr><td colspan="2" style="background:#1a1a1a;color:#fff;padding:10px 14px;font-weight:bold;">Objednávka &amp; Kontakt</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;width:35%;">Typ nákupu</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;color:${isGift ? '#e67e22' : '#222'};">${isGift ? '🎁 Dárkový poukaz' : 'Osobní program'}</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">WhatsApp chat</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;"><a href="${waLink}" style="color:#25D366;font-size:15px;">👉 Otevřít WhatsApp konverzaci</a></td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Klient / Kupující</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Jmeno}</td></tr>
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Telefon</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Telefon}</td></tr>
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">E-mail</td><td style="padding:8px 14px;border-bottom:1px solid #eee;"><a href="mailto:${body.Email}">${body.Email}</a></td></tr>
-              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Částka</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${firstInstallmentAmount} Kč</td></tr>
-              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Souhlas s referencemi</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;color:${hasConsentReference ? '#2ecc71' : '#888'};">${hasConsentReference ? '✅ ANO' : '❌ NE'}</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Bydliště / Adresa</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Ulice}, ${body.PSC} ${body.Mesto} (${body.Zeme})</td></tr>
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Částka k úhradě</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${firstInstallmentAmount} Kč</td></tr>
+
+              ${!isGift ? `
+                <tr><td colspan="2" style="background:#1a1a1a;color:#2ecc71;padding:10px 14px;font-weight:bold;">Vyplněné údaje pro analýzu</td></tr>
+                <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Věk</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vek || '—'} let</td></tr>
+                <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Pohlaví</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Pohlavi || '—'}</td></tr>
+                <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Výška</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vyska_cm ? body.Vyska_cm + ' cm' : '—'}</td></tr>
+                <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Váha</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${body.Vaha_kg ? body.Vaha_kg + ' kg' : '—'}</td></tr>
+                <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod pasu</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${obvodPasu || '—'} cm</td></tr>
+                <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod boků</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${obvodBoku || '—'} cm</td></tr>
+                <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Proč chce změnu / Cíl</td><td style="padding:8px 14px;border-bottom:1px solid #eee;line-height:1.5;font-weight:500;">${clientNote || '—'}</td></tr>
+                
+                <tr><td colspan="2" style="background:#1a1a1a;color:#f39c12;padding:10px 14px;font-weight:bold;">Marketingový souhlas (Reference)</td></tr>
+                <tr>
+                  <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Souhlas s referencemi</td>
+                  <td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;color:${hasConsentReference ? '#2ecc71' : '#e74c3c'};">
+                    ${hasConsentReference ? '✅ ANO (udělen – anonymní grafy/fotky)' : '❌ NE (neudělen)'}
+                  </td>
+                </tr>
+              ` : ''}
             </table>
           </div>
         `;
@@ -405,21 +445,21 @@ export async function onRequestPost(context) {
             from: sender,
             to: [OWNER_EMAIL],
             reply_to: body.Email,
-            subject: `Nová objednávka: ${sluzbaNazev} – ${body.Jmeno}`,
+            subject: orderSubject,
             html: ownerOrderHtml
           })
         });
       }
     }
 
-    // ── Zneplatnenie použitého kódu v KV databáze ──
+    // ── Zneplatnění použitého kódu v KV databázi ──
     if (matchedPromo && store) {
       matchedPromo.used = true;
       matchedPromo.usedCount = (Number(matchedPromo.usedCount) || 0) + 1;
       await store.put('PROMO_CODES', JSON.stringify(promoCodes));
     }
 
-    // ── Uloženie klienta do KV databázy ──
+    // ── Uložení klienta do KV databáze ──
     if (store) {
       const todayStr = new Date().toISOString().split('T')[0];
 
@@ -463,9 +503,9 @@ export async function onRequestPost(context) {
           pohlavi: body.Pohlavi || '',
           vyska: body.Vyska_cm || '',
           vaha: body.Vaha_kg || '',
-          obvod_boku: body.Obvod_boku_cm || '',
-          obvod_pasu: body.Obvod_pasu_cm || '',
-          zprava: body.Duvod_zmeny || '',
+          obvod_boku: obvodBoku,
+          obvod_pasu: obvodPasu,
+          zprava: clientNote,
           souhlas_reference: hasConsentReference
         },
         created_at: new Date().toISOString()
