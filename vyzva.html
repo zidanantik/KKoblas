@@ -271,7 +271,7 @@
       background: rgba(255, 153, 0, 0.05);
     }
 
-    /* Vizuální stavy při uplatnění dárkového kódu jako na /sluzby.html */
+    /* Vizuální stavy při uplatnění dárkového kódu */
     .pkg-box.pkg-card--voucher-match {
       border: 2px solid #ffaa22 !important;
       background: linear-gradient(180deg, rgba(255, 170, 34, 0.08) 0%, #121212 100%) !important;
@@ -485,7 +485,7 @@
           console.warn('Nelze načíst status kapacity:', e);
         });
 
-      // 2. Logika slevového kódu a grafického zvýraznění jako na /sluzby.html
+      // 2. Logika slevového kódu a přepínání tlačítek (dar vs. běžný nákup)
       var promoInput = document.getElementById('landingPromoInput');
       var promoBtn   = document.getElementById('landingPromoBtn');
       var promoMsg   = document.getElementById('landingPromoMsg');
@@ -521,6 +521,7 @@
           promoInput.value = data.code;
 
           var isGiftVoucher = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
+          var isDarekOnly = Boolean(data.darekOnly);
           var allowed = data.packages && data.packages.length > 0 ? data.packages : ['startup', 'mentoring', 'ultimate'];
           
           ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
@@ -528,14 +529,15 @@
             var box = document.getElementById('box-' + pkg);
             var btn = document.getElementById('btn-' + pkg);
             var btnGift = document.getElementById('btngift-' + pkg);
-            if (!priceEl || !box || !btn) return;
+            if (!priceEl || !box || !btn || !btnGift) return;
 
             // Reset grafiky před aplikací nového kódu
             box.classList.remove('pkg-card--voucher-match', 'is-dimmed');
+            btn.style.display = 'block';
+            btnGift.style.display = 'block';
 
             if (allowed.includes(pkg)) {
               if (isGiftVoucher) {
-                // Voucher / 100% sleva: Zvýraznění karty a odemknutí VIP
                 if (closedMap[pkg]) {
                   box.classList.remove('is-closed');
                 }
@@ -545,9 +547,21 @@
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> 0 Kč';
                 btn.textContent = 'Aktivovat voucher (0 Kč) →';
                 btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
-                if (btnGift) btnGift.style.display = 'none'; // Při uplatnění 100% kódu se dárkové tlačítko skryje
+                btnGift.style.display = 'none'; // U 100% voucheru dárek nepotřebuje kupovat
+
+              } else if (isDarekOnly) {
+                // Kód je striktně pro nákup dárku
+                var orig = basePrices[pkg];
+                var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
+                var finalP = Math.max(0, orig - disc);
+
+                priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
+                btn.style.display = 'none'; // Skryjeme běžnou objednávku
+                btnGift.textContent = '🎁 Objednat dárek se slevou →';
+                btnGift.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&darek=1&kod=' + data.code);
+
               } else {
-                // Běžná sleva (procentuální nebo fixní)
+                // Běžná sleva
                 var orig = basePrices[pkg];
                 var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
                 var finalP = Math.max(0, orig - disc);
@@ -555,10 +569,9 @@
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
                 btn.textContent = 'Objednat se slevou →';
                 btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
-                if (btnGift) btnGift.style.display = 'block';
+                btnGift.style.display = 'none'; // Skryjeme dárkové tlačítko, pokud jde o slevu pro sebe
               }
             } else {
-              // Kód se na tento balíček nevztahuje -> zešedivění
               box.classList.add('is-dimmed');
             }
           });
