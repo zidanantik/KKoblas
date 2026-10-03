@@ -8,8 +8,20 @@
     .then(function(items) {
       if (!Array.isArray(items) || items.length === 0) return;
 
+      var nowMs = Date.now();
+
+      // Vyfiltrujeme pouze kódy, které mají platný budoucí čas
+      var validItems = items.filter(function(item) {
+        if (!item.validUntil) return true;
+        var t = new Date(item.validUntil).getTime();
+        return !isNaN(t) && t > nowMs;
+      });
+
+      // Pokud už všechny mezitím vypršely, VŮBEC NIC NEVKLÁDÁME
+      if (validItems.length === 0) return;
+
       var earliestExp = null;
-      items.forEach(function(item) {
+      validItems.forEach(function(item) {
         if (item.validUntil) {
           var t = new Date(item.validUntil).getTime();
           if (!isNaN(t)) {
@@ -25,16 +37,16 @@
         #kk-promo-banner {
           background: #0d0d0d;
           background: linear-gradient(90deg, #0d0d0d 0%, #171510 50%, #0d0d0d 100%);
-          border-bottom: 1px solid rgba(200, 138, 44, 0.45);
+          border-bottom: 1px solid rgba(200, 138, 44, 0.5);
           color: #e5e5e5;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
-          font-size: 13px;
+          font-size: 13.5px;
           line-height: 1.4;
-          padding: 9px 16px;
+          padding: 10px 16px;
           text-align: center;
           position: relative;
-          z-index: 1000;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+          z-index: 10001;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.6);
           transition: all 0.4s ease;
           overflow: hidden;
         }
@@ -60,13 +72,13 @@
           font-weight: bold;
           color: #ff9900;
           background: rgba(255, 153, 0, 0.12);
-          border: 1px solid rgba(255, 153, 0, 0.35);
+          border: 1px solid rgba(255, 153, 0, 0.4);
           padding: 2px 7px;
           border-radius: 4px;
           letter-spacing: 1px;
         }
         .kk-banner-divider {
-          color: #555;
+          color: #666;
           user-select: none;
         }
         .kk-banner-countdown {
@@ -93,7 +105,7 @@
       var banner = document.createElement('div');
       banner.id = 'kk-promo-banner';
 
-      var itemsHtml = items.map(function(item) {
+      var itemsHtml = validItems.map(function(item) {
         return '<span class="kk-banner-item">'
           + '<span class="kk-banner-label">' + item.label + ':</span> '
           + '<span class="kk-banner-code">' + item.code + '</span>'
@@ -106,6 +118,21 @@
 
       banner.innerHTML = '<div class="kk-banner-inner">' + itemsHtml + timerHtml + '</div>';
       document.body.prepend(banner);
+
+      // Přizpůsobení horní liště (pokud by měla pevnou pozici)
+      var header = document.querySelector('.site-header');
+      if (header) {
+        var headerPos = window.getComputedStyle(header).position;
+        if (headerPos === 'fixed') {
+          banner.style.position = 'fixed';
+          banner.style.top = '0';
+          banner.style.left = '0';
+          banner.style.width = '100%';
+          var bH = banner.offsetHeight || 38;
+          header.style.top = bH + 'px';
+          document.body.style.paddingTop = bH + 'px';
+        }
+      }
 
       if (earliestExp) {
         var timerEl = document.getElementById('kk-timer-val');
@@ -120,6 +147,10 @@
             banner.style.maxHeight = '0';
             banner.style.paddingTop = '0';
             banner.style.paddingBottom = '0';
+            if (header && window.getComputedStyle(header).position === 'fixed') {
+              header.style.top = '0';
+              document.body.style.paddingTop = '';
+            }
             setTimeout(function() { banner.remove(); }, 400);
             return;
           }
