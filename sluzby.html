@@ -104,18 +104,18 @@
         transform: scale(1.02);
       }
     }
-    /* Ztlumení klasického nákupu při dárkové akci */
+
+    /* Zneplatnění a ztlumení klasického nákupu a splátek při dárkové akci */
     .btn--dimmed-gift-mode {
-      opacity: 0.3 !important;
+      opacity: 0.22 !important;
       filter: grayscale(1) !important;
-      border: 1px solid #555 !important;
-      background: #1a1a1a !important;
-      color: #888 !important;
+      border: 1px solid #444 !important;
+      background: #141414 !important;
+      color: #666 !important;
+      pointer-events: none !important;
+      cursor: not-allowed !important;
+      user-select: none !important;
       transition: all 0.3s ease;
-    }
-    .btn--dimmed-gift-mode:hover {
-      opacity: 0.7 !important;
-      filter: grayscale(0.5) !important;
     }
 
     /* Červené zvýraznění upozornění InBody */
@@ -461,7 +461,7 @@
 
   <script src="script.js"></script>
   <script src="sluzby.js"></script>
-  <script src="banner.js" defer></script>
+  <script src="banner.js?v=3" defer></script>
   <script>
     (function () {
       function parseKc(str) {
@@ -702,19 +702,17 @@
                 var inbEl = document.getElementById('inbody-' + s);
                 if (inbEl) inbEl.textContent = 'Sleva ' + (data.type === 'percent' ? data.value + ' %' : fmtKc(data.value)) + ' platí výhradně na dárkový poukaz';
 
+                // Zneplatníme tlačítka běžného nákupu a splátek
                 if (bOrder) {
                   bOrder.classList.add('btn--dimmed-gift-mode');
-                  bOrder.textContent = 'Koupit pro sebe (' + fmtKc(orig) + ')';
-                  bOrder.href = (s === 'startup') 
-                    ? 'objednavka.html?sluzba=startup' 
-                    : 'objednavka.html?sluzba=' + s + '&platba=jednorizove';
+                  bOrder.textContent = 'Nelze uplatnit pro sebe';
                 }
 
                 if (bSpl) {
                   bSpl.classList.add('btn--dimmed-gift-mode');
-                  bSpl.href = 'objednavka.html?sluzba=' + s + '&platba=splatky';
                 }
 
+                // Zvýrazníme dárkové tlačítko
                 if (g) {
                   g.className = 'pkg-gift-btn pkg-gift-btn--highlight';
                   g.innerHTML = '🎁 Koupit jako dárkový poukaz za ' + fmtKc(finalP) + ' →';
