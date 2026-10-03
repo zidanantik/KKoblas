@@ -168,9 +168,17 @@ async function toggle(sluzba) {
   if (!confirm(action + ' službu ' + sluzba.toUpperCase() + '?')) return;
 
   var pass = ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
-  var payload = Object.assign({ password: pass }, currentStatus);
+  var payload = Object.assign({}, currentStatus, { password: pass });
   payload[sluzba] = next;
-  payload.singleToggle = sluzba;
+
+  // Nastavíme manualOverride pro konkrétní službu, aby ji server nevracel na VOLNÝ
+  var currentOverride = currentStatus.manualOverride || {
+    startup: currentStatus.startup === 'uzavreny',
+    mentoring: currentStatus.mentoring === 'uzavreny',
+    ultimate: currentStatus.ultimate === 'uzavreny'
+  };
+  payload.manualOverride = Object.assign({}, currentOverride);
+  payload.manualOverride[sluzba] = (next === 'uzavreny');
 
   setDeploy('⚡ Ukládám...', 'loading');
   try {
@@ -374,6 +382,10 @@ async function loadClients() {
     var clients = await res.json();
     loadedClientsCache = clients || [];
     renderClientsTable();
+    // Pokud už jsou načtené i promo kódy, překreslíme je pro aktualizaci počítadla
+    if (loadedCodesCache && loadedCodesCache.length > 0) {
+      renderPromoCodesList(loadedCodesCache);
+    }
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání: ' + err.message + '</td></tr>';
   }
