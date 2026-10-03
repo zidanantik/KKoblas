@@ -246,10 +246,29 @@
       text-decoration: none;
       font-size: 14px;
       transition: all 0.2s ease;
+      margin-bottom: 8px;
     }
     .btn-buy:hover {
       background: #ffaa22;
       box-shadow: 0 0 15px rgba(255, 153, 0, 0.35);
+    }
+    .btn-gift {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: transparent;
+      border: 1px solid #444;
+      color: #ccc;
+      padding: 10px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+    .btn-gift:hover {
+      border-color: #ff9900;
+      color: #ff9900;
+      background: rgba(255, 153, 0, 0.05);
     }
 
     /* Vizuální stavy při uplatnění dárkového kódu jako na /sluzby.html */
@@ -339,7 +358,7 @@
       <div id="landingPromoMsg" class="promo-feedback" hidden></div>
     </div>
 
-    <!-- Přehled nabídek (pouze jednorázové platby) -->
+    <!-- Přehled nabídek -->
     <div class="packages-grid">
 
       <!-- START-UP -->
@@ -359,6 +378,7 @@
         </ul>
         <div class="pkg-btns-normal">
           <a href="objednavka.html?sluzba=startup" class="btn-buy js-order-btn" id="btn-startup">Objednat Start-up →</a>
+          <a href="objednavka.html?sluzba=startup&darek=1" class="btn-gift" id="btngift-startup">🎁 Objednat jako dárek</a>
         </div>
         <div class="pkg-btns-closed">
           <p class="closed-notice">Kapacita je momentálně plná.</p>
@@ -383,7 +403,8 @@
           <li>Trvalé osvojení udržitelných návyků</li>
         </ul>
         <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn-buy js-order-btn" id="btn-mentoring">Objednat Mentoring →</a>
+          <a href="objednavka.html?sluzba=mentoring" class="btn-buy js-order-btn" id="btn-mentoring">Objednat Mentoring →</a>
+          <a href="objednavka.html?sluzba=mentoring&darek=1" class="btn-gift" id="btngift-mentoring">🎁 Objednat jako dárek</a>
         </div>
         <div class="pkg-btns-closed">
           <p class="closed-notice">Kapacita je momentálně plná.</p>
@@ -407,7 +428,8 @@
           <li>Kompletní servis a dlouhodobá adaptace</li>
         </ul>
         <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn-buy js-order-btn" id="btn-ultimate">Objednat Ultimate →</a>
+          <a href="objednavka.html?sluzba=ultimate" class="btn-buy js-order-btn" id="btn-ultimate">Objednat Ultimate →</a>
+          <a href="objednavka.html?sluzba=ultimate&darek=1" class="btn-gift" id="btngift-ultimate">🎁 Objednat jako dárek</a>
         </div>
         <div class="pkg-btns-closed">
           <p class="closed-notice">Kapacita je momentálně plná.</p>
@@ -505,6 +527,7 @@
             var priceEl = document.getElementById('price-' + pkg);
             var box = document.getElementById('box-' + pkg);
             var btn = document.getElementById('btn-' + pkg);
+            var btnGift = document.getElementById('btngift-' + pkg);
             if (!priceEl || !box || !btn) return;
 
             // Reset grafiky před aplikací nového kódu
@@ -522,6 +545,7 @@
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> 0 Kč';
                 btn.textContent = 'Aktivovat voucher (0 Kč) →';
                 btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
+                if (btnGift) btnGift.style.display = 'none'; // Při uplatnění 100% kódu se dárkové tlačítko skryje
               } else {
                 // Běžná sleva (procentuální nebo fixní)
                 var orig = basePrices[pkg];
@@ -530,7 +554,8 @@
 
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
                 btn.textContent = 'Objednat se slevou →';
-                btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&platba=jednorizove&kod=' + data.code);
+                btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
+                if (btnGift) btnGift.style.display = 'block';
               }
             } else {
               // Kód se na tento balíček nevztahuje -> zešedivění
