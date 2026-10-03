@@ -18,15 +18,57 @@ export async function onRequestGet(context) {
     const adminPass = context.request.headers.get('x-admin-pass');
     const storedPass = context.env.ADMIN_PASS;
 
-    // Administrace: vrací všechny kódy
+    // Administrace: vrací všechny kódy včetně expirací a stavu banneru
     if (adminPass && adminPass === storedPass) {
       return new Response(JSON.stringify(codes), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Veřejné ověření kódu
     const url = new URL(context.request.url);
+
+    // ── Veřejné načtení aktivních kódů pro horní banner ──
+    if (url.searchParams.get('banner') === '1') {
+      const now = new Date();
+      const bannerCodes = codes.filter(c => {
+        if (!c.active || !c.showInBanner) return false;
+        if (c.oneTime && c.used) return false;
+        if (c.validUntil && new Date(c.validUntil) <= now) return false;
+        return true;
+      }).map(c => {
+        let label = c.bannerLabel ? c.bannerLabel.trim() : '';
+        if (!label) {
+          const pkgs = (c.packages || []).map(p => normalizePkg(p)).filter(Boolean);
+          const pkgMap = { startup: 'START-UP', mentoring: 'MENTORING', ultimate: 'ULTIMATE' };
+          let scope = 'Všechny programy';
+          if (pkgs.length === 1) {
+            scope = pkgMap[pkgs[0]] || pkgs[0].toUpperCase();
+          } else if (pkgs.length > 0 && pkgs.length < 3) {
+            scope = pkgs.map(p => pkgMap[p] || p.toUpperCase()).join(' & ');
+          }
+
+          if (c.darekOnly) {
+            label = (pkgs.length === 3 || pkgs.length === 0) ? 'Dárkové poukazy' : `Dárkový poukaz (${scope})`;
+          } else if (c.splatky) {
+            label = `${scope} (splátky)`;
+          } else {
+            label = `${scope} (jednorázově)`;
+          }
+        }
+
+        return {
+          code: c.code,
+          label: label,
+          validUntil: c.validUntil || null
+        };
+      });
+
+      return new Response(JSON.stringify(bannerCodes), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+      });
+    }
+
+    // ── Veřejné ověření kódu v objednávkovém formuláři ──
     const codeParam = (url.searchParams.get('code') || '').trim().toUpperCase();
     const pkgParam = normalizePkg(url.searchParams.get('package') || url.searchParams.get('sluzba') || '');
     const modeSplatky = url.searchParams.get('splatky') === 'true';
@@ -42,6 +84,13 @@ export async function onRequestGet(context) {
     const found = codes.find(c => c.code && c.code.trim().toUpperCase() === codeParam);
     if (!found || found.active === false) {
       return new Response(JSON.stringify({ valid: false, message: 'Neplatný nebo neaktivní kód.' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Kontrola vypršení platnosti podle času
+    if (found.validUntil && new Date(found.validUntil) <= new Date()) {
+      return new Response(JSON.stringify({ valid: false, message: 'Platnost tohoto slevového kódu již vypršela.' }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -140,11 +189,12 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Přepnutí stavu
-    if (body.id && body.active !== undefined) {
+    // Přepnutí stavu (aktivní / zobrazení v banneru)
+    if (body.id && (body.active !== undefined || body.showInBanner !== undefined)) {
       const idx = codes.findIndex(c => c.id === body.id);
       if (idx > -1) {
-        codes[idx].active = body.active;
+        if (body.active !== undefined) codes[idx].active = body.active;
+        if (body.showInBanner !== undefined) codes[idx].showInBanner = body.showInBanner;
         if (store) {
           await store.put('PROMO_CODES', JSON.stringify(codes));
         }
@@ -163,6 +213,9 @@ export async function onRequestPost(context) {
       splatky: !!body.splatky,
       darekOnly: !!body.darekOnly,
       packages: (body.packages || []).map(p => normalizePkg(p)).filter(Boolean),
+      showInBanner: !!body.showInBanner,
+      validUntil: body.validUntil ? String(body.validUntil).trim() : null,
+      bannerLabel: body.bannerLabel ? String(body.bannerLabel).trim() : '',
       active: true,
       used: false,
       usedCount: 0,
