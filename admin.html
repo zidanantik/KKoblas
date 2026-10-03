@@ -130,7 +130,7 @@
 
     </main>
 
-    <!-- ── NOVÁ TABULKA: AKTIVNÍ KLIENTI & SPOLUPRÁCE ── -->
+    <!-- ── TABULKA: AKTIVNÍ KLIENTI & SPOLUPRÁCE ── -->
     <div class="event-panel" id="clientsPanel" style="margin-bottom: 30px;">
       <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
@@ -256,7 +256,7 @@
       <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
           <div style="font-family: monospace; font-size: 13px; font-weight: bold; color: #ff9900; letter-spacing: 2px;">SLEVOVÉ A DÁRKOVÉ KÓDY</div>
-          <div style="font-family: monospace; font-size: 11px; color: #777; margin-top: 3px;">Správa slev a jednorázových voucherů v Cloudflare KV</div>
+          <div style="font-family: monospace; font-size: 11px; color: #777; margin-top: 3px;">Správa slev, odpočtů v banneru a voucherů</div>
         </div>
         <button type="button" onclick="loadPromoCodes()" class="an-refresh-btn" style="cursor: pointer;" title="Obnovit seznam kódů">↻ OBNOVIT</button>
       </div>
@@ -266,7 +266,7 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
           <label class="event-label">Kód voucheru / slevy
             <div style="display: flex; gap: 6px; margin-top: 4px;">
-              <input type="text" id="newPromoCode" class="event-input" placeholder="např. SPLATKY10" style="text-transform: uppercase; margin-top: 0; flex: 1;">
+              <input type="text" id="newPromoCode" class="event-input" placeholder="např. PODZIM15" style="text-transform: uppercase; margin-top: 0; flex: 1;">
               <button type="button" onclick="generateRandomCode()" style="background: #151515; border: 1px solid #444; color: #ff9900; font-family: monospace; font-size: 10px; padding: 0 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; height: 38px;">🎲 NÁHODNÝ</button>
             </div>
           </label>
@@ -285,6 +285,16 @@
             </label>
           </div>
 
+          <!-- Výběr času expirace s rychlými testovacími tlačítky -->
+          <label class="event-label">Platnost do (datum a čas odpočtu)
+            <input type="datetime-local" id="newPromoValidUntil" class="event-input" step="1" style="color-scheme: dark;">
+            <div style="display: flex; gap: 6px; margin-top: 5px;">
+              <button type="button" onclick="setQuickTestSeconds(15)" style="background: #222; border: 1px solid #444; color: #ff9900; padding: 2px 8px; border-radius: 3px; font-family: monospace; font-size: 10px; cursor: pointer;">⚡ +15s</button>
+              <button type="button" onclick="setQuickTestSeconds(30)" style="background: #222; border: 1px solid #444; color: #ff9900; padding: 2px 8px; border-radius: 3px; font-family: monospace; font-size: 10px; cursor: pointer;">⚡ +30s</button>
+              <button type="button" onclick="setQuickTestSeconds(60)" style="background: #222; border: 1px solid #444; color: #ff9900; padding: 2px 8px; border-radius: 3px; font-family: monospace; font-size: 10px; cursor: pointer;">⚡ +1 min</button>
+            </div>
+          </label>
+
           <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; padding-bottom: 4px;">
             <label class="event-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
               <input type="checkbox" id="newPromoOneTime" checked style="accent-color: #ff9900; width: 16px; height: 16px;">
@@ -298,7 +308,17 @@
               <input type="checkbox" id="newPromoDarekOnly" style="accent-color: #ff9900; width: 16px; height: 16px;">
               Platí jen pro nákup dárku (voucheru)
             </label>
+            <label class="event-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; color: #ff9900; font-weight: bold;">
+              <input type="checkbox" id="newPromoShowInBanner" style="accent-color: #ff9900; width: 16px; height: 16px;">
+              📢 Zobrazit v horním banneru na webu
+            </label>
           </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <label class="event-label">Vlastní popisek do banneru (volitelné – nechte prázdné pro automatiku)
+            <input type="text" id="newPromoBannerLabel" class="event-input" placeholder="např. Osobní programy (jednorázově)">
+          </label>
         </div>
 
         <!-- Výběr balíčků -->
@@ -327,6 +347,7 @@
                 <th style="padding: 10px;">KÓD</th>
                 <th style="padding: 10px;">TYP A HODNOTA</th>
                 <th style="padding: 10px;">BALÍČKY</th>
+                <th style="padding: 10px;">BANNER &amp; EXPIRACE</th>
                 <th style="padding: 10px;">POUŽITÍ</th>
                 <th style="padding: 10px;">STAV</th>
                 <th style="padding: 10px; text-align: right;">AKCE</th>
@@ -334,7 +355,7 @@
             </thead>
             <tbody id="promoCodesTableBody">
               <tr>
-                <td colspan="6" style="padding: 15px; text-align: center; color: #666;">Načítám kódy...</td>
+                <td colspan="7" style="padding: 15px; text-align: center; color: #666;">Načítám kódy...</td>
               </tr>
             </tbody>
           </table>
@@ -363,6 +384,6 @@
 
   </div>
 
-  <script src="admin.js?v=7"></script>
+  <script src="admin.js?v=9"></script>
 </body>
 </html>
