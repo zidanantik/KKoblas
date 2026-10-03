@@ -356,12 +356,12 @@
                 <input type="number" id="fweight" name="Vaha_kg" required placeholder="80">
               </div>
               <div class="form-group">
-                <label for="fhips">Obvod boků (cm) <span class="form-hint-inline">(vhodné)</span></label>
-                <input type="number" id="fhips" name="Obvod_boku_cm" placeholder="95">
+                <label for="fhips">Obvod boků (cm) <span class="req">*</span></label>
+                <input type="number" id="fhips" name="Obvod_boku_cm" required placeholder="95">
               </div>
               <div class="form-group">
-                <label for="fwaist">Obvod pasu (cm) <span class="form-hint-inline">(vhodné)</span></label>
-                <input type="number" id="fwaist" name="Obvod_pasu_cm" placeholder="80">
+                <label for="fwaist">Obvod pasu (cm) <span class="req">*</span></label>
+                <input type="number" id="fwaist" name="Obvod_pasu_cm" required placeholder="80">
               </div>
             </div>
 
@@ -623,7 +623,9 @@
         document.getElementById('fage'),
         document.getElementById('fgender'),
         document.getElementById('fheight'),
-        document.getElementById('fweight')
+        document.getElementById('fweight'),
+        document.getElementById('fhips'),
+        document.getElementById('fwaist')
       ];
 
       function toggleGiftMode() {
