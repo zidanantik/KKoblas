@@ -78,7 +78,18 @@ export async function onRequestPost(context) {
     const rawClients = store ? await store.get('CLIENTS') : null;
     let clients = rawClients ? JSON.parse(rawClients) : [];
 
-    const idx = clients.findIndex(c => String(c.id || c.fakturoid_id) === String(body.id));
+    const targetId = body.id ? String(body.id).trim() : '';
+    const targetEmail = body.email ? String(body.email).toLowerCase().trim() : '';
+
+    const idx = clients.findIndex(c => {
+      const cId = c.id ? String(c.id).trim() : '';
+      const cFakId = c.fakturoid_id ? String(c.fakturoid_id).trim() : '';
+      const cEmail = (c.kupujici && c.kupujici.email) ? String(c.kupujici.email).toLowerCase().trim() : '';
+      if (targetId && targetId !== 'undefined' && (cId === targetId || cFakId === targetId)) return true;
+      if (targetEmail && cEmail === targetEmail) return true;
+      return false;
+    });
+
     if (idx === -1) {
       return new Response(JSON.stringify({ ok: false, error: 'Klient nenalezen' }), {
         status: 404,
@@ -123,7 +134,25 @@ export async function onRequestDelete(context) {
     const rawClients = store ? await store.get('CLIENTS') : null;
     let clients = rawClients ? JSON.parse(rawClients) : [];
 
-    clients = clients.filter(c => String(c.id || c.fakturoid_id) !== String(body.id));
+    const targetId = body.id ? String(body.id).trim() : '';
+    const targetEmail = body.email ? String(body.email).toLowerCase().trim() : '';
+
+    clients = clients.filter(c => {
+      const cId = c.id ? String(c.id).trim() : '';
+      const cFakId = c.fakturoid_id ? String(c.fakturoid_id).trim() : '';
+      const cEmail = (c.kupujici && c.kupujici.email) ? String(c.kupujici.email).toLowerCase().trim() : '';
+
+      // Shoda podle ID nebo Fakturoid ID
+      if (targetId && targetId !== 'undefined' && targetId !== 'null' && (cId === targetId || cFakId === targetId)) {
+        return false;
+      }
+      // Shoda podle e-mailu kupujícího (spolehlivá pojistka pro testovací záznamy)
+      if (targetEmail && cEmail === targetEmail) {
+        return false;
+      }
+      return true;
+    });
+
     await store.put('CLIENTS', JSON.stringify(clients));
 
     return new Response(JSON.stringify({ ok: true }), {
