@@ -36,19 +36,19 @@
       padding: 0 20px;
     }
 
-    /* Hero sekce s extra velkým logem vlevo a minimalizovaným odsazením */
+    /* Hero sekce s logem a textem */
     .hero-flex {
       display: flex;
       align-items: center;
       gap: 35px;
-      padding: 25px 0 10px;
+      padding: 25px 0 15px;
       text-align: left;
     }
     .hero-logo-col {
       flex-shrink: 0;
     }
     .landing-logo {
-      height: 210px; /* Zvětšeno podle tvého nákresu */
+      height: 180px;
       width: auto;
       display: block;
     }
@@ -80,13 +80,35 @@
       font-size: 14.5px;
     }
 
-    /* Rámeček slevového kódu – zmenšená mezera nad ním */
+    /* Galerie dvou fotek pod nadpisem */
+    .hero-photos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 700px;
+      margin: 15px auto 25px;
+    }
+    .hero-photo-card {
+      background: rgba(14, 22, 18, 0.9);
+      border: 1px solid rgba(255, 153, 0, 0.3);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    }
+    .hero-photo-card img {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Rámeček slevového kódu */
     .promo-card {
       background: rgba(18, 26, 22, 0.9);
       border: 1px solid rgba(255, 153, 0, 0.35);
       border-radius: 12px;
       max-width: 580px;
-      margin: 10px auto 25px;
+      margin: 15px auto 30px;
       padding: 16px 22px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
@@ -380,7 +402,7 @@
       color: #777;
     }
 
-    /* Responzivita pro mobily – logo se zarovná na střed nad text */
+    /* Responzivita pro mobily */
     @media (max-width: 768px) {
       .hero-flex {
         flex-direction: column;
@@ -389,8 +411,12 @@
         padding: 20px 0 10px;
       }
       .landing-logo {
-        height: 150px;
+        height: 140px;
         margin: 0 auto;
+      }
+      .hero-photos {
+        grid-template-columns: 1fr;
+        max-width: 320px;
       }
     }
   </style>
@@ -399,7 +425,7 @@
 
   <main class="container">
 
-    <!-- Hero sekce s extra velkým logem vlevo a textem vpravo -->
+    <!-- Hero sekce s logem a textem -->
     <div class="hero-flex">
       <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
@@ -408,6 +434,16 @@
         <span class="eyebrow">Certifikovaný nutriční poradce</span>
         <h1 class="hero-title">Získej postavu a energii,<br><em>které ti už nikdo nevezme</em></h1>
         <p class="hero-lead">Systém postavený na datech, vědě a realitě tvého života. Žádné hladovění ani nesmyslné restrikce.</p>
+      </div>
+    </div>
+
+    <!-- Dvě osobní fotky vedle sebe (img-1537.jpg a pepaan.webp) -->
+    <div class="hero-photos">
+      <div class="hero-photo-card">
+        <img src="img-1537.jpg" alt="Kryštof Koblas">
+      </div>
+      <div class="hero-photo-card">
+        <img src="pepaan.webp" alt="Kryštof Koblas - forma">
       </div>
     </div>
 
@@ -680,6 +716,7 @@
 
       promoBtn.addEventListener('click', function() { checkAndApplyCode(); });
       clearBtn.addEventListener('click', function() { resetPromo(); });
+      promoInput.value = '';
       promoInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
