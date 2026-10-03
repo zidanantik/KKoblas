@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HGD6YWD9V1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HGD6YWD9V1');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Nastartuj změnu postavy a energie | Kryštof Koblas</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/webp" href="LOGO nové.webp">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #e5e5e5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+    .landing-header {
+      padding: 24px 20px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: #0d0d0d;
+    }
+    .landing-logo {
+      height: 42px;
+      display: inline-block;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    /* Hero */
+    .hero-wrap {
+      text-align: center;
+      padding: 50px 0 35px;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #c88a2c;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 1.2;
+      color: #fff;
+      margin-bottom: 18px;
+    }
+    .hero-title em {
+      color: #ff9900;
+      font-style: italic;
+    }
+    .hero-lead {
+      max-width: 680px;
+      margin: 0 auto;
+      color: #aaa;
+      font-size: 16px;
+    }
+    /* Rámeček slevového kódu */
+    .promo-card {
+      background: #141414;
+      border: 1px solid rgba(200, 138, 44, 0.4);
+      border-radius: 8px;
+      max-width: 580px;
+      margin: 35px auto 45px;
+      padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .promo-label {
+      font-size: 13px;
+      color: #ff9900;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .promo-row {
+      display: flex;
+      gap: 10px;
+    }
+    .promo-input {
+      flex: 1;
+      height: 44px;
+      background: #090909;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 0 14px;
+      font-family: monospace;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 6px;
+      outline: none;
+    }
+    .promo-input:focus {
+      border-color: #ff9900;
+    }
+    .promo-btn {
+      height: 44px;
+      background: #c88a2c;
+      color: #000;
+      font-weight: 700;
+      border: none;
+      padding: 0 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+    }
+    .promo-btn:hover {
+      background: #ffaa22;
+      box-shadow: 0 0 14px rgba(255, 153, 0, 0.4);
+    }
+    .promo-feedback {
+      font-size: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      padding: 6px 10px;
+      border-radius: 4px;
+    }
+    .promo-feedback--ok {
+      background: rgba(46, 204, 113, 0.12);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+      color: #2ecc71;
+    }
+    .promo-feedback--err {
+      background: rgba(231, 76, 60, 0.12);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      color: #e74c3c;
+    }
+    /* Balíčky */
+    .packages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 24px;
+    }
+    .pkg-box {
+      background: #121212;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 30px 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .pkg-box--featured {
+      border-color: #c88a2c;
+      background: linear-gradient(180deg, #171510 0%, #121212 100%);
+      box-shadow: 0 8px 30px rgba(200, 138, 44, 0.12);
+    }
+    .pkg-badge {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: #ff9900;
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .pkg-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .pkg-sub {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .pkg-price-row {
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .pkg-price {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ff9900;
+    }
+    .pkg-price-struck {
+      text-decoration: line-through;
+      color: #666;
+      font-size: 18px;
+      margin-right: 8px;
+      font-weight: 400;
+    }
+    .pkg-meta {
+      font-size: 11.5px;
+      color: #777;
+      margin-top: 4px;
+    }
+    .pkg-features {
+      list-style: none;
+      margin-bottom: 25px;
+      flex: 1;
+    }
+    .pkg-features li {
+      position: relative;
+      padding-left: 20px;
+      font-size: 13.5px;
+      color: #bbb;
+      margin-bottom: 10px;
+    }
+    .pkg-features li::before {
+      content: "✔";
+      position: absolute;
+      left: 0;
+      color: #c88a2c;
+      font-size: 12px;
+    }
+    .btn-buy {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: #c88a2c;
+      color: #000;
+      font-weight: 700;
+      padding: 13px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      margin-bottom: 8px;
+    }
+    .btn-buy:hover {
+      background: #ffaa22;
+      box-shadow: 0 0 15px rgba(255, 153, 0, 0.35);
+    }
+    .btn-splatky {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: transparent;
+      border: 1px solid #444;
+      color: #ccc;
+      padding: 10px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+    .btn-splatky:hover {
+      border-color: #888;
+      color: #fff;
+    }
+
+    /* Stopstav / Čekačka design */
+    .pkg-box.is-closed {
+      border-color: rgba(255, 255, 255, 0.05);
+      background: #0f0f0f;
+    }
+    .pkg-box.is-closed .pkg-btns-normal {
+      display: none;
+    }
+    .pkg-btns-closed {
+      display: none;
+    }
+    .pkg-box.is-closed .pkg-btns-closed {
+      display: block;
+    }
+    .closed-notice {
+      color: #ff5555;
+      font-size: 12px;
+      margin-bottom: 8px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .btn-waitlist {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: transparent;
+      border: 1px solid #ff9900;
+      color: #ff9900;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+    .btn-waitlist:hover {
+      background: rgba(255, 153, 0, 0.1);
+    }
+
+    .footer-guarantee {
+      text-align: center;
+      margin-top: 50px;
+      padding: 24px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12.5px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="landing-header">
+    <img src="logotxt.webp" alt="Kryštof Koblas logo" class="landing-logo">
+  </header>
+
+  <main class="container">
+
+    <div class="hero-wrap">
+      <span class="eyebrow">Certifikovaný nutriční poradce</span>
+      <h1 class="hero-title">Získej postavu a energii,<br><em>které ti už nikdo nevezme</em></h1>
+      <p class="hero-lead">Systém postavený na datech, vědě a realitě tvého života. Žádné hladovění ani nesmyslné restrikce.</p>
+    </div>
+
+    <!-- Rámeček na uplatnění slevového kódu -->
+    <div class="promo-card">
+      <label class="promo-label" for="landingPromoInput">
+        🎁 Máš slevový kód z reklamy nebo sociálních sítí?
+      </label>
+      <div class="promo-row">
+        <input type="text" id="landingPromoInput" class="promo-input" placeholder="ZADEJ SLEVOVÝ KÓD" autocomplete="off">
+        <button type="button" id="landingPromoBtn" class="promo-btn">UPLATNIT</button>
+      </div>
+      <div id="landingPromoMsg" class="promo-feedback" hidden></div>
+    </div>
+
+    <!-- Přehled nabídek -->
+    <div class="packages-grid">
+
+      <!-- START-UP -->
+      <article class="pkg-box" id="box-startup" data-pkg="startup">
+        <h2 class="pkg-title">START-UP</h2>
+        <p class="pkg-sub">1 měsíc · Profi odrazový můstek</p>
+        <div class="pkg-price-row">
+          <div id="price-startup" class="pkg-price">6 900 Kč</div>
+          <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
+        </div>
+        <ul class="pkg-features">
+          <li>1× online schůzka (vstupní rozbor)</li>
+          <li>Individuální plán v licenci ZOFapp</li>
+          <li>Nastavení suplementace s rozumem</li>
+          <li>2× diagnostika InBody</li>
+          <li>Podpora a asistence na WhatsAppu</li>
+        </ul>
+        <div class="pkg-btns-normal">
+          <a href="objednavka.html?sluzba=startup" class="btn-buy js-order-btn">Objednat Start-up →</a>
+        </div>
+        <div class="pkg-btns-closed">
+          <p class="closed-notice">Kapacita je momentálně plná.</p>
+          <a href="cekacka.html?sluzba=startup" class="btn-waitlist">Chci vědět o volném místě →</a>
+        </div>
+      </article>
+
+      <!-- MENTORING -->
+      <article class="pkg-box pkg-box--featured" id="box-mentoring" data-pkg="mentoring">
+        <span class="pkg-badge">Nejoblíbenější</span>
+        <h2 class="pkg-title">MENTORING</h2>
+        <p class="pkg-sub">4 měsíce · Individuální vedení</p>
+        <div class="pkg-price-row">
+          <div id="price-mentoring" class="pkg-price">14 700 Kč</div>
+          <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
+        </div>
+        <ul class="pkg-features">
+          <li>Celkem 4 online schůzky (pravidelný mentoring)</li>
+          <li>Kompletní vedení v aplikaci ZOF</li>
+          <li>3× diagnostika InBody pro ověření progresu</li>
+          <li>VIP odpověď na WhatsAppu do 24 hodin</li>
+          <li>Trvalé osvojení udržitelných návyků</li>
+        </ul>
+        <div class="pkg-btns-normal">
+          <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn-buy js-order-btn">Objednat Mentoring →</a>
+          <a href="objednavka.html?sluzba=mentoring&platba=splatky" class="btn-splatky js-order-btn">Možnost platby na splátky (od 7 500 Kč)</a>
+        </div>
+        <div class="pkg-btns-closed">
+          <p class="closed-notice">Kapacita je momentálně plná.</p>
+          <a href="cekacka.html?sluzba=mentoring" class="btn-waitlist">Chci vědět o volném místě →</a>
+        </div>
+      </article>
+
+      <!-- ULTIMATE -->
+      <article class="pkg-box" id="box-ultimate" data-pkg="ultimate">
+        <h2 class="pkg-title">ULTIMATE</h2>
+        <p class="pkg-sub">6 měsíců · Maximální výkon & biohacking</p>
+        <div class="pkg-price-row">
+          <div id="price-ultimate" class="pkg-price">22 300 Kč</div>
+          <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
+        </div>
+        <ul class="pkg-features">
+          <li>Celkem 6 online schůzek s podrobnou analýzou</li>
+          <li>Pokročilé protokoly spánku a cirkadiánního rytmu</li>
+          <li>4× diagnostika InBody pro maximální kontrolu</li>
+          <li>Prioritní WhatsApp garance do 12 hodin</li>
+          <li>Kompletní servis a dlouhodobá adaptace</li>
+        </ul>
+        <div class="pkg-btns-normal">
+          <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn-buy js-order-btn">Objednat Ultimate →</a>
+          <a href="objednavka.html?sluzba=ultimate&platba=splatky" class="btn-splatky js-order-btn">Možnost platby na splátky (od 11 900 Kč)</a>
+        </div>
+        <div class="pkg-btns-closed">
+          <p class="closed-notice">Kapacita je momentálně plná.</p>
+          <a href="cekacka.html?sluzba=ultimate" class="btn-waitlist">Chci vědět o volném místě →</a>
+        </div>
+      </article>
+
+    </div>
+
+    <footer class="footer-guarantee">
+      <p>© 2026 Kryštof Koblas – Certifikovaný nutriční poradce | Uničov & celá ČR online</p>
+      <p style="margin-top: 6px;">Po odeslání objednávky tě kontaktuji do 2 pracovních dnů s dalšími kroky.</p>
+    </footer>
+
+  </main>
+
+  <!-- Horní banner s běžícími odpočty kódů -->
+  <script src="banner.js" defer></script>
+
+  <script>
+    (function() {
+      var basePrices = {
+        startup: 6900,
+        mentoring: 14700,
+        ultimate: 22300
+      };
+
+      var closedMap = {
+        startup: false,
+        mentoring: false,
+        ultimate: false
+      };
+
+      // 1. Zjištění stavu kapacity a stopstavu ze serveru
+      fetch('/api/status', { cache: 'no-store' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data) return;
+
+          var totalCap = data.capacity || {};
+          var isTotalFull = totalCap.mode === 'total' && totalCap.totalLimit > 0 && ((data.counts && data.counts.total) >= totalCap.totalLimit);
+
+          ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
+            var isPkgClosed = data[pkg] === 'uzavreny' || isTotalFull;
+            closedMap[pkg] = isPkgClosed;
+            var box = document.getElementById('box-' + pkg);
+            if (box) {
+              box.classList.toggle('is-closed', isPkgClosed);
+            }
+          });
+        })
+        .catch(function(e) {
+          console.warn('Nelze načíst status kapacity:', e);
+        });
+
+      // 2. Logika slevového kódu
+      var promoInput = document.getElementById('landingPromoInput');
+      var promoBtn   = document.getElementById('landingPromoBtn');
+      var promoMsg   = document.getElementById('landingPromoMsg');
+      var orderBtns  = document.querySelectorAll('.js-order-btn');
+
+      function formatKc(num) {
+        return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
+      }
+
+      function showMsg(txt, type) {
+        promoMsg.hidden = false;
+        promoMsg.className = 'promo-feedback promo-feedback--' + type;
+        promoMsg.textContent = txt;
+      }
+
+      async function checkAndApplyCode(codeVal) {
+        var code = (codeVal || promoInput.value).trim().toUpperCase();
+        if (!code) {
+          showMsg('Zadej slevový kód.', 'err');
+          return;
+        }
+
+        showMsg('Ověřuji kód...', 'ok');
+
+        try {
+          var res = await fetch('/api/codes?code=' + encodeURIComponent(code));
+          var data = await res.json();
+
+          if (!data.valid) {
+            showMsg(data.message || 'Neplatný kód.', 'err');
+            return;
+          }
+
+          promoInput.value = data.code;
+
+          var isGiftVoucher = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
+          var allowed = data.packages && data.packages.length > 0 ? data.packages : ['startup', 'mentoring', 'ultimate'];
+          
+          ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
+            var priceEl = document.getElementById('price-' + pkg);
+            var box = document.getElementById('box-' + pkg);
+            if (!priceEl) return;
+
+            if (allowed.includes(pkg)) {
+              // Pokud jde o 100% dárkový poukaz, odemkneme stopstav i při plné kapacitě
+              if (isGiftVoucher && box) {
+                box.classList.remove('is-closed');
+              }
+
+              var orig = basePrices[pkg];
+              var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
+              var finalP = Math.max(0, orig - disc);
+
+              if (isGiftVoucher) {
+                priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> 0 Kč';
+              } else {
+                priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
+              }
+            }
+          });
+
+          // Připojíme kód do odkazů tlačítek
+          orderBtns.forEach(function(btn) {
+            var currentHref = btn.getAttribute('href');
+            var url = new URL(currentHref, window.location.origin);
+            url.searchParams.set('kod', data.code);
+            btn.setAttribute('href', url.pathname + url.search);
+          });
+
+          var discountLabel = data.type === 'percent' ? data.value + ' %' : formatKc(data.value);
+          showMsg('✓ Sleva ' + discountLabel + ' byla započtena. Vyber balíček níže.', 'ok');
+
+        } catch (e) {
+          showMsg('Chyba při ověřování kódu.', 'err');
+        }
+      }
+
+      promoBtn.addEventListener('click', function() { checkAndApplyCode(); });
+      promoInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkAndApplyCode();
+        }
+      });
+
+      var urlParams = new URLSearchParams(window.location.search);
+      var codeInUrl = urlParams.get('kod') || urlParams.get('code');
+      if (codeInUrl) {
+        promoInput.value = codeInUrl;
+        setTimeout(function() { checkAndApplyCode(codeInUrl); }, 300);
+      }
+    })();
+  </script>
+</body>
+</html>
