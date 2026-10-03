@@ -1,4 +1,4 @@
-// banner.js — Horní informační lišta s živým odpočtem
+// banner.js — Horní informační lišta se samostatným odpočtem pro každý kód
 
 (function() {
   if (document.getElementById('kk-promo-banner')) return;
@@ -10,7 +10,7 @@
 
       var nowMs = Date.now();
 
-      // Vyfiltrujeme pouze kódy, které mají platný budoucí čas
+      // Vyfiltrujeme pouze kódy, které ještě nevypršely
       var validItems = items.filter(function(item) {
         if (!item.validUntil) return true;
         var t = new Date(item.validUntil).getTime();
@@ -18,18 +18,6 @@
       });
 
       if (validItems.length === 0) return;
-
-      var earliestExp = null;
-      validItems.forEach(function(item) {
-        if (item.validUntil) {
-          var t = new Date(item.validUntil).getTime();
-          if (!isNaN(t)) {
-            if (!earliestExp || t < earliestExp) {
-              earliestExp = t;
-            }
-          }
-        }
-      });
 
       var style = document.createElement('style');
       style.textContent = `
@@ -43,12 +31,12 @@
           line-height: 1.4;
           padding: 10px 16px;
           text-align: center;
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          box-sizing: border-box;
-          z-index: 999999;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          z-index: 999999 !important;
           box-shadow: 0 4px 18px rgba(0,0,0,0.7);
           transition: transform 0.4s ease, opacity 0.4s ease;
           overflow: hidden;
@@ -59,13 +47,21 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 14px;
+          gap: 16px;
           flex-wrap: wrap;
         }
         .kk-banner-item {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
+          gap: 7px;
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .kk-banner-item + .kk-banner-item::before {
+          content: "|";
+          color: #555;
+          margin-right: 10px;
+          margin-left: -4px;
+          user-select: none;
         }
         .kk-banner-label {
           color: #bbb;
@@ -80,18 +76,20 @@
           border-radius: 4px;
           letter-spacing: 1px;
         }
-        .kk-banner-divider {
-          color: #666;
-          user-select: none;
-        }
         .kk-banner-countdown {
           color: #2ecc71;
+          background: rgba(46, 204, 113, 0.1);
+          border: 1px solid rgba(46, 204, 113, 0.28);
+          padding: 2px 7px;
+          border-radius: 4px;
           font-family: monospace;
           font-weight: bold;
+          font-size: 12px;
           letter-spacing: 0.5px;
           display: inline-flex;
           align-items: center;
           gap: 4px;
+          white-space: nowrap;
         }
         @media (max-width: 768px) {
           #kk-promo-banner {
@@ -99,7 +97,10 @@
             padding: 8px 12px;
           }
           .kk-banner-inner {
-            gap: 8px;
+            gap: 10px;
+          }
+          .kk-banner-item + .kk-banner-item::before {
+            display: none;
           }
         }
       `;
@@ -108,80 +109,113 @@
       var banner = document.createElement('div');
       banner.id = 'kk-promo-banner';
 
-      var itemsHtml = validItems.map(function(item) {
-        return '<span class="kk-banner-item">'
-          + '<span class="kk-banner-label">' + item.label + ':</span> '
-          + '<span class="kk-banner-code">' + item.code + '</span>'
-          + '</span>';
-      }).join(' <span class="kk-banner-divider">|</span> ');
+      var itemsContainer = document.createElement('div');
+      itemsContainer.className = 'kk-banner-inner';
 
-      var timerHtml = earliestExp 
-        ? ' <span class="kk-banner-divider">—</span> <span class="kk-banner-countdown">⏳ končí za <span id="kk-timer-val">...</span></span>' 
-        : '';
+      validItems.forEach(function(item) {
+        var itemEl = document.createElement('div');
+        itemEl.className = 'kk-banner-item';
+        itemEl.setAttribute('data-code', item.code);
 
-      banner.innerHTML = '<div class="kk-banner-inner">' + itemsHtml + timerHtml + '</div>';
+        var countdownHtml = '';
+        if (item.validUntil) {
+          itemEl.setAttribute('data-until', item.validUntil);
+          countdownHtml = '<span class="kk-banner-countdown">⏳ <span class="kk-countdown-val">...</span></span>';
+        }
+
+        itemEl.innerHTML = '<span class="kk-banner-label">' + item.label + ':</span> '
+          + '<span class="kk-banner-code">' + item.code + '</span> '
+          + countdownHtml;
+
+        itemsContainer.appendChild(itemEl);
+      });
+
+      banner.appendChild(itemsContainer);
       document.body.prepend(banner);
 
-      // Posun hlavičky a obsahu dolů o výšku banneru
-      var bH = banner.offsetHeight || 42;
       var header = document.querySelector('.site-header');
 
-      function adjustLayout(height) {
-        document.body.style.paddingTop = height + 'px';
+      function adjustLayout() {
+        var bH = banner.offsetHeight || 42;
+        document.body.style.setProperty('padding-top', bH + 'px', 'important');
         if (header) {
-          var pos = window.getComputedStyle(header).position;
-          if (pos === 'fixed' || pos === 'absolute') {
-            header.style.top = height + 'px';
-          }
+          header.style.setProperty('top', bH + 'px', 'important');
         }
       }
 
-      adjustLayout(bH);
-      // Přeměření po vykreslení fontů
-      setTimeout(function() {
-        var newH = banner.offsetHeight;
-        if (newH && newH !== bH) {
-          adjustLayout(newH);
+      adjustLayout();
+      setTimeout(adjustLayout, 50);
+      setTimeout(adjustLayout, 200);
+      window.addEventListener('resize', adjustLayout);
+
+      function formatDiff(diffMs) {
+        if (diffMs <= 0) return null;
+        var days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+        var minutes = Math.floor((diffMs / 1000 / 60) % 60);
+        var seconds = Math.floor((diffMs / 1000) % 60);
+
+        function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+        if (days > 0) {
+          return days + 'd ' + pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
         }
-      }, 100);
+        if (hours > 0) {
+          return pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+        }
+        return pad(minutes) + ':' + pad(seconds);
+      }
 
-      if (earliestExp) {
-        var timerEl = document.getElementById('kk-timer-val');
+      function updateAllCountdowns() {
+        var currentNow = Date.now();
+        var allItems = itemsContainer.querySelectorAll('.kk-banner-item');
 
-        function updateCountdown() {
-          var now = Date.now();
-          var diff = earliestExp - now;
+        if (allItems.length === 0) {
+          clearInterval(timerInterval);
+          closeEntireBanner();
+          return;
+        }
+
+        allItems.forEach(function(el) {
+          var untilStr = el.getAttribute('data-until');
+          if (!untilStr) return;
+
+          var expTime = new Date(untilStr).getTime();
+          var diff = expTime - currentNow;
 
           if (diff <= 0) {
-            clearInterval(interval);
-            banner.style.opacity = '0';
-            banner.style.transform = 'translateY(-100%)';
-            document.body.style.paddingTop = '';
-            if (header) header.style.top = '';
-            setTimeout(function() { banner.remove(); }, 400);
-            return;
-          }
-
-          var days = Math.floor(diff / (1000 * 60 * 60 * 24));
-          var hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-          var minutes = Math.floor((diff / 1000 / 60) % 60);
-          var seconds = Math.floor((diff / 1000) % 60);
-
-          function pad(n) { return n < 10 ? '0' + n : n; }
-
-          var timeString = '';
-          if (days > 0) {
-            timeString = days + 'd ' + pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+            // Tento konkrétní kód vypršel -> plynule ho odstraníme
+            el.style.opacity = '0';
+            el.style.transform = 'scale(0.85)';
+            setTimeout(function() {
+              el.remove();
+              adjustLayout();
+              // Pokud v banneru už nezbyl vůbec žádný kód, zavřeme celý banner
+              if (itemsContainer.querySelectorAll('.kk-banner-item').length === 0) {
+                closeEntireBanner();
+              }
+            }, 300);
           } else {
-            timeString = pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+            var valEl = el.querySelector('.kk-countdown-val');
+            if (valEl) {
+              valEl.textContent = formatDiff(diff);
+            }
           }
-
-          if (timerEl) timerEl.textContent = timeString;
-        }
-
-        updateCountdown();
-        var interval = setInterval(updateCountdown, 1000);
+        });
       }
+
+      function closeEntireBanner() {
+        clearInterval(timerInterval);
+        window.removeEventListener('resize', adjustLayout);
+        banner.style.opacity = '0';
+        banner.style.transform = 'translateY(-100%)';
+        document.body.style.removeProperty('padding-top');
+        if (header) header.style.removeProperty('top');
+        setTimeout(function() { banner.remove(); }, 400);
+      }
+
+      updateAllCountdowns();
+      var timerInterval = setInterval(updateAllCountdowns, 1000);
     })
     .catch(function(e) {
       console.warn('Banner nelze načíst:', e);
