@@ -29,11 +29,14 @@ export async function onRequestGet(context) {
 
     // ── Veřejné načtení aktivních kódů pro horní banner ──
     if (url.searchParams.get('banner') === '1') {
-      const now = new Date();
+      const nowMs = Date.now();
       const bannerCodes = codes.filter(c => {
         if (!c.active || !c.showInBanner) return false;
         if (c.oneTime && c.used) return false;
-        if (c.validUntil && new Date(c.validUntil) <= now) return false;
+        if (c.validUntil) {
+          const expMs = new Date(c.validUntil).getTime();
+          if (!isNaN(expMs) && expMs <= nowMs) return false;
+        }
         return true;
       }).map(c => {
         let label = c.bannerLabel ? c.bannerLabel.trim() : '';
@@ -89,10 +92,13 @@ export async function onRequestGet(context) {
     }
 
     // Kontrola vypršení platnosti podle času
-    if (found.validUntil && new Date(found.validUntil) <= new Date()) {
-      return new Response(JSON.stringify({ valid: false, message: 'Platnost tohoto slevového kódu již vypršela.' }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
+    if (found.validUntil) {
+      const expMs = new Date(found.validUntil).getTime();
+      if (!isNaN(expMs) && expMs <= Date.now()) {
+        return new Response(JSON.stringify({ valid: false, message: 'Platnost tohoto slevového kódu již vypršela.' }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     if (found.oneTime && found.used) {
