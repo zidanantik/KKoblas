@@ -721,6 +721,9 @@ export async function onRequestPost(context) {
       const cleanPhone = (client.kupujici.telefon || '').replace(/[^\d+]/g, '');
       const waLink = cleanPhone.startsWith('+') ? `https://wa.me/${cleanPhone.replace('+', '')}` : `https://wa.me/420${cleanPhone}`;
 
+      // Zjištění souhlasu z profilu klienta
+      const hasConsent = Boolean(client.souhlas_reference === true || diag.souhlas_reference === true);
+
       let paidTitle = client.is_installment 
         ? `✅ ZAPLACENO: 1. splátka (1/${client.total_installments}) – ${packageName} – ${client.kupujici.jmeno}`
         : `✅ ZAPLACENO: ${packageName} – ${client.kupujici.jmeno}`;
@@ -748,7 +751,17 @@ export async function onRequestPost(context) {
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Pohlaví</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.pohlavi || '—'}</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Výška</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.vyska ? diag.vyska + ' cm' : '—'}</td></tr>
             <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Váha</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.vaha ? diag.vaha + ' kg' : '—'}</td></tr>
+            ${diag.obvod_pasu ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod pasu</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.obvod_pasu} cm</td></tr>` : ''}
+            ${diag.obvod_boku ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Obvod boků</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${diag.obvod_boku} cm</td></tr>` : ''}
             ${diag.zprava ? `<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Cíl / zpráva</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${diag.zprava}</td></tr>` : ''}
+            
+            <tr><td colspan="2" style="background:#1a1a1a;color:#f39c12;padding:10px 14px;font-weight:bold;">Marketingový souhlas (Reference)</td></tr>
+            <tr>
+              <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Souhlas s referencemi</td>
+              <td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;color:${hasConsent ? '#2ecc71' : '#e74c3c'};">
+                ${hasConsent ? '✅ ANO (udělen – anonymní grafy/fotky)' : '❌ NE (neudělen)'}
+              </td>
+            </tr>
           </table>
         </div>
       `;
