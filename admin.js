@@ -549,7 +549,7 @@ async function deleteClientRow(idKey) {
   if (!confirm('Opravdu trvale smazat tohoto klienta?')) return;
   try {
     var res = await fetch('/api/clients', {
-      method: 'DELETE',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-admin-pass': getAdminAuthPass()
@@ -566,6 +566,20 @@ async function deleteClientRow(idKey) {
 
 // ── Slevové a dárkové kódy ───────────────────────
 var loadedCodesCache = [];
+
+// Pomocná funkce pro rychlé testování (přidá k aktuálnímu času daný počet vteřin)
+function setQuickTestSeconds(sec) {
+  var d = new Date(Date.now() + sec * 1000);
+  var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+  var val = d.getFullYear() + '-' 
+    + pad(d.getMonth() + 1) + '-' 
+    + pad(d.getDate()) + 'T' 
+    + pad(d.getHours()) + ':' 
+    + pad(d.getMinutes()) + ':' 
+    + pad(d.getSeconds());
+  var input = document.getElementById('newPromoValidUntil');
+  if (input) input.value = val;
+}
 
 function handlePromoTypeChange() {
   var type = document.getElementById('newPromoType').value;
@@ -874,11 +888,11 @@ async function loadPromoCodes() {
 
   var pass = getAdminAuthPass();
   if (!pass) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff9900;">Pro zobrazení kódů zadejte heslo v přihlašovacím okně.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #ff9900;">Pro zobrazení kódů zadejte heslo v přihlašovacím okně.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">Načítám kódy z Cloudflare KV...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #888;">Načítám kódy z Cloudflare KV...</td></tr>';
 
   try {
     var res = await fetch('/api/codes', {
@@ -889,16 +903,18 @@ async function loadPromoCodes() {
     loadedCodesCache = codes || [];
     renderPromoCodesList(loadedCodesCache);
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání kódů: ' + err.message + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #ff5555;">Chyba při načítání kódů: ' + err.message + '</td></tr>';
   }
 }
 
 function renderPromoCodesList(codes) {
   var tbody = document.getElementById('promoCodesTableBody');
   if (!codes || codes.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #777;">Zatím nejsou vytvořeny žádné slevové ani dárkové kódy.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #777;">Zatím nejsou vytvořeny žádné slevové ani dárkové kódy.</td></tr>';
     return;
   }
+
+  var now = new Date();
 
   tbody.innerHTML = codes.map(function(c) {
     var typeLabel = '';
@@ -924,32 +940,60 @@ function renderPromoCodesList(codes) {
         ? '<span style="color: #e74c3c; font-weight: bold;">Uplatněn (' + count + '×)</span>' 
         : '<span style="color: #2ecc71;">Jednorázový (0×)</span>';
     } else {
-      usage = '<span style="color: #3498db;">Neomezený</span> <strong style="color: #ff9900; margin-left: 4px;">(' + count + '×)</strong>';
+      usage = '<span style="color: #3498db;">Neomezený</span> <strong style="color: #ff9900; margin-left: 4px;">(' + count + '× využito)</strong>';
+    }
+
+    // Stav expirace a banneru
+    var isExpired = c.validUntil && new Date(c.validUntil) <= now;
+    var bannerStatus = '';
+
+    if (c.showInBanner) {
+      bannerStatus += '<span style="color: #ff9900; font-weight: bold;">📢 V banneru</span>';
+      if (c.bannerLabel) {
+        bannerStatus += '<div style="font-size: 10px; color: #bbb;">„' + c.bannerLabel + '“</div>';
+      }
+    } else {
+      bannerStatus += '<span style="color: #666;">○ Bez banneru</span>';
+    }
+
+    var expiryHtml = '';
+    if (c.validUntil) {
+      var expD = new Date(c.validUntil);
+      var expStr = expD.toLocaleDateString('cs-CZ') + ' ' + expD.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+      if (isExpired) {
+        expiryHtml = '<div style="color: #e74c3c; font-size: 10px; margin-top: 3px;">⚠ Vypršel: ' + expStr + '</div>';
+      } else {
+        expiryHtml = '<div style="color: #2ecc71; font-size: 10px; margin-top: 3px;">⏳ Do: ' + expStr + '</div>';
+      }
+    } else {
+      expiryHtml = '<div style="color: #666; font-size: 10px; margin-top: 3px;">Bez časového limitu</div>';
+    }
+
+    var statusHtml = '';
+    if (isExpired) {
+      statusHtml = '<span style="color: #e74c3c; font-weight: bold;">✕ Expirován</span>';
+    } else if (c.active) {
+      statusHtml = '<span style="color: #2ecc71;">● Aktivní</span>';
+    } else {
+      statusHtml = '<span style="color: #666;">○ Vypnut</span>';
     }
 
     var toggleBtn = c.active 
       ? '<button onclick="togglePromoCodeActive(\'' + c.id + '\', false)" style="background: transparent; border: 1px solid #444; color: #bbb; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Vypnout</button>'
       : '<button onclick="togglePromoCodeActive(\'' + c.id + '\', true)" style="background: rgba(46,204,113,0.15); border: 1px solid #2ecc71; color: #2ecc71; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Aktivovat</button>';
 
-    var printBtn = '<button onclick="printVoucherModal(\'' + c.id + '\')" title="Tisk / PDF voucher" style="background: #151515; border: 1px solid #c88a2c; color: #ff9900; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">🖨 TISK</button>';
+    var bannerToggleBtn = c.showInBanner
+      ? '<button onclick="togglePromoBanner(\'' + c.id + '\', false)" title="Vypnout z banneru" style="background: rgba(255,153,0,0.15); border: 1px solid #ff9900; color: #ff9900; padding: 4px 6px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">📢 Vypnout banner</button>'
+      : '<button onclick="togglePromoBanner(\'' + c.id + '\', true)" title="Zapnout do banneru" style="background: transparent; border: 1px solid #555; color: #aaa; padding: 4px 6px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">📢 Do banneru</button>';
 
-    var timeStr = '';
-    if (c.createdAt) {
-      var d = new Date(c.createdAt);
-      if (!isNaN(d.getTime())) {
-        timeStr = d.toLocaleDateString('cs-CZ') + ' v ' + d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-      }
-    }
+    var printBtn = '<button onclick="printVoucherModal(\'' + c.id + '\')" title="Tisk / PDF voucher" style="background: #151515; border: 1px solid #c88a2c; color: #ff9900; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">🖨 TISK</button>';
 
     var extraInfo = '';
     if (c.note) {
       extraInfo += '<div style="font-size: 10px; color: #ff9900; margin-top: 3px;">Koupil: <strong>' + c.note + '</strong></div>';
     }
-    if (timeStr) {
-      extraInfo += '<div style="font-size: 10px; color: #888; margin-top: 2px;">Vytvořeno: ' + timeStr + '</div>';
-    }
 
-    return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">'
+    return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);' + (isExpired ? 'opacity: 0.7;' : '') + '">'
       + '<td style="padding: 10px;">'
       +   '<div style="display: flex; align-items: center; gap: 8px;">'
       +     '<span style="font-weight: bold; color: #ff9900;">' + c.code + '</span>'
@@ -959,9 +1003,11 @@ function renderPromoCodesList(codes) {
       + '</td>'
       + '<td style="padding: 10px;">' + typeLabel + '</td>'
       + '<td style="padding: 10px; color: #aaa;">' + pkgs + '</td>'
+      + '<td style="padding: 10px;">' + bannerStatus + expiryHtml + '</td>'
       + '<td style="padding: 10px;">' + usage + '</td>'
-      + '<td style="padding: 10px;">' + (c.active ? '<span style="color: #2ecc71;">● Aktivní</span>' : '<span style="color: #666;">○ Vypnut</span>') + '</td>'
-      + '<td style="padding: 10px; text-align: right; display: flex; gap: 6px; justify-content: flex-end;">'
+      + '<td style="padding: 10px;">' + statusHtml + '</td>'
+      + '<td style="padding: 10px; text-align: right; display: flex; gap: 6px; justify-content: flex-end; align-items: center;">'
+      +   bannerToggleBtn
       +   printBtn
       +   toggleBtn
       +   '<button onclick="deletePromoCode(\'' + c.id + '\')" style="background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 11px;">Smazat</button>'
@@ -977,6 +1023,9 @@ async function createNewPromoCode() {
   var oneTime = document.getElementById('newPromoOneTime').checked;
   var splatky = document.getElementById('newPromoSplatky') ? document.getElementById('newPromoSplatky').checked : false;
   var darekOnly = document.getElementById('newPromoDarekOnly') ? document.getElementById('newPromoDarekOnly').checked : false;
+  var showInBanner = document.getElementById('newPromoShowInBanner') ? document.getElementById('newPromoShowInBanner').checked : false;
+  var validUntil = document.getElementById('newPromoValidUntil') ? document.getElementById('newPromoValidUntil').value : '';
+  var bannerLabel = document.getElementById('newPromoBannerLabel') ? document.getElementById('newPromoBannerLabel').value.trim() : '';
 
   var pkgCheckboxes = document.querySelectorAll('.promo-pkg-cb:checked');
   var packages = Array.from(pkgCheckboxes).map(function(cb) { return cb.value; });
@@ -1004,6 +1053,9 @@ async function createNewPromoCode() {
     splatky: splatky, 
     darekOnly: darekOnly, 
     packages: packages,
+    showInBanner: showInBanner,
+    validUntil: validUntil || null,
+    bannerLabel: bannerLabel,
     usedCount: 0
   };
 
@@ -1020,6 +1072,9 @@ async function createNewPromoCode() {
 
     document.getElementById('newPromoCode').value = '';
     document.getElementById('newPromoValue').value = '';
+    if (document.getElementById('newPromoValidUntil')) document.getElementById('newPromoValidUntil').value = '';
+    if (document.getElementById('newPromoBannerLabel')) document.getElementById('newPromoBannerLabel').value = '';
+    if (document.getElementById('newPromoShowInBanner')) document.getElementById('newPromoShowInBanner').checked = false;
     
     var splatkyEl = document.getElementById('newPromoSplatky');
     if (splatkyEl) splatkyEl.checked = false;
@@ -1055,6 +1110,22 @@ async function togglePromoCodeActive(id, activeState) {
     loadPromoCodes();
   } catch (err) {
     alert('Chyba při změně stavu: ' + err.message);
+  }
+}
+
+async function togglePromoBanner(id, bannerState) {
+  try {
+    await fetch('/api/codes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pass': getAdminAuthPass()
+      },
+      body: JSON.stringify({ id: id, showInBanner: bannerState })
+    });
+    loadPromoCodes();
+  } catch (err) {
+    alert('Chyba při změně banneru: ' + err.message);
   }
 }
 
