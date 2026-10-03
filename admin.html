@@ -285,17 +285,19 @@
             </label>
           </div>
 
-          <!-- Výběr času expirace s rychlými testovacími tlačítky -->
+          <!-- Výběr času expirace s rychlými a praktickými tlačítky -->
           <label class="event-label">Platnost do (datum a čas odpočtu)
             <input type="datetime-local" id="newPromoValidUntil" class="event-input" step="1" style="color-scheme: dark;">
-            <div style="display: flex; gap: 6px; margin-top: 5px;">
-              <button type="button" onclick="setQuickTestSeconds(15)" style="background: #222; border: 1px solid #444; color: #ff9900; padding: 2px 8px; border-radius: 3px; font-family: monospace; font-size: 10px; cursor: pointer;">⚡ +15s</button>
-              <button type="button" onclick="setQuickTestSeconds(30)" style="background: #222; border: 1px solid #444; color: #ff9900; padding: 2px 8px; border-radius: 3px; font-family: monospace; font-size: 10px; cursor: pointer;">⚡ +30s</button>
-              <button type="button" onclick="setQuickTestSeconds(60)" style="background: #222; border: 1px solid #444; color: #ff9900; padding: 2px 8px; border-radius: 3px; font-family: monospace; font-size: 10px; cursor: pointer;">⚡ +1 min</button>
+            <div style="display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap;">
+              <button type="button" onclick="addQuickTime(1)" style="background: #1a1a1a; border: 1px solid #c88a2c; color: #ffaa22; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; cursor: pointer;">⚡ +1 min</button>
+              <button type="button" onclick="addQuickTime(2)" style="background: #1a1a1a; border: 1px solid #c88a2c; color: #ffaa22; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; cursor: pointer;">⚡ +2 min</button>
+              <button type="button" onclick="addQuickTime(5)" style="background: #1a1a1a; border: 1px solid #c88a2c; color: #ffaa22; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; cursor: pointer;">⚡ +5 min</button>
+              <button type="button" onclick="addQuickTime(60)" style="background: #1a1a1a; border: 1px solid #555; color: #bbb; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; cursor: pointer;">+1 hod</button>
+              <button type="button" onclick="addQuickTime(1440)" style="background: #1a1a1a; border: 1px solid #555; color: #bbb; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; cursor: pointer;">+24 hod</button>
             </div>
           </label>
 
-          <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; padding-bottom: 4px;">
+          <div style="display: flex; flex-direction: column; gap: 10px; justify-content: flex-end; padding-bottom: 4px;">
             <label class="event-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
               <input type="checkbox" id="newPromoOneTime" checked style="accent-color: #ff9900; width: 16px; height: 16px;">
               Jednorázový kód
@@ -384,6 +386,6 @@
 
   </div>
 
-  <script src="admin.js?v=9"></script>
+  <script src="admin.js?v=10"></script>
 </body>
 </html>
