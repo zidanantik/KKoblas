@@ -131,6 +131,22 @@
       background: #ffaa22;
       box-shadow: 0 0 14px rgba(255, 153, 0, 0.4);
     }
+    .promo-clear-btn {
+      height: 44px;
+      background: #222;
+      color: #ff5555;
+      border: 1px solid #444;
+      font-weight: bold;
+      padding: 0 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+    .promo-clear-btn:hover {
+      background: #333;
+      border-color: #ff5555;
+    }
     .promo-feedback {
       font-size: 12px;
       margin-top: 10px;
@@ -271,6 +287,14 @@
       background: rgba(255, 153, 0, 0.05);
     }
 
+    /* Vizuální stav disabled pro neaktivní tlačítko */
+    .btn-disabled-dim {
+      opacity: 0.25 !important;
+      pointer-events: none !important;
+      filter: grayscale(80%);
+      cursor: not-allowed;
+    }
+
     /* Vizuální stavy při uplatnění dárkového kódu */
     .pkg-box.pkg-card--voucher-match {
       border: 2px solid #ffaa22 !important;
@@ -354,6 +378,7 @@
       <div class="promo-row">
         <input type="text" id="landingPromoInput" class="promo-input" placeholder="ZADEJ SLEVOVÝ KÓD" autocomplete="off">
         <button type="button" id="landingPromoBtn" class="promo-btn">UPLATNIT</button>
+        <button type="button" id="landingClearBtn" class="promo-clear-btn" title="Zrušit kód" hidden>ZRUŠIT</button>
       </div>
       <div id="landingPromoMsg" class="promo-feedback" hidden></div>
     </div>
@@ -366,7 +391,7 @@
         <h2 class="pkg-title">START-UP</h2>
         <p class="pkg-sub">1 měsíc · Profi odrazový můstek</p>
         <div class="pkg-price-row">
-          <div id="price-startup" class="pkg-price">6 900 Kč</div>
+          <div id="price-startup" class="pkg-price" data-base="6900">6 900 Kč</div>
           <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
         </div>
         <ul class="pkg-features">
@@ -392,7 +417,7 @@
         <h2 class="pkg-title">MENTORING</h2>
         <p class="pkg-sub">4 měsíce · Individuální vedení</p>
         <div class="pkg-price-row">
-          <div id="price-mentoring" class="pkg-price">14 700 Kč</div>
+          <div id="price-mentoring" class="pkg-price" data-base="14700">14 700 Kč</div>
           <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
         </div>
         <ul class="pkg-features">
@@ -417,7 +442,7 @@
         <h2 class="pkg-title">ULTIMATE</h2>
         <p class="pkg-sub">6 měsíců · Maximální výkon & biohacking</p>
         <div class="pkg-price-row">
-          <div id="price-ultimate" class="pkg-price">22 300 Kč</div>
+          <div id="price-ultimate" class="pkg-price" data-base="22300">22 300 Kč</div>
           <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
         </div>
         <ul class="pkg-features">
@@ -485,9 +510,10 @@
           console.warn('Nelze načíst status kapacity:', e);
         });
 
-      // 2. Logika slevového kódu a přepínání tlačítek (dar vs. běžný nákup)
+      // 2. Logika slevového kódu, ztlumení tlačítek a funkce zrušit
       var promoInput = document.getElementById('landingPromoInput');
       var promoBtn   = document.getElementById('landingPromoBtn');
+      var clearBtn   = document.getElementById('landingClearBtn');
       var promoMsg   = document.getElementById('landingPromoMsg');
 
       function formatKc(num) {
@@ -498,6 +524,30 @@
         promoMsg.hidden = false;
         promoMsg.className = 'promo-feedback promo-feedback--' + type;
         promoMsg.textContent = txt;
+      }
+
+      function resetPromo() {
+        promoInput.value = '';
+        promoMsg.hidden = true;
+        clearBtn.hidden = true;
+
+        ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
+          var priceEl = document.getElementById('price-' + pkg);
+          var box = document.getElementById('box-' + pkg);
+          var btn = document.getElementById('btn-' + pkg);
+          var btnGift = document.getElementById('btngift-' + pkg);
+          if (!priceEl || !box || !btn || !btnGift) return;
+
+          box.classList.remove('pkg-card--voucher-match', 'is-dimmed');
+          btn.classList.remove('btn-disabled-dim');
+          btnGift.classList.remove('btn-disabled-dim');
+
+          priceEl.textContent = formatKc(basePrices[pkg]);
+          btn.textContent = 'Objednat ' + (pkg === 'startup' ? 'Start-up' : (pkg === 'mentoring' ? 'Mentoring' : 'Ultimate')) + ' →';
+          btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg);
+          btnGift.textContent = '🎁 Objednat jako dárek';
+          btnGift.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&darek=1');
+        });
       }
 
       async function checkAndApplyCode(codeVal) {
@@ -519,6 +569,7 @@
           }
 
           promoInput.value = data.code;
+          clearBtn.hidden = false;
 
           var isGiftVoucher = data.type === 'gift' || (data.type === 'percent' && Number(data.value) >= 100);
           var isDarekOnly = Boolean(data.darekOnly);
@@ -531,37 +582,37 @@
             var btnGift = document.getElementById('btngift-' + pkg);
             if (!priceEl || !box || !btn || !btnGift) return;
 
-            // Reset grafiky před aplikací nového kódu
+            // Reset před aplikací
             box.classList.remove('pkg-card--voucher-match', 'is-dimmed');
-            btn.style.display = 'block';
-            btnGift.style.display = 'block';
+            btn.classList.remove('btn-disabled-dim');
+            btnGift.classList.remove('btn-disabled-dim');
 
             if (allowed.includes(pkg)) {
               if (isGiftVoucher) {
-                if (closedMap[pkg]) {
-                  box.classList.remove('is-closed');
-                }
+                if (closedMap[pkg]) box.classList.remove('is-closed');
                 box.classList.add('pkg-card--voucher-match');
 
                 var orig = basePrices[pkg];
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> 0 Kč';
+                
+                // Objednat se aktivuje jako 0 Kč voucher, dárek ztmavíme
                 btn.textContent = 'Aktivovat voucher (0 Kč) →';
                 btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
-                btnGift.style.display = 'none'; // U 100% voucheru dárek nepotřebuje kupovat
+                btnGift.classList.add('btn-disabled-dim');
 
               } else if (isDarekOnly) {
-                // Kód je striktně pro nákup dárku
+                // Kód je jen pro dárek -> ztmavíme běžnou objednávku, dárek dostane slevu
                 var orig = basePrices[pkg];
                 var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
                 var finalP = Math.max(0, orig - disc);
 
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
-                btn.style.display = 'none'; // Skryjeme běžnou objednávku
+                btn.classList.add('btn-disabled-dim');
                 btnGift.textContent = '🎁 Objednat dárek se slevou →';
                 btnGift.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&darek=1&kod=' + data.code);
 
               } else {
-                // Běžná sleva
+                // Běžná sleva -> ztmavíme dárkové tlačítko, běžná objednávka dostane slevu
                 var orig = basePrices[pkg];
                 var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
                 var finalP = Math.max(0, orig - disc);
@@ -569,7 +620,7 @@
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
                 btn.textContent = 'Objednat se slevou →';
                 btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
-                btnGift.style.display = 'none'; // Skryjeme dárkové tlačítko, pokud jde o slevu pro sebe
+                btnGift.classList.add('btn-disabled-dim');
               }
             } else {
               box.classList.add('is-dimmed');
@@ -585,6 +636,7 @@
       }
 
       promoBtn.addEventListener('click', function() { checkAndApplyCode(); });
+      clearBtn.addEventListener('click', function() { resetPromo(); });
       promoInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
