@@ -105,7 +105,13 @@
       }
     }
 
-    /* Zneplatnění a ztlumení klasického nákupu a splátek při dárkové akci */
+    /* Ztlumení celé neaktivní karty */
+    .pkg-card.is-dimmed {
+      opacity: 0.35 !important;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Zneplatnění a ztlumení neaktivních tlačítek */
     .btn--dimmed-gift-mode {
       opacity: 0.22 !important;
       filter: grayscale(1) !important;
@@ -461,7 +467,7 @@
 
   <script src="script.js"></script>
   <script src="sluzby.js"></script>
-  <script src="banner.js?v=3" defer></script>
+  <script src="banner.js?v=4" defer></script>
   <script>
     (function () {
       function parseKc(str) {
@@ -702,7 +708,7 @@
                 var inbEl = document.getElementById('inbody-' + s);
                 if (inbEl) inbEl.textContent = 'Sleva ' + (data.type === 'percent' ? data.value + ' %' : fmtKc(data.value)) + ' platí výhradně na dárkový poukaz';
 
-                // Zneplatníme tlačítka běžného nákupu a splátek
+                // Zneplatníme tlačítka běžného nákupu a splátek na tomto balíčku
                 if (bOrder) {
                   bOrder.classList.add('btn--dimmed-gift-mode');
                   bOrder.textContent = 'Nelze uplatnit pro sebe';
@@ -719,13 +725,28 @@
                   g.href = 'objednavka.html?sluzba=' + s + '&platba=jednorizove&darek=1&kod=' + encodeURIComponent(data.code);
                 }
               } else {
+                // OSTATNÍ BALÍČKY: Zcela deaktivujeme všechny možnosti nákupu
                 if (card) card.classList.add('is-dimmed');
-                if (g) g.style.display = 'none';
+                var orig = currentPrices[s].jed;
+                setHtml('price-' + s, fmtKc(orig) + ' <small style="display:block;font-size:11px;color:#888;font-weight:normal;font-family:sans-serif;margin-top:4px;">(Kód na tuto službu neplatí)</small>');
+
+                if (bOrder) {
+                  bOrder.classList.add('btn--dimmed-gift-mode');
+                  bOrder.textContent = 'Kód neplatí na tuto službu';
+                }
+                if (bSpl) {
+                  bSpl.classList.add('btn--dimmed-gift-mode');
+                }
+                if (g) {
+                  g.classList.add('btn--dimmed-gift-mode');
+                  g.textContent = 'Kód neplatí na tento dárkový poukaz';
+                }
               }
             });
 
             var discountLabel = data.type === 'percent' ? data.value + ' %' : fmtKc(data.value);
-            showStatus('🎁 Dárková sleva ' + discountLabel + ' aktivována! Vyber dárkový poukaz níže.', 'ok');
+            var giftPkgs = allowedPkgs.map(function(p){ return pkgTitles[p] || p.toUpperCase(); }).join(' a ');
+            showStatus('🎁 Dárková sleva ' + discountLabel + ' aktivována pro: ' + giftPkgs + '! Vyber dárkový poukaz níže.', 'ok');
 
             var firstCard = document.getElementById('card-' + allowedPkgs[0]) || document.getElementById('packages');
             if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -734,14 +755,31 @@
           } else if (isSplatkyCode) {
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
               var card = document.getElementById('card-' + s);
-              if (s === 'startup') {
+              var bOrder = document.getElementById('btn-' + s + '-order') || document.getElementById('btn-' + s + '-jed');
+              var bSpl = document.getElementById('btn-' + s + '-spl');
+              var g = document.getElementById('btn-' + s + '-gift');
+
+              if (s === 'startup' || !allowedPkgs.includes(s)) {
                 if (card) card.classList.add('is-dimmed');
-              } else if (allowedPkgs.includes(s)) {
+                if (bOrder) {
+                  bOrder.classList.add('btn--dimmed-gift-mode');
+                  bOrder.textContent = 'Kód neplatí na tuto službu';
+                }
+                if (bSpl) bSpl.classList.add('btn--dimmed-gift-mode');
+                if (g) g.classList.add('btn--dimmed-gift-mode');
+              } else {
+                if (bOrder) {
+                  bOrder.classList.add('btn--dimmed-gift-mode');
+                  bOrder.textContent = 'Platí pouze na splátky';
+                }
+                if (g) {
+                  g.classList.add('btn--dimmed-gift-mode');
+                }
+
                 var origSpl = currentPrices[s].spl;
                 var discount = data.type === 'percent' ? Math.round(origSpl * (Number(data.value) / 100)) : Number(data.value);
                 var finalSpl = Math.max(0, origSpl - discount);
 
-                var bSpl = document.getElementById('btn-' + s + '-spl');
                 if (bSpl) {
                   bSpl.innerHTML = 'Chci na splátky – 1. platba <span style="text-decoration:line-through;color:#aaa;margin-right:4px;">' + fmtKc(origSpl) + '</span><span style="color:#ff9900;font-weight:bold;">' + fmtKc(finalSpl) + '</span>';
                   bSpl.href = 'objednavka.html?sluzba=' + s + '&platba=splatky&kod=' + encodeURIComponent(data.code);
@@ -749,8 +787,6 @@
 
                 var inbEl = document.getElementById('inbody-' + s);
                 if (inbEl) inbEl.textContent = 'V ceně je navíc odečteno ' + fmtKc(INBODY_AMOUNTS[s]) + ' na InBody';
-              } else {
-                if (card) card.classList.add('is-dimmed');
               }
             });
 
@@ -764,6 +800,10 @@
 
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
               var card = document.getElementById('card-' + s);
+              var bOrder = document.getElementById('btn-' + s + '-order') || document.getElementById('btn-' + s + '-jed');
+              var bSpl = document.getElementById('btn-' + s + '-spl');
+              var g = document.getElementById('btn-' + s + '-gift');
+
               if (s === targetPkg) {
                 if (card) {
                   card.classList.add('pkg-card--voucher-match');
@@ -771,6 +811,9 @@
                 }
               } else {
                 if (card) card.classList.add('is-dimmed');
+                if (bOrder) bOrder.classList.add('btn--dimmed-gift-mode');
+                if (bSpl) bSpl.classList.add('btn--dimmed-gift-mode');
+                if (g) g.classList.add('btn--dimmed-gift-mode');
               }
             });
 
@@ -837,6 +880,9 @@
           } else {
             ['startup', 'mentoring', 'ultimate'].forEach(function(s) {
               var card = document.getElementById('card-' + s);
+              var bOrder = document.getElementById('btn-' + s + '-order') || document.getElementById('btn-' + s + '-jed');
+              var bSpl = document.getElementById('btn-' + s + '-spl');
+              var g = document.getElementById('btn-' + s + '-gift');
 
               if (allowedPkgs.includes(s)) {
                 var orig = currentPrices[s].jed;
@@ -852,35 +898,39 @@
                 }
 
                 if (s === 'startup') {
-                  var b = document.getElementById('btn-startup-order');
-                  if (b) {
-                    b.textContent = 'Objednat za ' + fmtKc(finalP);
-                    b.href = 'objednavka.html?sluzba=startup&kod=' + encodeURIComponent(data.code);
+                  if (bOrder) {
+                    bOrder.textContent = 'Objednat za ' + fmtKc(finalP);
+                    bOrder.href = 'objednavka.html?sluzba=startup&kod=' + encodeURIComponent(data.code);
                   }
                 } else if (s === 'mentoring') {
-                  var b = document.getElementById('btn-mentoring-jed');
-                  if (b) {
-                    b.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
-                    b.href = 'objednavka.html?sluzba=mentoring&platba=jednorizove&kod=' + encodeURIComponent(data.code);
+                  if (bOrder) {
+                    bOrder.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
+                    bOrder.href = 'objednavka.html?sluzba=mentoring&platba=jednorizove&kod=' + encodeURIComponent(data.code);
                   }
                 } else if (s === 'ultimate') {
-                  var b = document.getElementById('btn-ultimate-jed');
-                  if (b) {
-                    b.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
-                    b.href = 'objednavka.html?sluzba=ultimate&platba=jednorizove&kod=' + encodeURIComponent(data.code);
+                  if (bOrder) {
+                    bOrder.textContent = 'Koupit jednorázově za ' + fmtKc(finalP);
+                    bOrder.href = 'objednavka.html?sluzba=ultimate&platba=jednorizove&kod=' + encodeURIComponent(data.code);
                   }
                 }
 
-                // DÁRKOVÝ POUKAZ ZŮSTÁVÁ BEZ KÓDU
-                var g = document.getElementById('btn-' + s + '-gift');
+                // Dárkový poukaz zůstává bez kódu
                 if (g) {
-                  g.href = 'objednavka.html?sluzba=' + s + '&platba=jednorizove&darek=1';
+                  g.classList.add('btn--dimmed-gift-mode');
+                  g.textContent = 'Sleva neplatí na dárkový poukaz';
                 }
 
               } else {
                 if (card) card.classList.add('is-dimmed');
                 var orig = currentPrices[s].jed;
                 setHtml('price-' + s, fmtKc(orig) + ' <small style="display:block;font-size:11px;color:#888;font-weight:normal;font-family:sans-serif;margin-top:4px;">(Kód na tento balíček neplatí)</small>');
+
+                if (bOrder) {
+                  bOrder.classList.add('btn--dimmed-gift-mode');
+                  bOrder.textContent = 'Kód neplatí na tuto službu';
+                }
+                if (bSpl) bSpl.classList.add('btn--dimmed-gift-mode');
+                if (g) g.classList.add('btn--dimmed-gift-mode');
               }
             });
 
