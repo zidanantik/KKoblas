@@ -71,7 +71,7 @@ export async function onRequestGet(context) {
       });
     }
 
-    // ── Veřejné ověření kódu v objednávkovém formuláři ──
+    // ── Veřejné ověření kódu ──
     const codeParam = (url.searchParams.get('code') || '').trim().toUpperCase();
     const pkgParam = normalizePkg(url.searchParams.get('package') || url.searchParams.get('sluzba') || '');
     const modeSplatky = url.searchParams.get('splatky') === 'true';
@@ -107,31 +107,32 @@ export async function onRequestGet(context) {
       });
     }
 
-    // Validace typu platby (splátky vs. jednorázově)
-    if (found.splatky && url.searchParams.has('splatky') && !modeSplatky) {
-      return new Response(JSON.stringify({ valid: false, message: 'Tento kód platí pouze pro platbu na splátky.' }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    if (!found.splatky && url.searchParams.has('splatky') && modeSplatky) {
-      return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na splátky.' }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // ── STRIKTNÍ ODDĚLENÍ DÁRKŮ A BĚŽNÝCH NÁKUPŮ ──
-    // 1. Kód označený pouze na dárky nesmí projít na běžný program
-    if (found.darekOnly && !modeDarek) {
-      return new Response(JSON.stringify({ valid: false, message: 'Tento kód lze uplatnit výhradně na nákup dárkového poukazu.' }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Validace typu platby na splátky (pouze při objednávce, kdy je 'splatky' v URL)
+    if (url.searchParams.has('splatky')) {
+      if (found.splatky && !modeSplatky) {
+        return new Response(JSON.stringify({ valid: false, message: 'Tento kód platí pouze pro platbu na splátky.' }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      if (!found.splatky && modeSplatky) {
+        return new Response(JSON.stringify({ valid: false, message: 'Tento kód nelze uplatnit na splátky.' }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
 
-    // 2. Běžný slevový kód nesmí projít na nákup dárkového poukazu
-    if (!found.darekOnly && modeDarek && found.type !== 'gift') {
-      return new Response(JSON.stringify({ valid: false, message: 'Tento slevový kód platí pouze pro osobní programy, nelze jej uplatnit na dárkový poukaz.' }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // ── STRIKTNÍ ODDĚLENÍ DÁRKŮ A BĚŽNÝCH NÁKUPŮ (pouze při objednávce, kdy je 'darek' v URL) ──
+    if (url.searchParams.has('darek')) {
+      if (found.darekOnly && !modeDarek) {
+        return new Response(JSON.stringify({ valid: false, message: 'Tento kód lze uplatnit výhradně na nákup dárkového poukazu.' }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      if (!found.darekOnly && modeDarek && found.type !== 'gift') {
+        return new Response(JSON.stringify({ valid: false, message: 'Tento slevový kód platí pouze pro osobní programy, nelze jej uplatnit na dárkový poukaz.' }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     // Normalizace povolených balíčků
