@@ -55,11 +55,11 @@
       align-items: center;
     }
     .landing-logo {
-      height: 205px;
+      height: 225px; /* Mírně zvětšené logo */
       width: auto;
       display: block;
       filter: drop-shadow(0 4px 18px rgba(255, 153, 0, 0.25));
-      /* Posun loga přímo na červené X (doprava a lehce dolů) */
+      /* Přesná pozice zachována */
       transform: translate(65px, 25px);
     }
     .hero-text-col {
@@ -544,7 +544,7 @@
 
   <main class="landing-wrapper">
 
-    <!-- 1. HORNÍ SEKCE: Logo posunuté na červené X | Text na střed | Portrét vpravo -->
+    <!-- 1. HORNÍ SEKCE: Logo na pozici červeného X | Text na střed | Portrét vpravo -->
     <header class="hero-compact">
       <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
@@ -697,6 +697,7 @@
 
   <script>
     (function() {
+      // Výchozí ceny přesně podle tvého adminu (žádné problikávání)
       var basePrices = {
         startup: 6900,
         mentoring: 15900,
