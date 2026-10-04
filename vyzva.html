@@ -62,6 +62,7 @@
       text-decoration: none;
       line-height: 0;
       cursor: pointer;
+      position: relative; /* Kotva pro absolutně pozicovanou čepičku */
     }
     .landing-logo {
       height: 225px;
@@ -76,6 +77,20 @@
       filter: drop-shadow(0 4px 24px rgba(255, 170, 34, 0.4));
       opacity: 0.95;
     }
+
+    /* Elegantní vánoční čepička posazená přesně na levé K v logu */
+    .santa-hat {
+      position: absolute;
+      top: 18px;    /* Vylaďeno přímo nad levý roh písmene K */
+      left: 76px;   /* Drží se nad lístky a levým K bez narušení rozvržení */
+      width: 55px;
+      height: 45px;
+      pointer-events: none;
+      z-index: 10;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5));
+      transform: rotate(-12deg);
+    }
+
     .hero-text-col {
       text-align: center;
       padding: 0 6px;
@@ -564,6 +579,10 @@
         height: 150px;
         transform: none;
       }
+      .santa-hat {
+        left: 50%;
+        transform: translateX(-35px) translateY(-10px) rotate(-10deg);
+      }
       .hero-portrait-col, .side-food-wrap, .side-right-col {
         display: none;
       }
@@ -616,8 +635,36 @@
     <!-- 1. HORNÍ SEKCE: Celý blok posunutý naráz přesně na středovou osu nad MENTORING -->
     <header class="hero-compact">
       <div class="hero-logo-col">
-        <!-- Logo odkazující v nové záložce na koblas-nutricni.cz -->
+        <!-- Logo odkazující v nové záložce na koblas-nutricni.cz s vánoční čepicí -->
         <a href="https://koblas-nutricni.cz" target="_blank" rel="noopener" class="landing-logo-link" title="Přejít na hlavní web">
+          <!-- Vánoční čepička -->
+          <svg class="santa-hat" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="santaRed" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff3333"/>
+                <stop offset="45%" stop-color="#d41414"/>
+                <stop offset="100%" stop-color="#800606"/>
+              </linearGradient>
+              <linearGradient id="santaWhite" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#d9d9d9"/>
+              </linearGradient>
+              <filter id="hatGlow" x="-20%" y="-20%" width="150%" height="150%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.5"/>
+              </filter>
+            </defs>
+            <g filter="url(#hatGlow)">
+              <path d="M 20,54 C 20,32 35,14 55,10 C 72,7 86,16 85,30 C 84,40 76,46 72,49 C 55,47 38,50 20,54 Z" fill="url(#santaRed)"/>
+              <path d="M 35,16 C 48,11 65,11 76,19 C 83,25 84,33 80,41 C 82,32 80,24 74,18 C 65,13 48,13 35,16 Z" fill="#ff6666" opacity="0.4"/>
+              <path d="M 16,52 C 14,48 18,44 24,46 C 28,42 36,42 40,45 C 44,41 52,41 56,44 C 60,40 68,40 72,43 C 76,41 82,43 84,47 C 88,51 86,57 82,60 C 78,63 72,62 68,59 C 64,63 56,64 52,60 C 48,64 40,64 36,60 C 32,63 24,63 20,59 C 15,58 14,54 16,52 Z" fill="url(#santaWhite)"/>
+              <ellipse cx="26" cy="52" rx="7" ry="5" fill="#ffffff"/>
+              <ellipse cx="42" cy="51" rx="8" ry="6" fill="#ffffff"/>
+              <ellipse cx="58" cy="51" rx="8" ry="6" fill="#ffffff"/>
+              <ellipse cx="74" cy="52" rx="7" ry="5" fill="#ffffff"/>
+              <circle cx="82" cy="38" r="9.5" fill="url(#santaWhite)"/>
+              <circle cx="80.5" cy="36.5" r="7.5" fill="#ffffff"/>
+            </g>
+          </svg>
           <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
         </a>
       </div>
