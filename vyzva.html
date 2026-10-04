@@ -78,17 +78,17 @@
       opacity: 0.95;
     }
 
-    /* Elegantní vánoční čepička posazená přesně na levé K v logu */
+    /* Vánoční čepička posazená přesně na vrchol loga KK */
     .santa-hat {
       position: absolute;
-      top: 18px;    /* Vylaďeno přímo nad levý roh písmene K */
-      left: 76px;   /* Drží se nad lístky a levým K bez narušení rozvržení */
-      width: 55px;
-      height: 45px;
+      top: -12px;
+      left: 102px;
+      width: 48px;
+      height: 38px;
       pointer-events: none;
       z-index: 10;
-      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5));
-      transform: rotate(-12deg);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+      transform: rotate(-15deg);
     }
 
     .hero-text-col {
@@ -637,7 +637,7 @@
       <div class="hero-logo-col">
         <!-- Logo odkazující v nové záložce na koblas-nutricni.cz s vánoční čepicí -->
         <a href="https://koblas-nutricni.cz" target="_blank" rel="noopener" class="landing-logo-link" title="Přejít na hlavní web">
-          <!-- Vánoční čepička -->
+          <!-- Vánoční čepička usazená přesně na logo -->
           <svg class="santa-hat" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="santaRed" x1="0%" y1="0%" x2="100%" y2="100%">
