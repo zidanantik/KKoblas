@@ -212,7 +212,7 @@
       color: #e74c3c;
     }
 
-    /* ── 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH ── */
+    /* ── 2. SEKCE BALÍČKŮ S FOTKAMI TESNE PO BOKÁCH ── */
     .packages-stage {
       display: flex;
       justify-content: center;
@@ -249,7 +249,7 @@
       display: block;
     }
 
-    /* Trojice balíčků */
+    /* Trojice balíčků (přesné fixní rozměry - nic se nehne) */
     .packages-grid {
       display: grid;
       grid-template-columns: repeat(3, 290px);
@@ -257,12 +257,20 @@
       flex-shrink: 0;
     }
 
-    /* Fotka postavy vpravo těsně u Ultimate */
+    /* Pravý sloupec s oběma fotkami */
+    .side-right-col {
+      width: 145px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex-shrink: 0;
+      margin-top: 15px;
+    }
+
+    /* 1. Fotka postavy vpravo nahoře */
     .side-physique-wrap {
       width: 145px;
       height: 255px;
-      flex-shrink: 0;
-      margin-top: 15px;
       border-radius: 12px;
       border: 1px solid rgba(255, 153, 0, 0.35);
       box-shadow: 0 10px 30px rgba(0,0,0,0.6);
@@ -277,6 +285,28 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
+    }
+
+    /* 2. Nová fotka masa ve žlutě označeném prostoru */
+    .side-meat-wrap {
+      width: 145px;
+      height: 195px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 153, 0, 0.35);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      overflow: hidden;
+      background: #0d1612;
+      transition: transform 0.25s ease;
+    }
+    .side-meat-wrap:hover {
+      transform: scale(1.03);
+    }
+    .side-meat-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
       display: block;
     }
 
@@ -494,7 +524,7 @@
         grid-template-columns: repeat(3, 270px);
         gap: 12px;
       }
-      .side-food-wrap, .side-physique-wrap {
+      .side-food-wrap, .side-right-col, .side-physique-wrap, .side-meat-wrap {
         width: 125px;
       }
     }
@@ -513,7 +543,7 @@
         height: 150px;
         transform: none;
       }
-      .hero-portrait-col, .side-food-wrap, .side-physique-wrap {
+      .hero-portrait-col, .side-food-wrap, .side-right-col {
         display: none;
       }
       .packages-stage {
@@ -532,9 +562,9 @@
         margin: 15px auto 25px;
       }
       .mobile-photo-thumb {
-        width: 100px;
-        height: 130px;
-        border-radius: 10px;
+        width: 75px;
+        height: 100px;
+        border-radius: 8px;
         overflow: hidden;
         border: 1px solid rgba(255, 153, 0, 0.35);
         box-shadow: 0 6px 18px rgba(0,0,0,0.5);
@@ -592,7 +622,7 @@
     <!-- Mobilní pás fotek (pouze na mobilu pod textem) -->
     <div class="mobile-photos-row">
       <div class="mobile-photo-thumb">
-        <img src="fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B-20260510T211134Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B/IMG_1186.webp" alt="Kryštof Koblas - sport a regenerace" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B-20260510T211134Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B/IMG_1186.jpg';}else if(this.dataset.step==1){this.dataset.step=2;this.src='IMG_1186.webp';}else if(this.dataset.step==2){this.dataset.step=3;this.src='IMG_1186.jpg';}">
+        <img src="fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B-20260510T211134Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B/IMG_1186.webp" alt="Plavání" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B-20260510T211134Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B/IMG_1186.jpg';}else if(this.dataset.step==1){this.dataset.step=2;this.src='IMG_1186.webp';}">
       </div>
       <div class="mobile-photo-thumb">
         <img src="img-1537.jpg" alt="Kryštof Koblas">
@@ -600,9 +630,12 @@
       <div class="mobile-photo-thumb">
         <img src="pepaan.webp" alt="Forma">
       </div>
+      <div class="mobile-photo-thumb">
+        <img src="fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby-20260510T210935Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby/maso-restaurace-fokta.jpg" alt="Maso z restaurace" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby-20260510T210935Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby/maso-restaurace-fotka.jpg';}else if(this.dataset.step==1){this.dataset.step=2;this.src='maso-restaurace-fokta.jpg';}">
+      </div>
     </div>
 
-    <!-- 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH -->
+    <!-- 2. SEKCE BALÍČKŮ S FOTKAMI TESNE PO BOKÁCH -->
     <section class="packages-stage">
 
       <!-- Fotka z bazénu vlevo těsně u Start-upu (se zoomem na tebe) -->
@@ -691,9 +724,14 @@
 
       </div>
 
-      <!-- Fotka postavy vpravo těsně u Ultimate -->
-      <div class="side-physique-wrap">
-        <img src="pepaan.webp" alt="Kryštof Koblas - forma">
+      <!-- Pravý sloupec: 1. Postava nahoře | 2. Maso dole na žlutě označeném místě -->
+      <div class="side-right-col">
+        <div class="side-physique-wrap">
+          <img src="pepaan.webp" alt="Kryštof Koblas - forma">
+        </div>
+        <div class="side-meat-wrap">
+          <img src="fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby-20260510T210935Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby/maso-restaurace-fokta.jpg" alt="Kvalitní výživa a pestrá strava" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby-20260510T210935Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20slu%C5%BEby/maso-restaurace-fotka.jpg';}else if(this.dataset.step==1){this.dataset.step=2;this.src='maso-restaurace-fokta.jpg';}else if(this.dataset.step==2){this.dataset.step=3;this.src='maso-restaurace-fotka.jpg';}">
+        </div>
       </div>
 
     </section>
