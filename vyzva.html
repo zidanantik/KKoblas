@@ -32,36 +32,37 @@
       overflow-x: hidden;
     }
 
-    /* Celkový rámec zarovnaný kompaktně na střed (žádné prázdné díry do stran) */
+    /* Celkový rámec zarovnaný kompaktně na střed */
     .landing-wrapper {
       max-width: 1220px;
       margin: 0 auto;
       padding: 10px 16px 40px;
     }
 
-    /* ── 1. HORNÍ BLOK (Logo vlevo | Text na střed | Portrét vpravo) ── */
+    /* ── 1. HORNÍ BLOK (Logo přisunuté k textu | Text na střed | Portrét vpravo) ── */
     .hero-compact {
       display: grid;
-      grid-template-columns: 190px 1fr 165px;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
-      gap: 20px;
-      max-width: 1020px;
+      gap: 16px;
+      max-width: 960px;
       margin: 0 auto 25px;
       padding-top: 15px;
     }
     .hero-logo-col {
       display: flex;
-      justify-content: center;
+      justify-content: flex-end; /* Přisunuto těsně k textovému bloku */
       align-items: center;
     }
     .landing-logo {
-      height: 175px;
+      height: 205px; /* Zvětšené dominantní logo */
       width: auto;
       display: block;
       filter: drop-shadow(0 4px 18px rgba(255, 153, 0, 0.25));
     }
     .hero-text-col {
       text-align: center;
+      padding: 0 6px;
     }
     .eyebrow {
       display: inline-block;
@@ -92,7 +93,7 @@
     }
     .hero-portrait-col {
       display: flex;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
     }
     .hero-portrait-card {
@@ -495,8 +496,11 @@
         text-align: center;
         gap: 14px;
       }
+      .hero-logo-col {
+        justify-content: center;
+      }
       .landing-logo {
-        height: 140px;
+        height: 150px;
       }
       .hero-portrait-col, .side-food-wrap, .side-physique-wrap {
         display: none;
@@ -537,7 +541,7 @@
 
   <main class="landing-wrapper">
 
-    <!-- 1. HORNÍ SEKCE: Logo vlevo | Text na střed | Portrét vpravo -->
+    <!-- 1. HORNÍ SEKCE: Zvětšené logo přisunuté zleva k textu | Text na střed | Portrét vpravo -->
     <header class="hero-compact">
       <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
@@ -572,7 +576,7 @@
     <!-- Mobilní pás fotek (pouze na mobilu pod textem) -->
     <div class="mobile-photos-row">
       <div class="mobile-photo-thumb">
-        <img src="P_20260327_143812.webp" alt="Pestrá strava" onerror="if(!this.dataset.tried){this.dataset.tried=1;this.src='P_20260327_143812.jpg';}">
+        <img src="P_20260327_143812.jpg" alt="Pestrá strava" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='P_20260327_143812.webp';}else if(this.dataset.step==1){this.dataset.step=2;this.src='P_20260327_143812.jpeg';}">
       </div>
       <div class="mobile-photo-thumb">
         <img src="img-1537.jpg" alt="Kryštof Koblas">
@@ -587,7 +591,7 @@
 
       <!-- Fotka jídla vlevo těsně u Start-upu -->
       <div class="side-food-wrap">
-        <img src="P_20260327_143812.webp" alt="Pestrá nutriční strava" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='P_20260327_143812.jpg';}else if(this.dataset.step==1){this.dataset.step=2;this.src='P_20260327_143812.jpeg';}else if(this.dataset.step==2){this.dataset.step=3;this.src='P_20260327_143812.png';}else if(this.dataset.step==3){this.dataset.step=4;this.src='P_20260327_143812.JPG';}">
+        <img src="P_20260327_143812.jpg" alt="Pestrá nutriční strava" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='P_20260327_143812.webp';}else if(this.dataset.step==1){this.dataset.step=2;this.src='P_20260327_143812.jpeg';}else if(this.dataset.step==2){this.dataset.step=3;this.src='P_20260327_143812.png';}else if(this.dataset.step==3){this.dataset.step=4;this.src='P_20260327_143812.JPG';}">
       </div>
 
       <!-- Přehled nabídek -->
@@ -730,7 +734,6 @@
           if (meJed) basePrices.mentoring = meJed;
           if (ulJed) basePrices.ultimate = ulJed;
 
-          // Okamžitá aktualizace cen, pokud není vepsaný slevový kód
           if (!promoInput.value) {
             document.getElementById('price-startup').textContent = formatKc(basePrices.startup);
             document.getElementById('price-mentoring').textContent = formatKc(basePrices.mentoring);
