@@ -467,7 +467,7 @@
         <h2 class="pkg-title">START-UP</h2>
         <p class="pkg-sub">1 měsíc · Profi odrazový můstek</p>
         <div class="pkg-price-row">
-          <div id="price-startup" class="pkg-price" data-base="6900">Načítám...</div>
+          <div id="price-startup" class="pkg-price" data-base="6900">6 900 Kč</div>
           <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
         </div>
         <ul class="pkg-features">
@@ -493,7 +493,7 @@
         <h2 class="pkg-title">MENTORING</h2>
         <p class="pkg-sub">4 měsíce · Individuální vedení</p>
         <div class="pkg-price-row">
-          <div id="price-mentoring" class="pkg-price" data-base="14700">Načítám...</div>
+          <div id="price-mentoring" class="pkg-price" data-base="14700">14 700 Kč</div>
           <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
         </div>
         <ul class="pkg-features">
@@ -518,7 +518,7 @@
         <h2 class="pkg-title">ULTIMATE</h2>
         <p class="pkg-sub">6 měsíců · Maximální výkon & biohacking</p>
         <div class="pkg-price-row">
-          <div id="price-ultimate" class="pkg-price" data-base="22300">Načítám...</div>
+          <div id="price-ultimate" class="pkg-price" data-base="22300">22 300 Kč</div>
           <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
         </div>
         <ul class="pkg-features">
@@ -552,7 +552,6 @@
 
   <script>
     (function() {
-      // Záložní výchozí hodnoty (kdyby náhodou selhala síť)
       var basePrices = {
         startup: 6900,
         mentoring: 14700,
@@ -565,11 +564,6 @@
         ultimate: false
       };
 
-      var promoInput = document.getElementById('landingPromoInput');
-      var promoBtn   = document.getElementById('landingPromoBtn');
-      var clearBtn   = document.getElementById('landingClearBtn');
-      var promoMsg   = document.getElementById('landingPromoMsg');
-
       function parseKc(str) {
         return parseInt(String(str || '').replace(/\s/g, '').replace(/Kč.*$/, '')) || 0;
       }
@@ -578,72 +572,38 @@
         return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
       }
 
-      // Robustní extraktor ceny z libovolné struktury v odpovědi API
-      function extractPrice(pkgKey, pricesObj, fullData) {
-        if (!pricesObj && !fullData) return null;
-        var obj = pricesObj && pricesObj[pkgKey];
-        if (obj !== undefined && obj !== null) {
-          if (typeof obj === 'number') return obj;
-          if (typeof obj === 'string' && obj.trim()) return parseKc(obj);
-          if (typeof obj === 'object') {
-            var keys = ['jednorazove', 'jednorázově', 'jednorazova', 'jednorizove', 'cena', 'price', 'val', 'value'];
-            for (var i = 0; i < keys.length; i++) {
-              if (obj[keys[i]] !== undefined && obj[keys[i]] !== null && String(obj[keys[i]]).trim() !== '') {
-                return parseKc(obj[keys[i]]);
-              }
-            }
-          }
-        }
-        if (fullData) {
-          var directKeys = [pkgKey + '_jednorazove', pkgKey + '_price', pkgKey + '_cena'];
-          for (var j = 0; j < directKeys.length; j++) {
-            var v = fullData[directKeys[j]];
-            if (v !== undefined && v !== null && typeof v !== 'object' && String(v).trim() !== '') {
-              var parsed = parseKc(v);
-              if (parsed > 0) return parsed;
-            }
-          }
-        }
-        return null;
-      }
-
-      function renderBasePrices() {
-        ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
-          var el = document.getElementById('price-' + pkg);
-          if (el) el.textContent = formatKc(basePrices[pkg]);
-        });
-      }
-
-      // 1. Zjištění stavu kapacity a přesných cen z admin panelu (/api/status)
+      // 1. Zjištění stavu kapacity a aktuálních cen přímo z adminu (/api/status)
       fetch('/api/status', { cache: 'no-store' })
         .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data) {
-            renderBasePrices();
-            return;
-          }
+        .then(function(s) {
+          if (!s) return;
 
-          var prices = data.prices || data.ceny || {};
+          var p = s.prices || {};
+          var su = p.startup || {};
+          var me = p.mentoring || {};
+          var ul = p.ultimate || {};
 
-          // Načtení reálných cen z adminu pro všechny 3 balíčky
-          ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
-            var val = extractPrice(pkg, prices, data);
-            if (val && val > 0) {
-              basePrices[pkg] = val;
-            }
-          });
+          // Přesně stejné načtení jako na sluzby.html (ošetřeno 'jednorizove' i 'jednorazove')
+          var suJed = parseKc(su.jednorizove || su.jednorazove);
+          var meJed = parseKc(me.jednorizove || me.jednorazove);
+          var ulJed = parseKc(ul.jednorizove || ul.jednorazove);
 
-          // Vykreslení aktuálních cen z admin panelu (pokud ještě není zadán kód)
+          if (suJed) basePrices.startup = suJed;
+          if (meJed) basePrices.mentoring = meJed;
+          if (ulJed) basePrices.ultimate = ulJed;
+
+          // Přepsání cen podle adminu
           if (!promoInput.value) {
-            renderBasePrices();
+            document.getElementById('price-startup').textContent = formatKc(basePrices.startup);
+            document.getElementById('price-mentoring').textContent = formatKc(basePrices.mentoring);
+            document.getElementById('price-ultimate').textContent = formatKc(basePrices.ultimate);
           }
 
-          // Kontrola stopstavu / plné kapacity
-          var totalCap = data.capacity || {};
-          var isTotalFull = totalCap.mode === 'total' && totalCap.totalLimit > 0 && ((data.counts && data.counts.total) >= totalCap.totalLimit);
+          var totalCap = s.capacity || {};
+          var isTotalFull = totalCap.mode === 'total' && totalCap.totalLimit > 0 && ((s.counts && s.counts.total) >= totalCap.totalLimit);
 
           ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
-            var isPkgClosed = data[pkg] === 'uzavreny' || isTotalFull;
+            var isPkgClosed = s[pkg] === 'uzavreny' || isTotalFull;
             closedMap[pkg] = isPkgClosed;
             var box = document.getElementById('box-' + pkg);
             if (box) {
@@ -653,10 +613,14 @@
         })
         .catch(function(e) {
           console.warn('Nelze načíst status kapacity a ceny z adminu:', e);
-          renderBasePrices();
         });
 
-      // 2. Logika slevového kódu a přepočtu cen
+      // 2. Logika slevového kódu a dynamického zvýraznění tlačítek
+      var promoInput = document.getElementById('landingPromoInput');
+      var promoBtn   = document.getElementById('landingPromoBtn');
+      var clearBtn   = document.getElementById('landingClearBtn');
+      var promoMsg   = document.getElementById('landingPromoMsg');
+
       function showMsg(txt, type) {
         promoMsg.hidden = false;
         promoMsg.className = 'promo-feedback promo-feedback--' + type;
@@ -727,7 +691,7 @@
             btnGift.classList.remove('btn-gift-highlight');
 
             if (allowed.includes(pkg)) {
-              var orig = basePrices[pkg]; // Vychází přímo z ceny načtené z adminu
+              var orig = basePrices[pkg]; // Vychází přímo z aktuální ceny z adminu
 
               if (isGiftVoucher) {
                 if (closedMap[pkg]) box.classList.remove('is-closed');
@@ -755,7 +719,6 @@
 
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
                 btn.textContent = 'Objednat se slevou →';
-                btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
                 btnGift.classList.add('btn-disabled-dim');
               }
             } else {
@@ -773,6 +736,7 @@
 
       promoBtn.addEventListener('click', function() { checkAndApplyCode(); });
       clearBtn.addEventListener('click', function() { resetPromo(); });
+      promoInput.value = '';
       promoInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
