@@ -13,6 +13,7 @@ var deployMsg  = document.getElementById('deployMsg');
 var currentStatus = {
   startup: 'volny', mentoring: 'volny', ultimate: 'volny',
   capacity: { mode: 'total', totalLimit: 10, limits: { startup: 0, mentoring: 0, ultimate: 0 } },
+  santaHat: true,
   event: { active: false, name: '', popis: '', cena: '', odkaz: '' },
   prices: {
     startup:   { jednorizove: '6 900 Kč' },
@@ -94,6 +95,12 @@ async function saveStatus() {
       body: JSON.stringify(Object.assign({ password: pass }, currentStatus))
     });
     if (!res.ok) throw new Error(res.status);
+    var data = await res.json();
+    if (data.status) {
+      currentStatus = data.status;
+      renderAll();
+      updateCapacityDisplay(data.status);
+    }
     setDeploy('✓ Uloženo — změna je okamžitě živá', 'ok');
     setTimeout(function () { deployBar.hidden = true; }, 4000);
   } catch (e) {
@@ -120,8 +127,21 @@ function renderStation(sluzba) {
   if (btnLabel)  btnLabel.textContent  = isOpen ? 'UZAVŘÍT' : 'OTEVŘÍT';
 }
 
+function renderSantaHat() {
+  var isHat = currentStatus.santaHat !== false;
+  var led   = document.getElementById('led-santa');
+  var txt   = document.getElementById('statusText-santa');
+  var lbl   = document.getElementById('btnLabel-santa');
+  var panel = document.getElementById('seasonPanel');
+  if (led)   led.className   = 'status-led ' + (isHat ? 'volny' : '');
+  if (txt)   txt.textContent = isHat ? 'ZAPNUTO' : 'VYPNUTO';
+  if (lbl)   lbl.textContent = isHat ? 'VYPNOUT' : 'ZAPNOUT';
+  if (panel) panel.classList.toggle('event-panel--active', isHat);
+}
+
 function renderAll() {
   SERVICES.forEach(renderStation);
+  renderSantaHat();
   renderEvent();
   renderPrices();
 }
@@ -158,6 +178,16 @@ function renderEvent() {
   if (opisEl)  opisEl.value  = ev.popis || '';
   if (cenaEl)  cenaEl.value  = ev.cena  || '';
   if (odkazEl) odkazEl.value = ev.odkaz || '';
+}
+
+// ── Toggle čepičky ──────────────────────────────
+var btnSanta = document.getElementById('btn-santa');
+if (btnSanta) {
+  btnSanta.addEventListener('click', async function () {
+    currentStatus.santaHat = !(currentStatus.santaHat !== false);
+    renderSantaHat();
+    await saveStatus();
+  });
 }
 
 // ── Toggle služeb ────────────────────────────────
@@ -302,6 +332,7 @@ async function saveCapacitySettings() {
       capacity: currentStatus.capacity,
       event: currentStatus.event,
       prices: currentStatus.prices,
+      santaHat: currentStatus.santaHat,
       resetOverride: true
     };
 
@@ -382,7 +413,6 @@ async function loadClients() {
     var clients = await res.json();
     loadedClientsCache = clients || [];
     renderClientsTable();
-    // Pokud už jsou načtené i promo kódy, překreslíme je pro aktualizaci počítadla
     if (loadedCodesCache && loadedCodesCache.length > 0) {
       renderPromoCodesList(loadedCodesCache);
     }
