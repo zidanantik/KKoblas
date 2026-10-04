@@ -564,11 +564,32 @@
         ultimate: false
       };
 
-      // 1. Zjištění stavu kapacity a stopstavu ze serveru
+      function parseKc(str) {
+        return parseInt((str || '').replace(/\s/g, '').replace(/Kč.*$/, '')) || 0;
+      }
+
+      function formatKc(num) {
+        return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
+      }
+
+      // 1. Zjištění stavu kapacity a aktuálních cen ze serveru
       fetch('/api/status', { cache: 'no-store' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (!data) return;
+
+          // Načtení živých cen z API
+          var p = data.prices || {};
+          if (p.startup && p.startup.jednorizove) basePrices.startup = parseKc(p.startup.jednorizove);
+          if (p.mentoring && p.mentoring.jednorizove) basePrices.mentoring = parseKc(p.mentoring.jednorizove);
+          if (p.ultimate && p.ultimate.jednorizove) basePrices.ultimate = parseKc(p.ultimate.jednorizove);
+
+          // Vykreslení aktuálních cen (pokud není aktivní kód)
+          if (!promoInput.value) {
+            document.getElementById('price-startup').textContent = formatKc(basePrices.startup);
+            document.getElementById('price-mentoring').textContent = formatKc(basePrices.mentoring);
+            document.getElementById('price-ultimate').textContent = formatKc(basePrices.ultimate);
+          }
 
           var totalCap = data.capacity || {};
           var isTotalFull = totalCap.mode === 'total' && totalCap.totalLimit > 0 && ((data.counts && data.counts.total) >= totalCap.totalLimit);
@@ -583,7 +604,7 @@
           });
         })
         .catch(function(e) {
-          console.warn('Nelze načíst status kapacity:', e);
+          console.warn('Nelze načíst status kapacity a ceny:', e);
         });
 
       // 2. Logika slevového kódu a dynamického zvýraznění tlačítek
@@ -591,10 +612,6 @@
       var promoBtn   = document.getElementById('landingPromoBtn');
       var clearBtn   = document.getElementById('landingClearBtn');
       var promoMsg   = document.getElementById('landingPromoMsg');
-
-      function formatKc(num) {
-        return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
-      }
 
       function showMsg(txt, type) {
         promoMsg.hidden = false;
