@@ -56,6 +56,12 @@
       justify-content: flex-end;
       align-items: center;
     }
+    .landing-logo-link {
+      display: inline-block;
+      text-decoration: none;
+      line-height: 0;
+      cursor: pointer;
+    }
     .landing-logo {
       height: 225px;
       width: auto;
@@ -63,6 +69,11 @@
       filter: drop-shadow(0 4px 18px rgba(255, 153, 0, 0.25));
       /* Přesná poloha těsně u textu zachována */
       transform: translate(65px, 25px);
+      transition: filter 0.2s ease, opacity 0.2s ease;
+    }
+    .landing-logo:hover {
+      filter: drop-shadow(0 4px 24px rgba(255, 170, 34, 0.4));
+      opacity: 0.95;
     }
     .hero-text-col {
       text-align: center;
@@ -597,7 +608,10 @@
     <!-- 1. HORNÍ SEKCE: Celý blok posunutý naráz přesně na středovou osu nad MENTORING -->
     <header class="hero-compact">
       <div class="hero-logo-col">
-        <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
+        <!-- Logo odkazující v nové záložce na koblas-nutricni.cz -->
+        <a href="https://koblas-nutricni.cz" target="_blank" rel="noopener" class="landing-logo-link" title="Přejít na hlavní web">
+          <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
+        </a>
       </div>
       
       <div class="hero-text-col">
