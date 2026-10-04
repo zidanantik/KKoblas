@@ -212,7 +212,7 @@
       color: #e74c3c;
     }
 
-    /* ── 2. SEKCE BALÍČKŮ S FOTKAMI TESNE PO BOKÁCH ── */
+    /* ── 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH ── */
     .packages-stage {
       display: flex;
       justify-content: center;
@@ -249,7 +249,7 @@
       display: block;
     }
 
-    /* Trojice balíčků (přesné fixní rozměry - nic se nehne) */
+    /* Trojice balíčků (přesné fixní rozměry) */
     .packages-grid {
       display: grid;
       grid-template-columns: repeat(3, 290px);
@@ -288,7 +288,7 @@
       display: block;
     }
 
-    /* 2. Nová fotka masa ve žlutě označeném prostoru */
+    /* 2. Fotka masa se zoomem přímo na šťavnatý řez steaku */
     .side-meat-wrap {
       width: 145px;
       height: 195px;
@@ -306,7 +306,9 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center;
+      object-position: 50% 50%;
+      transform: scale(1.7);
+      transform-origin: 52% 48%;
       display: block;
     }
 
@@ -580,6 +582,11 @@
         transform: scale(1.8);
         transform-origin: 47% 58%;
       }
+      .mobile-photo-thumb:last-child img {
+        object-position: 50% 50%;
+        transform: scale(1.7);
+        transform-origin: 52% 48%;
+      }
     }
   </style>
 </head>
@@ -635,7 +642,7 @@
       </div>
     </div>
 
-    <!-- 2. SEKCE BALÍČKŮ S FOTKAMI TESNE PO BOKÁCH -->
+    <!-- 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH -->
     <section class="packages-stage">
 
       <!-- Fotka z bazénu vlevo těsně u Start-upu (se zoomem na tebe) -->
@@ -724,7 +731,7 @@
 
       </div>
 
-      <!-- Pravý sloupec: 1. Postava nahoře | 2. Maso dole na žlutě označeném místě -->
+      <!-- Pravý sloupec: 1. Postava nahoře | 2. Maso se zoomem na šťavnatý řez dole -->
       <div class="side-right-col">
         <div class="side-physique-wrap">
           <img src="pepaan.webp" alt="Kryštof Koblas - forma">
