@@ -32,26 +32,26 @@
       overflow-x: hidden;
     }
 
-    /* Celkový rámec zarovnaný kompaktně na střed */
+    /* Celkový rámec zarovnaný kompaktne na stred */
     .landing-wrapper {
       max-width: 1220px;
       margin: 0 auto;
       padding: 10px 16px 40px;
     }
 
-    /* ── 1. HORNÍ BLOK (Logo a portrét zarovnané na stejnou vodorovnou osu) ── */
+    /* ── 1. HORNÝ BLOK (Presne vycentrovaný na stredovú os nad balíček MENTORING) ── */
     .hero-compact {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 1fr auto 1fr; /* Symetrické stĺpce garantujúce 100% stred */
       align-items: center;
-      gap: 16px;
-      max-width: 960px;
+      gap: 24px;
+      max-width: 980px;
       margin: 0 auto 25px;
       padding-top: 15px;
     }
     .hero-logo-col {
       display: flex;
-      justify-content: flex-end;
+      justify-content: flex-end; /* Logo prisunuté sprava k textu */
       align-items: center;
     }
     .landing-logo {
@@ -59,12 +59,12 @@
       width: auto;
       display: block;
       filter: drop-shadow(0 4px 18px rgba(255, 153, 0, 0.25));
-      /* Pozice na červeném X */
-      transform: translate(65px, 25px);
     }
     .hero-text-col {
       text-align: center;
       padding: 0 6px;
+      max-width: 490px;
+      margin: 0 auto;
     }
     .eyebrow {
       display: inline-block;
@@ -95,7 +95,7 @@
     }
     .hero-portrait-col {
       display: flex;
-      justify-content: flex-start;
+      justify-content: flex-start; /* Portrét zarovnaný zľava k textu */
       align-items: center;
     }
     .hero-portrait-card {
@@ -107,8 +107,6 @@
       overflow: hidden;
       box-shadow: 0 8px 25px rgba(0,0,0,0.6);
       flex-shrink: 0;
-      /* Střed fotky přesně ve vodorovné rovině se středem loga KK */
-      transform: translateY(25px);
     }
     .hero-portrait-card img {
       width: 100%;
@@ -117,7 +115,7 @@
       display: block;
     }
 
-    /* Rámeček na uplatnění kódu přímo pod textem */
+    /* Rámček na uplatnenie kódu priamo pod textom */
     .promo-card {
       background: rgba(18, 26, 22, 0.95);
       border: 1px solid rgba(255, 153, 0, 0.35);
@@ -211,7 +209,7 @@
       color: #e74c3c;
     }
 
-    /* ── 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH ── */
+    /* ── 2. SEKCIA BALÍČKOV S FOTKAMI TESNE PO BOKOCH ── */
     .packages-stage {
       display: flex;
       justify-content: center;
@@ -220,7 +218,7 @@
       margin-top: 15px;
     }
 
-    /* Fotka jídla vlevo těsně u Start-upu s náklonem */
+    /* Fotka jedla vľavo tesne pri Start-upe s náklonom */
     .side-food-wrap {
       width: 145px;
       height: 195px;
@@ -244,7 +242,7 @@
       display: block;
     }
 
-    /* Trojice balíčků */
+    /* Trojica balíčkov */
     .packages-grid {
       display: grid;
       grid-template-columns: repeat(3, 290px);
@@ -252,7 +250,7 @@
       flex-shrink: 0;
     }
 
-    /* Fotka postavy vpravo těsně u Ultimate */
+    /* Fotka postavy vpravo tesne pri Ultimate */
     .side-physique-wrap {
       width: 145px;
       height: 255px;
@@ -275,7 +273,7 @@
       display: block;
     }
 
-    /* Vzhled karet balíčků */
+    /* Vzhľad kariet balíčkov */
     .pkg-box {
       background: rgba(14, 22, 18, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -396,7 +394,7 @@
       background: rgba(255, 153, 0, 0.05);
     }
 
-    /* Zvýrazněné dárkové tlačítko při darekOnly kódu */
+    /* Zvýraznené darčekové tlačidlo pri darekOnly kóde */
     .btn-gift-highlight {
       background: linear-gradient(135deg, #ff9900 0%, #e08200 100%) !important;
       color: #000 !important;
@@ -410,7 +408,7 @@
       background: linear-gradient(135deg, #ffaa22, #f09000) !important;
     }
 
-    /* Ztlumení neaktivních tlačítek */
+    /* Ztlmenie neaktívnych tlačidiel */
     .btn-disabled-dim {
       opacity: 0.25 !important;
       pointer-events: none !important;
@@ -418,7 +416,7 @@
       cursor: not-allowed;
     }
 
-    /* Vizuální stav aktivovaného voucheru */
+    /* Vizuálny stav aktivovaného voucheru */
     .pkg-box.pkg-card--voucher-match {
       border: 2px solid #ffaa22 !important;
       background: linear-gradient(180deg, rgba(255, 170, 34, 0.1) 0%, rgba(14, 22, 18, 0.95) 100%) !important;
@@ -430,7 +428,7 @@
       filter: grayscale(40%);
     }
 
-    /* Stopstav / Čekačka design */
+    /* Stopstav / Čakačka dizajn */
     .pkg-box.is-closed {
       border-color: rgba(255, 255, 255, 0.05);
       background: #090e0c;
@@ -478,12 +476,12 @@
       color: #777;
     }
 
-    /* Pás fotek pro mobily (na PC skrytý) */
+    /* Pás fotiek pre mobily (na PC skrytý) */
     .mobile-photos-row {
       display: none;
     }
 
-    /* ── RESPONZIVITA (Mobily a menší obrazovky) ── */
+    /* ── RESPONZIVITA (Mobily a menšie obrazovky) ── */
     @media (max-width: 1080px) {
       .packages-grid {
         grid-template-columns: repeat(3, 270px);
@@ -505,7 +503,6 @@
       }
       .landing-logo {
         height: 150px;
-        transform: none; /* Na mobilu bez offsetu na střed */
       }
       .hero-portrait-col, .side-food-wrap, .side-physique-wrap {
         display: none;
@@ -546,7 +543,7 @@
 
   <main class="landing-wrapper">
 
-    <!-- 1. HORNÍ SEKCE: Logo a portrét zarovnané na stejnou vodorovnou osu -->
+    <!-- 1. HORNÝ BLOK: Vycentrovaný presne na stredovú vertikálnu os nad Mentoring -->
     <header class="hero-compact">
       <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
@@ -557,7 +554,7 @@
         <h1 class="hero-title">Získej postavu a energii,<br><em>které ti už nikdo nevezme</em></h1>
         <p class="hero-lead">Systém postavený na datech, vědě a realitě tvého života. Žádné hladovění ani nesmyslné restrikce.</p>
         
-        <!-- Rámeček na slevový kód -->
+        <!-- Rámček na zľavový kód -->
         <div class="promo-card">
           <label class="promo-label" for="landingPromoInput">
             🎁 Máš slevový kód z reklamy nebo sociálních sítí?
@@ -578,7 +575,7 @@
       </div>
     </header>
 
-    <!-- Mobilní pás fotek (pouze na mobilu pod textem) -->
+    <!-- Mobilný pás fotiek (iba na mobile pod textom) -->
     <div class="mobile-photos-row">
       <div class="mobile-photo-thumb">
         <img src="P_20260327_143812.jpg" alt="Pestrá strava" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='P_20260327_143812.webp';}else if(this.dataset.step==1){this.dataset.step=2;this.src='P_20260327_143812.jpeg';}">
@@ -591,15 +588,15 @@
       </div>
     </div>
 
-    <!-- 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH -->
+    <!-- 2. SEKCIA BALÍČKOV S FOTKAMI TESNE PO BOKOCH -->
     <section class="packages-stage">
 
-      <!-- Fotka jídla vlevo těsně u Start-upu -->
+      <!-- Fotka jedla vľavo tesne pri Start-upe -->
       <div class="side-food-wrap">
         <img src="P_20260327_143812.jpg" alt="Pestrá nutriční strava" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='P_20260327_143812.webp';}else if(this.dataset.step==1){this.dataset.step=2;this.src='P_20260327_143812.jpeg';}else if(this.dataset.step==2){this.dataset.step=3;this.src='P_20260327_143812.png';}else if(this.dataset.step==3){this.dataset.step=4;this.src='P_20260327_143812.JPG';}">
       </div>
 
-      <!-- Přehled nabídek -->
+      <!-- Prehľad ponúk -->
       <div class="packages-grid">
 
         <!-- START-UP -->
@@ -680,7 +677,7 @@
 
       </div>
 
-      <!-- Fotka postavy vpravo těsně u Ultimate -->
+      <!-- Fotka postavy vpravo tesne pri Ultimate -->
       <div class="side-physique-wrap">
         <img src="pepaan.webp" alt="Kryštof Koblas - forma">
       </div>
@@ -694,12 +691,12 @@
 
   </main>
 
-  <!-- Horní banner s běžícími odpočty kódů -->
+  <!-- Horný banner s bežiacimi odpočtami kódov -->
   <script src="banner.js" defer></script>
 
   <script>
     (function() {
-      // Výchozí ceny přesně podle tvého adminu (žádné problikávání)
+      // Predvolené ceny presne podľa adminu (bez prebliknutia)
       var basePrices = {
         startup: 6900,
         mentoring: 15900,
@@ -720,7 +717,7 @@
         return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
       }
 
-      // 1. Zjištění stavu kapacity a cen přímo z adminu (/api/status)
+      // 1. Zistenie stavu kapacity a cien priamo z adminu (/api/status)
       fetch('/api/status', { cache: 'no-store' })
         .then(function(r) { return r.json(); })
         .then(function(s) {
@@ -761,7 +758,7 @@
           console.warn('Nelze načíst status kapacity a ceny z adminu:', e);
         });
 
-      // 2. Logika slevového kódu a dynamického zvýraznění tlačítek
+      // 2. Logika zľavového kódu a dynamického zvýraznenia tlačidiel
       var promoInput = document.getElementById('landingPromoInput');
       var promoBtn   = document.getElementById('landingPromoBtn');
       var clearBtn   = document.getElementById('landingClearBtn');
