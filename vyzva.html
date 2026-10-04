@@ -39,7 +39,7 @@
       padding: 10px 16px 40px;
     }
 
-    /* ── 1. HORNÍ BLOK (Logo přisunuté k textu | Text na střed | Portrét vpravo) ── */
+    /* ── 1. HORNÍ BLOK (Logo na červeném X | Text na střed | Portrét vpravo) ── */
     .hero-compact {
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -51,14 +51,16 @@
     }
     .hero-logo-col {
       display: flex;
-      justify-content: flex-end; /* Přisunuto těsně k textovému bloku */
+      justify-content: flex-end;
       align-items: center;
     }
     .landing-logo {
-      height: 205px; /* Zvětšené dominantní logo */
+      height: 205px;
       width: auto;
       display: block;
       filter: drop-shadow(0 4px 18px rgba(255, 153, 0, 0.25));
+      /* Posun loga přímo na červené X (doprava a lehce dolů) */
+      transform: translate(65px, 25px);
     }
     .hero-text-col {
       text-align: center;
@@ -501,6 +503,7 @@
       }
       .landing-logo {
         height: 150px;
+        transform: none; /* Na mobilu bez offsetu na střed */
       }
       .hero-portrait-col, .side-food-wrap, .side-physique-wrap {
         display: none;
@@ -541,7 +544,7 @@
 
   <main class="landing-wrapper">
 
-    <!-- 1. HORNÍ SEKCE: Zvětšené logo přisunuté zleva k textu | Text na střed | Portrét vpravo -->
+    <!-- 1. HORNÍ SEKCE: Logo posunuté na červené X | Text na střed | Portrét vpravo -->
     <header class="hero-compact">
       <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
@@ -694,7 +697,6 @@
 
   <script>
     (function() {
-      // Výchozí ceny přesně podle tvého adminu (žádné problikávání)
       var basePrices = {
         startup: 6900,
         mentoring: 15900,
@@ -715,7 +717,7 @@
         return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
       }
 
-      // 1. Zjištění stavu kapacity a aktuálních cen přímo z adminu (/api/status)
+      // 1. Zjištění stavu kapacity a cen přímo z adminu (/api/status)
       fetch('/api/status', { cache: 'no-store' })
         .then(function(r) { return r.json(); })
         .then(function(s) {
@@ -825,7 +827,6 @@
             var btnGift = document.getElementById('btngift-' + pkg);
             if (!priceEl || !box || !btn || !btnGift) return;
 
-            // Reset před aplikací
             box.classList.remove('pkg-card--voucher-match', 'is-dimmed');
             btn.classList.remove('btn-disabled-dim');
             btnGift.classList.remove('btn-disabled-dim');
