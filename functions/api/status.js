@@ -8,6 +8,7 @@ const DEFAULT = {
     limits: { startup: 0, mentoring: 0, ultimate: 0 }
   },
   manualOverride: { startup: false, mentoring: false, ultimate: false },
+  santaHat: true, // Výchozí stav vánoční čepičky
   event: { active: false, name: '', popis: '', cena: '', odkaz: '' },
   prices: {
     startup:   { jednorizove: '6 900 Kč' },
@@ -72,6 +73,7 @@ export async function onRequestGet(context) {
 
     if (!data.capacity) data.capacity = DEFAULT.capacity;
     if (!data.manualOverride) data.manualOverride = { startup: false, mentoring: false, ultimate: false };
+    if (data.santaHat === undefined) data.santaHat = DEFAULT.santaHat;
 
     const cap = data.capacity;
 
@@ -175,6 +177,7 @@ export async function onRequestPost(context) {
       capacity: newCap,
       counts: counts,
       autoClosed: isFull,
+      santaHat: body.santaHat !== undefined ? Boolean(body.santaHat) : Boolean(prev.santaHat !== undefined ? prev.santaHat : true),
       event: {
         active: body.event?.active === true,
         name:   (body.event?.name  || '').slice(0, 120),
