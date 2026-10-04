@@ -39,7 +39,7 @@
       padding: 10px 16px 40px;
     }
 
-    /* ── 1. HORNÍ BLOK (Logo na červeném X | Text na střed | Portrét vpravo) ── */
+    /* ── 1. HORNÍ BLOK (Logo a portrét zarovnané na stejnou vodorovnou osu) ── */
     .hero-compact {
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -55,11 +55,11 @@
       align-items: center;
     }
     .landing-logo {
-      height: 225px; /* Mírně zvětšené logo */
+      height: 225px;
       width: auto;
       display: block;
       filter: drop-shadow(0 4px 18px rgba(255, 153, 0, 0.25));
-      /* Přesná pozice zachována */
+      /* Pozice na červeném X */
       transform: translate(65px, 25px);
     }
     .hero-text-col {
@@ -107,6 +107,8 @@
       overflow: hidden;
       box-shadow: 0 8px 25px rgba(0,0,0,0.6);
       flex-shrink: 0;
+      /* Střed fotky přesně ve vodorovné rovině se středem loga KK */
+      transform: translateY(25px);
     }
     .hero-portrait-card img {
       width: 100%;
@@ -544,7 +546,7 @@
 
   <main class="landing-wrapper">
 
-    <!-- 1. HORNÍ SEKCE: Logo na pozici červeného X | Text na střed | Portrét vpravo -->
+    <!-- 1. HORNÍ SEKCE: Logo a portrét zarovnané na stejnou vodorovnou osu -->
     <header class="hero-compact">
       <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
