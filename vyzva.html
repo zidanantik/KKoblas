@@ -31,24 +31,24 @@
       min-height: 100vh;
     }
     .container {
-      max-width: 1100px;
+      max-width: 1150px;
       margin: 0 auto;
       padding: 0 20px;
     }
 
-    /* Hero sekce s logem a textem */
+    /* Hero sekce: Logo | Text | Fotky vedle sebe */
     .hero-flex {
       display: flex;
       align-items: center;
-      gap: 35px;
-      padding: 25px 0 15px;
+      gap: 30px;
+      padding: 30px 0 20px;
       text-align: left;
     }
     .hero-logo-col {
       flex-shrink: 0;
     }
     .landing-logo {
-      height: 180px;
+      height: 140px;
       width: auto;
       display: block;
     }
@@ -57,7 +57,7 @@
     }
     .eyebrow {
       display: inline-block;
-      font-size: 13px;
+      font-size: 12.5px;
       text-transform: uppercase;
       letter-spacing: 2px;
       color: #ff9900;
@@ -66,7 +66,7 @@
     }
     .hero-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(26px, 4vw, 40px);
+      font-size: clamp(24px, 3.5vw, 36px);
       line-height: 1.2;
       color: #fff;
       margin-bottom: 8px;
@@ -77,27 +77,27 @@
     }
     .hero-lead {
       color: #aaa;
-      font-size: 14.5px;
+      font-size: 14px;
     }
 
-    /* Galerie dvou fotek pod nadpisem */
-    .hero-photos {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      max-width: 700px;
-      margin: 15px auto 25px;
+    /* Sloupec s oběma fotkami vpravo */
+    .hero-photos-col {
+      flex-shrink: 0;
+      display: flex;
+      gap: 12px;
+      width: 270px;
     }
     .hero-photo-card {
+      flex: 1;
       background: rgba(14, 22, 18, 0.9);
       border: 1px solid rgba(255, 153, 0, 0.3);
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
     }
     .hero-photo-card img {
       width: 100%;
-      height: 240px;
+      height: 170px;
       object-fit: cover;
       display: block;
     }
@@ -402,21 +402,22 @@
       color: #777;
     }
 
-    /* Responzivita pro mobily */
-    @media (max-width: 768px) {
+    /* Responzivita pro mobily – pod sebou */
+    @media (max-width: 950px) {
       .hero-flex {
         flex-direction: column;
         text-align: center;
-        gap: 15px;
+        gap: 20px;
         padding: 20px 0 10px;
       }
       .landing-logo {
-        height: 140px;
+        height: 120px;
         margin: 0 auto;
       }
-      .hero-photos {
-        grid-template-columns: 1fr;
+      .hero-photos-col {
+        width: 100%;
         max-width: 320px;
+        margin: 0 auto;
       }
     }
   </style>
@@ -425,7 +426,7 @@
 
   <main class="container">
 
-    <!-- Hero sekce s logem a textem -->
+    <!-- Hero sekce: Logo, Text a Fotky vedle sebe -->
     <div class="hero-flex">
       <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
@@ -435,15 +436,13 @@
         <h1 class="hero-title">Získej postavu a energii,<br><em>které ti už nikdo nevezme</em></h1>
         <p class="hero-lead">Systém postavený na datech, vědě a realitě tvého života. Žádné hladovění ani nesmyslné restrikce.</p>
       </div>
-    </div>
-
-    <!-- Dvě osobní fotky vedle sebe (img-1537.jpg a pepaan.webp) -->
-    <div class="hero-photos">
-      <div class="hero-photo-card">
-        <img src="img-1537.jpg" alt="Kryštof Koblas">
-      </div>
-      <div class="hero-photo-card">
-        <img src="pepaan.webp" alt="Kryštof Koblas - forma">
+      <div class="hero-photos-col">
+        <div class="hero-photo-card">
+          <img src="img-1537.jpg" alt="Kryštof Koblas">
+        </div>
+        <div class="hero-photo-card">
+          <img src="pepaan.webp" alt="Kryštof Koblas - forma">
+        </div>
       </div>
     </div>
 
@@ -698,7 +697,6 @@
 
                 priceEl.innerHTML = '<span class="pkg-price-struck">' + formatKc(orig) + '</span> ' + formatKc(finalP);
                 btn.textContent = 'Objednat se slevou →';
-                btn.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&kod=' + data.code);
                 btnGift.classList.add('btn-disabled-dim'); // Ztmavení dárku
               }
             } else {
