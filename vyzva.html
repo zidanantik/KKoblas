@@ -89,6 +89,7 @@
       z-index: 10;
       filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
       transform: rotate(-22deg);
+      display: none; /* Řízeno dynamicky z administrace */
     }
 
     .hero-text-col {
@@ -639,8 +640,8 @@
       <div class="hero-logo-col">
         <!-- Logo odkazující v nové záložce na koblas-nutricni.cz s přesně usazenou čepicí -->
         <a href="https://koblas-nutricni.cz" target="_blank" rel="noopener" class="landing-logo-link" title="Přejít na hlavní web">
-          <!-- Vánoční čepička usazená přesně na zelené místo -->
-          <svg class="santa-hat" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+          <!-- Vánoční čepička usazená přesně na zelené místo (řízena z adminu) -->
+          <svg id="santaHatContainer" class="santa-hat" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="santaRed" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="#ff3333"/>
@@ -850,11 +851,17 @@
         return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kč";
       }
 
-      // 1. Zjištění stavu kapacity a cen přímo z adminu (/api/status)
+      // 1. Zjištění stavu kapacity, cen i vánoční čepičky přímo z adminu (/api/status)
       fetch('/api/status', { cache: 'no-store' })
         .then(function(r) { return r.json(); })
         .then(function(s) {
           if (!s) return;
+
+          // Zobrazení / skrytí čepičky podle nastavení v adminu
+          var hatEl = document.getElementById('santaHatContainer');
+          if (hatEl) {
+            hatEl.style.display = (s.santaHat !== false) ? 'block' : 'none';
+          }
 
           var p = s.prices || {};
           var su = p.startup || {};
