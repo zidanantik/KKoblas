@@ -238,11 +238,14 @@
     .side-food-wrap:hover {
       transform: rotate(-5deg) scale(1.04);
     }
+    /* ZOOM PŘÍMO NA PLAVCE VE VODĚ */
     .side-food-wrap img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center;
+      object-position: 47% 58%;
+      transform: scale(1.8);
+      transform-origin: 47% 58%;
       display: block;
     }
 
@@ -542,6 +545,11 @@
         object-fit: cover;
         display: block;
       }
+      .mobile-photo-thumb:first-child img {
+        object-position: 47% 58%;
+        transform: scale(1.8);
+        transform-origin: 47% 58%;
+      }
     }
   </style>
 </head>
@@ -597,7 +605,7 @@
     <!-- 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH -->
     <section class="packages-stage">
 
-      <!-- Fotka z bazénu vlevo těsně u Start-upu -->
+      <!-- Fotka z bazénu vlevo těsně u Start-upu (se zoomem na tebe) -->
       <div class="side-food-wrap">
         <img src="fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B-20260510T211134Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B/IMG_1186.webp" alt="Kryštof Koblas - sport a regenerace" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B-20260510T211134Z-3-001/fotky%20pro%20z%C3%A1lo%C5%BEku%20o%20mn%C4%9B/IMG_1186.jpg';}else if(this.dataset.step==1){this.dataset.step=2;this.src='IMG_1186.webp';}else if(this.dataset.step==2){this.dataset.step=3;this.src='IMG_1186.jpg';}">
       </div>
