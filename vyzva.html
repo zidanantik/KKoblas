@@ -29,55 +29,40 @@
       line-height: 1.5;
       padding-bottom: 50px;
       min-height: 100vh;
+      overflow-x: hidden;
     }
-    .container {
-      max-width: 1150px;
+    .landing-container {
+      max-width: 1420px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 10px 20px 40px;
     }
 
-    /* Hero sekce podle tvého náčrtu */
-    .hero-grid {
+    /* ── HORNÍ SEKCE PODLE KOLÁŽE (Logo vlevo, Text na střed, Portrét vpravo) ── */
+    .hero-header {
       display: grid;
-      grid-template-columns: 210px 1fr 180px;
-      grid-template-rows: auto auto;
-      gap: 15px 25px;
+      grid-template-columns: 230px 1fr 190px;
       align-items: center;
-      padding: 30px 0 20px;
+      gap: 20px;
+      padding: 25px 0 15px;
     }
-
-    /* 1. Žlutá: Větší logo vlevo nahoře */
-    .hero-logo-box {
-      grid-column: 1;
-      grid-row: 1;
+    .hero-left {
       display: flex;
       justify-content: flex-start;
       align-items: center;
     }
     .landing-logo {
-      height: 175px; /* Výrazně zvětšené logo */
+      height: 185px; /* Výrazné velké zlaté logo */
       width: auto;
       display: block;
-      filter: drop-shadow(0 4px 15px rgba(255, 153, 0, 0.15));
+      filter: drop-shadow(0 4px 20px rgba(255, 153, 0, 0.22));
     }
-
-    /* 2. Modrá: Foto 1 vlevo dole pod logem */
-    .hero-photo-left {
-      grid-column: 1;
-      grid-row: 2;
-      justify-self: start;
-    }
-
-    /* 3. Zelená: Texty uprostřed na střed */
-    .hero-text-center {
-      grid-column: 2;
-      grid-row: 1 / span 2;
+    .hero-center {
       text-align: center;
       padding: 0 10px;
     }
     .eyebrow {
       display: inline-block;
-      font-size: 12.5px;
+      font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 2px;
       color: #ff9900;
@@ -98,50 +83,41 @@
     .hero-lead {
       color: #aaa;
       font-size: 14.5px;
-      max-width: 500px;
-      margin: 0 auto;
+      max-width: 530px;
+      margin: 0 auto 16px;
       line-height: 1.6;
     }
-
-    /* 4. Fialová: Foto 2 vpravo zarovnaná naproti první fotce */
-    .hero-photo-right {
-      grid-column: 3;
-      grid-row: 1 / span 2;
-      justify-self: end;
-      align-self: end; /* Zarovnání do spodní linie k foto 1 */
+    .hero-right {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
     }
-
-    /* Vzhled karet pro fotky */
-    .hero-photo-card {
-      width: 142px;
-      height: 185px;
+    .hero-photo-top {
+      width: 145px;
+      height: 180px;
       background: rgba(14, 22, 18, 0.9);
       border: 1px solid rgba(255, 153, 0, 0.35);
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
-    .hero-photo-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(255, 153, 0, 0.25);
-    }
-    .hero-photo-card img {
+    .hero-photo-top img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
 
-    /* Rámeček slevového kódu */
+    /* Rámeček slevového kódu vycentrovaný pod textem */
     .promo-card {
       background: rgba(18, 26, 22, 0.9);
       border: 1px solid rgba(255, 153, 0, 0.35);
       border-radius: 12px;
-      max-width: 580px;
-      margin: 15px auto 30px;
-      padding: 16px 22px;
+      max-width: 530px;
+      margin: 0 auto;
+      padding: 14px 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: left;
     }
     .promo-label {
       font-size: 13px;
@@ -226,12 +202,63 @@
       color: #e74c3c;
     }
 
-    /* Balíčky */
+    /* ── BALÍČKY S BOČNÍMI FOTKAMI (Jídlo vlevo, Postava vpravo) ── */
+    .packages-layout {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 24px;
+      margin-top: 30px;
+      position: relative;
+    }
     .packages-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(3, minmax(280px, 340px));
+      gap: 22px;
+      flex: 1;
+      max-width: 1040px;
+      position: relative;
+      z-index: 2;
     }
+    .flank-photo {
+      background: rgba(14, 22, 18, 0.9);
+      border: 1px solid rgba(255, 153, 0, 0.4);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.7);
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .flank-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* Nová fotka jídla vlevo pootočená vedle Start-upu */
+    .flank-photo--left {
+      width: 160px;
+      height: 200px;
+      margin-top: 65px;
+      border-radius: 14px;
+      transform: rotate(-13deg);
+    }
+    .flank-photo--left:hover {
+      transform: rotate(-6deg) scale(1.05);
+      box-shadow: 0 16px 40px rgba(255, 153, 0, 0.25);
+    }
+    /* Fotka postavy vpravo vedle Ultimate */
+    .flank-photo--right {
+      width: 160px;
+      height: 280px;
+      margin-top: 35px;
+      border-radius: 14px;
+    }
+    .flank-photo--right:hover {
+      transform: scale(1.04);
+      box-shadow: 0 16px 40px rgba(255, 153, 0, 0.25);
+    }
+
+    /* Karta balíčku */
     .pkg-box {
       background: rgba(14, 22, 18, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -426,177 +453,230 @@
 
     .footer-guarantee {
       text-align: center;
-      margin-top: 35px;
+      margin-top: 40px;
       padding: 20px 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
       font-size: 12.5px;
       color: #777;
     }
 
-    /* Responzivita pro mobily – čisté seskupení pod sebe */
-    @media (max-width: 950px) {
-      .hero-grid {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto auto;
-        gap: 16px;
-        justify-items: center;
-        text-align: center;
-        padding: 20px 0 10px;
+    /* Pás fotek pro mobily (na desktopu skrytý) */
+    .mobile-photos-strip {
+      display: none;
+    }
+
+    /* ── RESPONZIVITA (Plynulé zmenšení na tabletech a mobilech) ── */
+    @media (max-width: 1220px) {
+      .packages-layout {
+        gap: 14px;
       }
-      .hero-logo-box {
-        grid-column: 1 / span 2;
-        grid-row: 1;
+      .flank-photo--left {
+        width: 130px;
+        height: 165px;
+        margin-top: 80px;
+      }
+      .flank-photo--right {
+        width: 130px;
+        height: 230px;
+        margin-top: 50px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero-header {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 16px;
+        padding: 15px 0 10px;
+      }
+      .hero-left, .hero-right {
         justify-content: center;
       }
       .landing-logo {
+        height: 140px;
+      }
+      .hero-photo-top {
+        display: none;
+      }
+      .flank-photo--left, .flank-photo--right {
+        display: none;
+      }
+      .packages-layout {
+        flex-direction: column;
+        align-items: center;
+      }
+      .packages-grid {
+        grid-template-columns: 1fr;
+        max-width: 440px;
+        width: 100%;
+      }
+      .mobile-photos-strip {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 15px auto 25px;
+      }
+      .mobile-photo-item {
+        width: 105px;
         height: 135px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 153, 0, 0.35);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.5);
       }
-      .hero-text-center {
-        grid-column: 1 / span 2;
-        grid-row: 2;
-      }
-      .hero-photo-left {
-        grid-column: 1;
-        grid-row: 3;
-        justify-self: end;
-      }
-      .hero-photo-right {
-        grid-column: 2;
-        grid-row: 3;
-        justify-self: start;
-        align-self: center;
-      }
-      .hero-photo-card {
-        width: 130px;
-        height: 165px;
+      .mobile-photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
     }
   </style>
 </head>
 <body>
 
-  <main class="container">
+  <main class="landing-container">
 
-    <!-- Hero sekce podle tvého rozvržení -->
-    <div class="hero-grid">
-
-      <!-- 1. Žlutá: Zvětšené logo vlevo nahoře -->
-      <div class="hero-logo-box">
+    <!-- 1. HORNÍ SEKCE: Logo vlevo | Text na střed | Portrét vpravo -->
+    <header class="hero-header">
+      <div class="hero-left">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
       </div>
-
-      <!-- 2. Modrá: Foto 1 vlevo dole pod logem -->
-      <div class="hero-photo-card hero-photo-left">
-        <img src="img-1537.jpg" alt="Kryštof Koblas">
-      </div>
-
-      <!-- 3. Zelená: Popisky zarovnané na střed -->
-      <div class="hero-text-center">
+      
+      <div class="hero-center">
         <span class="eyebrow">Certifikovaný nutriční poradce</span>
         <h1 class="hero-title">Získej postavu a energii,<br><em>které ti už nikdo nevezme</em></h1>
         <p class="hero-lead">Systém postavený na datech, vědě a realitě tvého života. Žádné hladovění ani nesmyslné restrikce.</p>
+        
+        <!-- Rámeček na uplatnění slevového kódu -->
+        <div class="promo-card">
+          <label class="promo-label" for="landingPromoInput">
+            🎁 Máš slevový kód z reklamy nebo sociálních sítí?
+          </label>
+          <div class="promo-row">
+            <input type="text" id="landingPromoInput" class="promo-input" placeholder="ZADEJ SLEVOVÝ KÓD" autocomplete="off">
+            <button type="button" id="landingPromoBtn" class="promo-btn">UPLATNIT</button>
+            <button type="button" id="landingClearBtn" class="promo-clear-btn" title="Zrušit kód" hidden>ZRUŠIT</button>
+          </div>
+          <div id="landingPromoMsg" class="promo-feedback" hidden></div>
+        </div>
       </div>
 
-      <!-- 4. Fialová: Foto 2 vpravo zarovnaná naproti první fotce -->
-      <div class="hero-photo-card hero-photo-right">
+      <div class="hero-right">
+        <div class="hero-photo-top">
+          <img src="img-1537.jpg" alt="Kryštof Koblas">
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobilní pás fotek (zobrazuje se pouze na mobilech pod textem) -->
+    <div class="mobile-photos-strip">
+      <div class="mobile-photo-item">
+        <img src="P_20260327_143812.jpg" alt="Zdravá strava" onerror="if(!this.src.endsWith('.webp')){this.src='P_20260327_143812.webp';}">
+      </div>
+      <div class="mobile-photo-item">
+        <img src="img-1537.jpg" alt="Kryštof Koblas">
+      </div>
+      <div class="mobile-photo-item">
+        <img src="pepaan.webp" alt="Kryštof Koblas - forma">
+      </div>
+    </div>
+
+    <!-- 2. SEKCE BALÍČKŮ S BOČNÍMI FOTKAMI -->
+    <section class="packages-layout">
+
+      <!-- Nová fotka jídla vlevo pootočená vedle Start-upu -->
+      <div class="flank-photo flank-photo--left">
+        <img src="P_20260327_143812.jpg" alt="Pestrá nutriční strava" onerror="if(!this.src.endsWith('.webp')){this.src='P_20260327_143812.webp';}">
+      </div>
+
+      <!-- Přehled nabídek -->
+      <div class="packages-grid">
+
+        <!-- START-UP -->
+        <article class="pkg-box" id="box-startup" data-pkg="startup">
+          <h2 class="pkg-title">START-UP</h2>
+          <p class="pkg-sub">1 měsíc · Profi odrazový můstek</p>
+          <div class="pkg-price-row">
+            <div id="price-startup" class="pkg-price" data-base="6900">6 900 Kč</div>
+            <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
+          </div>
+          <ul class="pkg-features">
+            <li>1× online schůzka (vstupní rozbor)</li>
+            <li>Individuální plán v licenci ZOFapp</li>
+            <li>Nastavení suplementace s rozumem</li>
+            <li>2× diagnostika InBody</li>
+            <li>Podpora a asistence na WhatsAppu</li>
+          </ul>
+          <div class="pkg-btns-normal">
+            <a href="objednavka.html?sluzba=startup" class="btn-buy js-order-btn" id="btn-startup">Objednat Start-up →</a>
+            <a href="objednavka.html?sluzba=startup&darek=1" class="btn-gift" id="btngift-startup">🎁 Objednat jako dárek</a>
+          </div>
+          <div class="pkg-btns-closed">
+            <p class="closed-notice">Kapacita je momentálně plná.</p>
+            <a href="cekacka.html?sluzba=startup" class="btn-waitlist">Chci vědět o volném místě →</a>
+          </div>
+        </article>
+
+        <!-- MENTORING -->
+        <article class="pkg-box pkg-box--featured" id="box-mentoring" data-pkg="mentoring">
+          <span class="pkg-badge">Nejoblíbenější</span>
+          <h2 class="pkg-title">MENTORING</h2>
+          <p class="pkg-sub">4 měsíce · Individuální vedení</p>
+          <div class="pkg-price-row">
+            <div id="price-mentoring" class="pkg-price" data-base="15900">15 900 Kč</div>
+            <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
+          </div>
+          <ul class="pkg-features">
+            <li>Celkem 4 online schůzky (pravidelný mentoring)</li>
+            <li>Kompletní vedení v aplikaci ZOF</li>
+            <li>3× diagnostika InBody pro ověření progresu</li>
+            <li>VIP odpověď na WhatsAppu do 24 hodin</li>
+            <li>Trvalé osvojení udržitelných návyků</li>
+          </ul>
+          <div class="pkg-btns-normal">
+            <a href="objednavka.html?sluzba=mentoring" class="btn-buy js-order-btn" id="btn-mentoring">Objednat Mentoring →</a>
+            <a href="objednavka.html?sluzba=mentoring&darek=1" class="btn-gift" id="btngift-mentoring">🎁 Objednat jako dárek</a>
+          </div>
+          <div class="pkg-btns-closed">
+            <p class="closed-notice">Kapacita je momentálně plná.</p>
+            <a href="cekacka.html?sluzba=mentoring" class="btn-waitlist">Chci vědět o volném místě →</a>
+          </div>
+        </article>
+
+        <!-- ULTIMATE -->
+        <article class="pkg-box" id="box-ultimate" data-pkg="ultimate">
+          <h2 class="pkg-title">ULTIMATE</h2>
+          <p class="pkg-sub">6 měsíců · Maximální výkon & biohacking</p>
+          <div class="pkg-price-row">
+            <div id="price-ultimate" class="pkg-price" data-base="19900">19 900 Kč</div>
+            <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
+          </div>
+          <ul class="pkg-features">
+            <li>Celkem 6 online schůzek s podrobnou analýzou</li>
+            <li>Pokročilé protokoly spánku a cirkadiánního rytmu</li>
+            <li>4× diagnostika InBody pro maximální kontrolu</li>
+            <li>Prioritní WhatsApp garance do 12 hodin</li>
+            <li>Kompletní servis a dlouhodobá adaptace</li>
+          </ul>
+          <div class="pkg-btns-normal">
+            <a href="objednavka.html?sluzba=ultimate" class="btn-buy js-order-btn" id="btn-ultimate">Objednat Ultimate →</a>
+            <a href="objednavka.html?sluzba=ultimate&darek=1" class="btn-gift" id="btngift-ultimate">🎁 Objednat jako dárek</a>
+          </div>
+          <div class="pkg-btns-closed">
+            <p class="closed-notice">Kapacita je momentálně plná.</p>
+            <a href="cekacka.html?sluzba=ultimate" class="btn-waitlist">Chci vědět o volném místě →</a>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Fotka postavy vpravo vedle Ultimate -->
+      <div class="flank-photo flank-photo--right">
         <img src="pepaan.webp" alt="Kryštof Koblas - forma">
       </div>
 
-    </div>
-
-    <!-- Rámeček na uplatnění slevového kódu -->
-    <div class="promo-card">
-      <label class="promo-label" for="landingPromoInput">
-        🎁 Máš slevový kód z reklamy nebo sociálních sítí?
-      </label>
-      <div class="promo-row">
-        <input type="text" id="landingPromoInput" class="promo-input" placeholder="ZADEJ SLEVOVÝ KÓD" autocomplete="off">
-        <button type="button" id="landingPromoBtn" class="promo-btn">UPLATNIT</button>
-        <button type="button" id="landingClearBtn" class="promo-clear-btn" title="Zrušit kód" hidden>ZRUŠIT</button>
-      </div>
-      <div id="landingPromoMsg" class="promo-feedback" hidden></div>
-    </div>
-
-    <!-- Přehled nabídek -->
-    <div class="packages-grid">
-
-      <!-- START-UP -->
-      <article class="pkg-box" id="box-startup" data-pkg="startup">
-        <h2 class="pkg-title">START-UP</h2>
-        <p class="pkg-sub">1 měsíc · Profi odrazový můstek</p>
-        <div class="pkg-price-row">
-          <div id="price-startup" class="pkg-price" data-base="6900">6 900 Kč</div>
-          <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
-        </div>
-        <ul class="pkg-features">
-          <li>1× online schůzka (vstupní rozbor)</li>
-          <li>Individuální plán v licenci ZOFapp</li>
-          <li>Nastavení suplementace s rozumem</li>
-          <li>2× diagnostika InBody</li>
-          <li>Podpora a asistence na WhatsAppu</li>
-        </ul>
-        <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=startup" class="btn-buy js-order-btn" id="btn-startup">Objednat Start-up →</a>
-          <a href="objednavka.html?sluzba=startup&darek=1" class="btn-gift" id="btngift-startup">🎁 Objednat jako dárek</a>
-        </div>
-        <div class="pkg-btns-closed">
-          <p class="closed-notice">Kapacita je momentálně plná.</p>
-          <a href="cekacka.html?sluzba=startup" class="btn-waitlist">Chci vědět o volném místě →</a>
-        </div>
-      </article>
-
-      <!-- MENTORING -->
-      <article class="pkg-box pkg-box--featured" id="box-mentoring" data-pkg="mentoring">
-        <span class="pkg-badge">Nejoblíbenější</span>
-        <h2 class="pkg-title">MENTORING</h2>
-        <p class="pkg-sub">4 měsíce · Individuální vedení</p>
-        <div class="pkg-price-row">
-          <div id="price-mentoring" class="pkg-price" data-base="14700">14 700 Kč</div>
-          <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
-        </div>
-        <ul class="pkg-features">
-          <li>Celkem 4 online schůzky (pravidelný mentoring)</li>
-          <li>Kompletní vedení v aplikaci ZOF</li>
-          <li>3× diagnostika InBody pro ověření progresu</li>
-          <li>VIP odpověď na WhatsAppu do 24 hodin</li>
-          <li>Trvalé osvojení udržitelných návyků</li>
-        </ul>
-        <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=mentoring" class="btn-buy js-order-btn" id="btn-mentoring">Objednat Mentoring →</a>
-          <a href="objednavka.html?sluzba=mentoring&darek=1" class="btn-gift" id="btngift-mentoring">🎁 Objednat jako dárek</a>
-        </div>
-        <div class="pkg-btns-closed">
-          <p class="closed-notice">Kapacita je momentálně plná.</p>
-          <a href="cekacka.html?sluzba=mentoring" class="btn-waitlist">Chci vědět o volném místě →</a>
-        </div>
-      </article>
-
-      <!-- ULTIMATE -->
-      <article class="pkg-box" id="box-ultimate" data-pkg="ultimate">
-        <h2 class="pkg-title">ULTIMATE</h2>
-        <p class="pkg-sub">6 měsíců · Maximální výkon & biohacking</p>
-        <div class="pkg-price-row">
-          <div id="price-ultimate" class="pkg-price" data-base="22300">22 300 Kč</div>
-          <div class="pkg-meta">Včetně odečtu InBody diagnostiky</div>
-        </div>
-        <ul class="pkg-features">
-          <li>Celkem 6 online schůzek s podrobnou analýzou</li>
-          <li>Pokročilé protokoly spánku a cirkadiánního rytmu</li>
-          <li>4× diagnostika InBody pro maximální kontrolu</li>
-          <li>Prioritní WhatsApp garance do 12 hodin</li>
-          <li>Kompletní servis a dlouhodobá adaptace</li>
-        </ul>
-        <div class="pkg-btns-normal">
-          <a href="objednavka.html?sluzba=ultimate" class="btn-buy js-order-btn" id="btn-ultimate">Objednat Ultimate →</a>
-          <a href="objednavka.html?sluzba=ultimate&darek=1" class="btn-gift" id="btngift-ultimate">🎁 Objednat jako dárek</a>
-        </div>
-        <div class="pkg-btns-closed">
-          <p class="closed-notice">Kapacita je momentálně plná.</p>
-          <a href="cekacka.html?sluzba=ultimate" class="btn-waitlist">Chci vědět o volném místě →</a>
-        </div>
-      </article>
-
-    </div>
+    </section>
 
     <footer class="footer-guarantee">
       <p>© 2026 Kryštof Koblas – Certifikovaný nutriční poradce | Uničov & celá ČR online</p>
@@ -612,8 +692,8 @@
     (function() {
       var basePrices = {
         startup: 6900,
-        mentoring: 14700,
-        ultimate: 22300
+        mentoring: 15900,
+        ultimate: 19900
       };
 
       var closedMap = {
@@ -641,7 +721,6 @@
           var me = p.mentoring || {};
           var ul = p.ultimate || {};
 
-          // Přesně stejné načtení jako na sluzby.html (ošetřeno 'jednorizove' i 'jednorazove')
           var suJed = parseKc(su.jednorizove || su.jednorazove);
           var meJed = parseKc(me.jednorizove || me.jednorazove);
           var ulJed = parseKc(ul.jednorizove || ul.jednorazove);
@@ -650,7 +729,6 @@
           if (meJed) basePrices.mentoring = meJed;
           if (ulJed) basePrices.ultimate = ulJed;
 
-          // Přepsání cen podle adminu
           if (!promoInput.value) {
             document.getElementById('price-startup').textContent = formatKc(basePrices.startup);
             document.getElementById('price-mentoring').textContent = formatKc(basePrices.mentoring);
@@ -749,7 +827,7 @@
             btnGift.classList.remove('btn-gift-highlight');
 
             if (allowed.includes(pkg)) {
-              var orig = basePrices[pkg]; // Vychází přímo z aktuální ceny z adminu
+              var orig = basePrices[pkg];
 
               if (isGiftVoucher) {
                 if (closedMap[pkg]) box.classList.remove('is-closed');
@@ -772,7 +850,6 @@
                 btnGift.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&darek=1&kod=' + data.code);
 
               } else {
-                var orig = basePrices[pkg];
                 var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
                 var finalP = Math.max(0, orig - disc);
 
