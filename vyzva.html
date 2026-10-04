@@ -31,50 +31,53 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
-    .landing-container {
-      max-width: 1420px;
+
+    /* Celkový rámec zarovnaný kompaktně na střed (žádné prázdné díry do stran) */
+    .landing-wrapper {
+      max-width: 1220px;
       margin: 0 auto;
-      padding: 10px 20px 40px;
+      padding: 10px 16px 40px;
     }
 
-    /* ── HORNÍ SEKCE PODLE KOLÁŽE (Logo vlevo, Text na střed, Portrét vpravo) ── */
-    .hero-header {
+    /* ── 1. HORNÍ BLOK (Logo vlevo | Text na střed | Portrét vpravo) ── */
+    .hero-compact {
       display: grid;
-      grid-template-columns: 230px 1fr 190px;
+      grid-template-columns: 190px 1fr 165px;
       align-items: center;
       gap: 20px;
-      padding: 25px 0 15px;
+      max-width: 1020px;
+      margin: 0 auto 25px;
+      padding-top: 15px;
     }
-    .hero-left {
+    .hero-logo-col {
       display: flex;
-      justify-content: flex-start;
+      justify-content: center;
       align-items: center;
     }
     .landing-logo {
-      height: 185px; /* Výrazné velké zlaté logo */
+      height: 175px;
       width: auto;
       display: block;
-      filter: drop-shadow(0 4px 20px rgba(255, 153, 0, 0.22));
+      filter: drop-shadow(0 4px 18px rgba(255, 153, 0, 0.25));
     }
-    .hero-center {
+    .hero-text-col {
       text-align: center;
-      padding: 0 10px;
     }
     .eyebrow {
       display: inline-block;
-      font-size: 13px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 2px;
       color: #ff9900;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .hero-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(24px, 3.2vw, 36px);
+      font-size: clamp(23px, 2.6vw, 34px);
       line-height: 1.22;
       color: #fff;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .hero-title em {
       color: #ff9900;
@@ -82,68 +85,69 @@
     }
     .hero-lead {
       color: #aaa;
-      font-size: 14.5px;
-      max-width: 530px;
-      margin: 0 auto 16px;
-      line-height: 1.6;
+      font-size: 14px;
+      max-width: 480px;
+      margin: 0 auto 14px;
+      line-height: 1.55;
     }
-    .hero-right {
+    .hero-portrait-col {
       display: flex;
-      justify-content: flex-end;
+      justify-content: center;
       align-items: center;
     }
-    .hero-photo-top {
+    .hero-portrait-card {
       width: 145px;
-      height: 180px;
+      height: 175px;
       background: rgba(14, 22, 18, 0.9);
       border: 1px solid rgba(255, 153, 0, 0.35);
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+      flex-shrink: 0;
     }
-    .hero-photo-top img {
+    .hero-portrait-card img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
 
-    /* Rámeček slevového kódu vycentrovaný pod textem */
+    /* Rámeček na uplatnění kódu přímo pod textem */
     .promo-card {
-      background: rgba(18, 26, 22, 0.9);
+      background: rgba(18, 26, 22, 0.95);
       border: 1px solid rgba(255, 153, 0, 0.35);
-      border-radius: 12px;
-      max-width: 530px;
+      border-radius: 10px;
+      max-width: 470px;
       margin: 0 auto;
-      padding: 14px 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      padding: 12px 18px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
       text-align: left;
     }
     .promo-label {
-      font-size: 13px;
+      font-size: 12.5px;
       color: #ff9900;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
     .promo-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
     .promo-input {
       flex: 1;
-      height: 42px;
+      height: 40px;
       background: #060a08;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: #fff;
-      padding: 0 14px;
+      padding: 0 12px;
       font-family: monospace;
       font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      border-radius: 8px;
+      border-radius: 6px;
       outline: none;
     }
     .promo-input:focus {
@@ -151,15 +155,15 @@
       box-shadow: 0 0 10px rgba(255, 153, 0, 0.2);
     }
     .promo-btn {
-      height: 42px;
+      height: 40px;
       background: linear-gradient(135deg, #ff9900 0%, #e08200 100%);
       color: #000;
       font-weight: 700;
       border: none;
-      padding: 0 18px;
-      border-radius: 8px;
+      padding: 0 16px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 12.5px;
+      font-size: 12px;
       letter-spacing: 0.5px;
       box-shadow: 0 4px 15px rgba(255, 153, 0, 0.25);
       transition: all 0.2s ease;
@@ -169,13 +173,13 @@
       box-shadow: 0 4px 20px rgba(255, 153, 0, 0.4);
     }
     .promo-clear-btn {
-      height: 42px;
+      height: 40px;
       background: #1a1a1a;
       color: #ff5555;
       border: 1px solid #444;
       font-weight: bold;
-      padding: 0 14px;
-      border-radius: 8px;
+      padding: 0 12px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
       transition: all 0.2s ease;
@@ -202,68 +206,76 @@
       color: #e74c3c;
     }
 
-    /* ── BALÍČKY S BOČNÍMI FOTKAMI (Jídlo vlevo, Postava vpravo) ── */
-    .packages-layout {
+    /* ── 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH ── */
+    .packages-stage {
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      gap: 24px;
-      margin-top: 30px;
-      position: relative;
+      gap: 16px;
+      margin-top: 15px;
     }
-    .packages-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(280px, 340px));
-      gap: 22px;
-      flex: 1;
-      max-width: 1040px;
-      position: relative;
-      z-index: 2;
-    }
-    .flank-photo {
-      background: rgba(14, 22, 18, 0.9);
-      border: 1px solid rgba(255, 153, 0, 0.4);
-      box-shadow: 0 12px 35px rgba(0,0,0,0.7);
-      overflow: hidden;
+
+    /* Fotka jídla vlevo těsně u Start-upu s náklonem */
+    .side-food-wrap {
+      width: 145px;
+      height: 195px;
       flex-shrink: 0;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      margin-top: 35px;
+      transform: rotate(-12deg);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 153, 0, 0.4);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      overflow: hidden;
+      background: #0d1612;
+      transition: transform 0.25s ease;
     }
-    .flank-photo img {
+    .side-food-wrap:hover {
+      transform: rotate(-5deg) scale(1.04);
+    }
+    .side-food-wrap img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
-    /* Nová fotka jídla vlevo pootočená vedle Start-upu */
-    .flank-photo--left {
-      width: 160px;
-      height: 200px;
-      margin-top: 65px;
-      border-radius: 14px;
-      transform: rotate(-13deg);
-    }
-    .flank-photo--left:hover {
-      transform: rotate(-6deg) scale(1.05);
-      box-shadow: 0 16px 40px rgba(255, 153, 0, 0.25);
-    }
-    /* Fotka postavy vpravo vedle Ultimate */
-    .flank-photo--right {
-      width: 160px;
-      height: 280px;
-      margin-top: 35px;
-      border-radius: 14px;
-    }
-    .flank-photo--right:hover {
-      transform: scale(1.04);
-      box-shadow: 0 16px 40px rgba(255, 153, 0, 0.25);
+
+    /* Trojice balíčků */
+    .packages-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 290px);
+      gap: 16px;
+      flex-shrink: 0;
     }
 
-    /* Karta balíčku */
+    /* Fotka postavy vpravo těsně u Ultimate */
+    .side-physique-wrap {
+      width: 145px;
+      height: 255px;
+      flex-shrink: 0;
+      margin-top: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 153, 0, 0.35);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      overflow: hidden;
+      background: #0d1612;
+      transition: transform 0.25s ease;
+    }
+    .side-physique-wrap:hover {
+      transform: scale(1.03);
+    }
+    .side-physique-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Vzhled karet balíčků */
     .pkg-box {
-      background: rgba(14, 22, 18, 0.85);
+      background: rgba(14, 22, 18, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
-      padding: 28px 24px;
+      padding: 24px 20px;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -272,73 +284,74 @@
     }
     .pkg-box--featured {
       border-color: #ff9900;
-      background: linear-gradient(180deg, rgba(255, 153, 0, 0.05) 0%, rgba(14, 22, 18, 0.95) 100%);
-      box-shadow: 0 12px 40px rgba(255, 153, 0, 0.15);
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.06) 0%, rgba(14, 22, 18, 0.95) 100%);
+      box-shadow: 0 12px 40px rgba(255, 153, 0, 0.18);
     }
     .pkg-badge {
       position: absolute;
-      top: -12px;
-      right: 20px;
+      top: -11px;
+      right: 18px;
       background: #ff9900;
       color: #000;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      padding: 4px 10px;
+      padding: 3px 9px;
       border-radius: 4px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .pkg-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 22px;
+      font-size: 21px;
       color: #fff;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .pkg-sub {
       color: #888;
-      font-size: 13px;
-      margin-bottom: 16px;
+      font-size: 12.5px;
+      margin-bottom: 14px;
     }
     .pkg-price-row {
-      margin-bottom: 18px;
-      padding-bottom: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
     .pkg-price {
-      font-size: 26px;
+      font-size: 25px;
       font-weight: 700;
       color: #ff9900;
     }
     .pkg-price-struck {
       text-decoration: line-through;
       color: #666;
-      font-size: 17px;
+      font-size: 16px;
       margin-right: 8px;
       font-weight: 400;
     }
     .pkg-meta {
-      font-size: 11.5px;
+      font-size: 11px;
       color: #777;
-      margin-top: 4px;
+      margin-top: 3px;
     }
     .pkg-features {
       list-style: none;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       flex: 1;
     }
     .pkg-features li {
       position: relative;
-      padding-left: 20px;
-      font-size: 13.5px;
+      padding-left: 18px;
+      font-size: 13px;
       color: #bbb;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
+      line-height: 1.45;
     }
     .pkg-features li::before {
       content: "✔";
       position: absolute;
       left: 0;
       color: #ff9900;
-      font-size: 12px;
+      font-size: 11px;
     }
     .btn-buy {
       display: block;
@@ -347,13 +360,13 @@
       background: linear-gradient(135deg, #ff9900 0%, #e08200 100%);
       color: #000;
       font-weight: 700;
-      padding: 12px 18px;
-      border-radius: 8px;
+      padding: 11px 16px;
+      border-radius: 7px;
       text-decoration: none;
-      font-size: 14px;
+      font-size: 13.5px;
       box-shadow: 0 4px 15px rgba(255, 153, 0, 0.25);
       transition: all 0.2s ease;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
     .btn-buy:hover {
       background: linear-gradient(135deg, #ffaa22, #f09000);
@@ -366,10 +379,10 @@
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #ccc;
-      padding: 10px 14px;
-      border-radius: 8px;
+      padding: 9px 12px;
+      border-radius: 7px;
       text-decoration: none;
-      font-size: 12.5px;
+      font-size: 12px;
       transition: all 0.2s ease;
     }
     .btn-gift:hover {
@@ -384,15 +397,15 @@
       color: #000 !important;
       font-weight: 700 !important;
       border: none !important;
-      font-size: 14px !important;
-      padding: 12px 18px !important;
+      font-size: 13.5px !important;
+      padding: 11px 16px !important;
       box-shadow: 0 4px 15px rgba(255, 153, 0, 0.25) !important;
     }
     .btn-gift-highlight:hover {
       background: linear-gradient(135deg, #ffaa22, #f09000) !important;
     }
 
-    /* Vizuální stav disabled pro neaktivní tlačítko */
+    /* Ztlumení neaktivních tlačítek */
     .btn-disabled-dim {
       opacity: 0.25 !important;
       pointer-events: none !important;
@@ -400,7 +413,7 @@
       cursor: not-allowed;
     }
 
-    /* Vizuální stavy při uplatnění kódu */
+    /* Vizuální stav aktivovaného voucheru */
     .pkg-box.pkg-card--voucher-match {
       border: 2px solid #ffaa22 !important;
       background: linear-gradient(180deg, rgba(255, 170, 34, 0.1) 0%, rgba(14, 22, 18, 0.95) 100%) !important;
@@ -441,10 +454,10 @@
       border: 1px solid #ff9900;
       color: #ff9900;
       font-weight: 600;
-      padding: 11px 16px;
-      border-radius: 8px;
+      padding: 10px 14px;
+      border-radius: 7px;
       text-decoration: none;
-      font-size: 13px;
+      font-size: 12.5px;
       transition: all 0.2s ease;
     }
     .btn-waitlist:hover {
@@ -453,78 +466,65 @@
 
     .footer-guarantee {
       text-align: center;
-      margin-top: 40px;
-      padding: 20px 20px;
+      margin-top: 35px;
+      padding: 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 12.5px;
+      font-size: 12px;
       color: #777;
     }
 
-    /* Pás fotek pro mobily (na desktopu skrytý) */
-    .mobile-photos-strip {
+    /* Pás fotek pro mobily (na PC skrytý) */
+    .mobile-photos-row {
       display: none;
     }
 
-    /* ── RESPONZIVITA (Plynulé zmenšení na tabletech a mobilech) ── */
-    @media (max-width: 1220px) {
-      .packages-layout {
-        gap: 14px;
+    /* ── RESPONZIVITA (Mobily a menší obrazovky) ── */
+    @media (max-width: 1080px) {
+      .packages-grid {
+        grid-template-columns: repeat(3, 270px);
+        gap: 12px;
       }
-      .flank-photo--left {
-        width: 130px;
-        height: 165px;
-        margin-top: 80px;
-      }
-      .flank-photo--right {
-        width: 130px;
-        height: 230px;
-        margin-top: 50px;
+      .side-food-wrap, .side-physique-wrap {
+        width: 125px;
       }
     }
 
-    @media (max-width: 980px) {
-      .hero-header {
+    @media (max-width: 950px) {
+      .hero-compact {
         grid-template-columns: 1fr;
         text-align: center;
-        gap: 16px;
-        padding: 15px 0 10px;
-      }
-      .hero-left, .hero-right {
-        justify-content: center;
+        gap: 14px;
       }
       .landing-logo {
         height: 140px;
       }
-      .hero-photo-top {
+      .hero-portrait-col, .side-food-wrap, .side-physique-wrap {
         display: none;
       }
-      .flank-photo--left, .flank-photo--right {
-        display: none;
-      }
-      .packages-layout {
+      .packages-stage {
         flex-direction: column;
         align-items: center;
       }
       .packages-grid {
         grid-template-columns: 1fr;
-        max-width: 440px;
+        max-width: 420px;
         width: 100%;
       }
-      .mobile-photos-strip {
+      .mobile-photos-row {
         display: flex;
         justify-content: center;
         gap: 10px;
         margin: 15px auto 25px;
       }
-      .mobile-photo-item {
-        width: 105px;
-        height: 135px;
+      .mobile-photo-thumb {
+        width: 100px;
+        height: 130px;
         border-radius: 10px;
         overflow: hidden;
         border: 1px solid rgba(255, 153, 0, 0.35);
         box-shadow: 0 6px 18px rgba(0,0,0,0.5);
       }
-      .mobile-photo-item img {
+      .mobile-photo-thumb img {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -535,20 +535,20 @@
 </head>
 <body>
 
-  <main class="landing-container">
+  <main class="landing-wrapper">
 
     <!-- 1. HORNÍ SEKCE: Logo vlevo | Text na střed | Portrét vpravo -->
-    <header class="hero-header">
-      <div class="hero-left">
+    <header class="hero-compact">
+      <div class="hero-logo-col">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
       </div>
       
-      <div class="hero-center">
+      <div class="hero-text-col">
         <span class="eyebrow">Certifikovaný nutriční poradce</span>
         <h1 class="hero-title">Získej postavu a energii,<br><em>které ti už nikdo nevezme</em></h1>
         <p class="hero-lead">Systém postavený na datech, vědě a realitě tvého života. Žádné hladovění ani nesmyslné restrikce.</p>
         
-        <!-- Rámeček na uplatnění slevového kódu -->
+        <!-- Rámeček na slevový kód -->
         <div class="promo-card">
           <label class="promo-label" for="landingPromoInput">
             🎁 Máš slevový kód z reklamy nebo sociálních sítí?
@@ -562,32 +562,32 @@
         </div>
       </div>
 
-      <div class="hero-right">
-        <div class="hero-photo-top">
+      <div class="hero-portrait-col">
+        <div class="hero-portrait-card">
           <img src="img-1537.jpg" alt="Kryštof Koblas">
         </div>
       </div>
     </header>
 
-    <!-- Mobilní pás fotek (zobrazuje se pouze na mobilech pod textem) -->
-    <div class="mobile-photos-strip">
-      <div class="mobile-photo-item">
-        <img src="P_20260327_143812.jpg" alt="Zdravá strava" onerror="if(!this.src.endsWith('.webp')){this.src='P_20260327_143812.webp';}">
+    <!-- Mobilní pás fotek (pouze na mobilu pod textem) -->
+    <div class="mobile-photos-row">
+      <div class="mobile-photo-thumb">
+        <img src="P_20260327_143812.webp" alt="Pestrá strava" onerror="if(!this.dataset.tried){this.dataset.tried=1;this.src='P_20260327_143812.jpg';}">
       </div>
-      <div class="mobile-photo-item">
+      <div class="mobile-photo-thumb">
         <img src="img-1537.jpg" alt="Kryštof Koblas">
       </div>
-      <div class="mobile-photo-item">
-        <img src="pepaan.webp" alt="Kryštof Koblas - forma">
+      <div class="mobile-photo-thumb">
+        <img src="pepaan.webp" alt="Forma">
       </div>
     </div>
 
-    <!-- 2. SEKCE BALÍČKŮ S BOČNÍMI FOTKAMI -->
-    <section class="packages-layout">
+    <!-- 2. SEKCE BALÍČKŮ S FOTKAMI TĚSNĚ PO BOKÁCH -->
+    <section class="packages-stage">
 
-      <!-- Nová fotka jídla vlevo pootočená vedle Start-upu -->
-      <div class="flank-photo flank-photo--left">
-        <img src="P_20260327_143812.jpg" alt="Pestrá nutriční strava" onerror="if(!this.src.endsWith('.webp')){this.src='P_20260327_143812.webp';}">
+      <!-- Fotka jídla vlevo těsně u Start-upu -->
+      <div class="side-food-wrap">
+        <img src="P_20260327_143812.webp" alt="Pestrá nutriční strava" onerror="if(!this.dataset.step){this.dataset.step=1;this.src='P_20260327_143812.jpg';}else if(this.dataset.step==1){this.dataset.step=2;this.src='P_20260327_143812.jpeg';}else if(this.dataset.step==2){this.dataset.step=3;this.src='P_20260327_143812.png';}else if(this.dataset.step==3){this.dataset.step=4;this.src='P_20260327_143812.JPG';}">
       </div>
 
       <!-- Přehled nabídek -->
@@ -671,8 +671,8 @@
 
       </div>
 
-      <!-- Fotka postavy vpravo vedle Ultimate -->
-      <div class="flank-photo flank-photo--right">
+      <!-- Fotka postavy vpravo těsně u Ultimate -->
+      <div class="side-physique-wrap">
         <img src="pepaan.webp" alt="Kryštof Koblas - forma">
       </div>
 
@@ -690,6 +690,7 @@
 
   <script>
     (function() {
+      // Výchozí ceny přesně podle tvého adminu (žádné problikávání)
       var basePrices = {
         startup: 6900,
         mentoring: 15900,
@@ -729,6 +730,7 @@
           if (meJed) basePrices.mentoring = meJed;
           if (ulJed) basePrices.ultimate = ulJed;
 
+          // Okamžitá aktualizace cen, pokud není vepsaný slevový kód
           if (!promoInput.value) {
             document.getElementById('price-startup').textContent = formatKc(basePrices.startup);
             document.getElementById('price-mentoring').textContent = formatKc(basePrices.mentoring);
