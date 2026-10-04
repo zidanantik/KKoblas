@@ -36,24 +36,44 @@
       padding: 0 20px;
     }
 
-    /* Hero sekce: Logo, Text a Fotky vedle sebe */
-    .hero-flex {
-      display: flex;
+    /* Hero sekce podle tvého náčrtu */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 210px 1fr 180px;
+      grid-template-rows: auto auto;
+      gap: 15px 25px;
       align-items: center;
-      gap: 30px;
       padding: 30px 0 20px;
-      text-align: left;
     }
-    .hero-logo-col {
-      flex-shrink: 0;
+
+    /* 1. Žlutá: Větší logo vlevo nahoře */
+    .hero-logo-box {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
     }
     .landing-logo {
-      height: 140px;
+      height: 175px; /* Výrazně zvětšené logo */
       width: auto;
       display: block;
+      filter: drop-shadow(0 4px 15px rgba(255, 153, 0, 0.15));
     }
-    .hero-text-col {
-      flex: 1;
+
+    /* 2. Modrá: Foto 1 vlevo dole pod logem */
+    .hero-photo-left {
+      grid-column: 1;
+      grid-row: 2;
+      justify-self: start;
+    }
+
+    /* 3. Zelená: Texty uprostřed na střed */
+    .hero-text-center {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      text-align: center;
+      padding: 0 10px;
     }
     .eyebrow {
       display: inline-block;
@@ -62,14 +82,14 @@
       letter-spacing: 2px;
       color: #ff9900;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .hero-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(24px, 3.5vw, 36px);
-      line-height: 1.2;
+      font-size: clamp(24px, 3.2vw, 36px);
+      line-height: 1.22;
       color: #fff;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .hero-title em {
       color: #ff9900;
@@ -77,27 +97,38 @@
     }
     .hero-lead {
       color: #aaa;
-      font-size: 14px;
+      font-size: 14.5px;
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
     }
 
-    /* Sloupec s oběma fotkami vpravo */
-    .hero-photos-col {
-      flex-shrink: 0;
-      display: flex;
-      gap: 12px;
-      width: 270px;
+    /* 4. Fialová: Foto 2 vpravo zarovnaná naproti první fotce */
+    .hero-photo-right {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      align-self: end; /* Zarovnání do spodní linie k foto 1 */
     }
+
+    /* Vzhled karet pro fotky */
     .hero-photo-card {
-      flex: 1;
+      width: 142px;
+      height: 185px;
       background: rgba(14, 22, 18, 0.9);
-      border: 1px solid rgba(255, 153, 0, 0.3);
-      border-radius: 10px;
+      border: 1px solid rgba(255, 153, 0, 0.35);
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .hero-photo-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(255, 153, 0, 0.25);
     }
     .hero-photo-card img {
       width: 100%;
-      height: 170px;
+      height: 100%;
       object-fit: cover;
       display: block;
     }
@@ -402,22 +433,42 @@
       color: #777;
     }
 
-    /* Responzivita pro mobily – pod sebou */
+    /* Responzivita pro mobily – čisté seskupení pod sebe */
     @media (max-width: 950px) {
-      .hero-flex {
-        flex-direction: column;
+      .hero-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 16px;
+        justify-items: center;
         text-align: center;
-        gap: 20px;
         padding: 20px 0 10px;
       }
-      .landing-logo {
-        height: 120px;
-        margin: 0 auto;
+      .hero-logo-box {
+        grid-column: 1 / span 2;
+        grid-row: 1;
+        justify-content: center;
       }
-      .hero-photos-col {
-        width: 100%;
-        max-width: 320px;
-        margin: 0 auto;
+      .landing-logo {
+        height: 135px;
+      }
+      .hero-text-center {
+        grid-column: 1 / span 2;
+        grid-row: 2;
+      }
+      .hero-photo-left {
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: end;
+      }
+      .hero-photo-right {
+        grid-column: 2;
+        grid-row: 3;
+        justify-self: start;
+        align-self: center;
+      }
+      .hero-photo-card {
+        width: 130px;
+        height: 165px;
       }
     }
   </style>
@@ -426,24 +477,31 @@
 
   <main class="container">
 
-    <!-- Hero sekce: Logo, Text a Fotky vedle sebe -->
-    <div class="hero-flex">
-      <div class="hero-logo-col">
+    <!-- Hero sekce podle tvého rozvržení -->
+    <div class="hero-grid">
+
+      <!-- 1. Žlutá: Zvětšené logo vlevo nahoře -->
+      <div class="hero-logo-box">
         <img src="logo-zlata.png" alt="Kryštof Koblas logo" class="landing-logo">
       </div>
-      <div class="hero-text-col">
+
+      <!-- 2. Modrá: Foto 1 vlevo dole pod logem -->
+      <div class="hero-photo-card hero-photo-left">
+        <img src="img-1537.jpg" alt="Kryštof Koblas">
+      </div>
+
+      <!-- 3. Zelená: Popisky zarovnané na střed -->
+      <div class="hero-text-center">
         <span class="eyebrow">Certifikovaný nutriční poradce</span>
         <h1 class="hero-title">Získej postavu a energii,<br><em>které ti už nikdo nevezme</em></h1>
         <p class="hero-lead">Systém postavený na datech, vědě a realitě tvého života. Žádné hladovění ani nesmyslné restrikce.</p>
       </div>
-      <div class="hero-photos-col">
-        <div class="hero-photo-card">
-          <img src="img-1537.jpg" alt="Kryštof Koblas">
-        </div>
-        <div class="hero-photo-card">
-          <img src="pepaan.webp" alt="Kryštof Koblas - forma">
-        </div>
+
+      <!-- 4. Fialová: Foto 2 vpravo zarovnaná naproti první fotce -->
+      <div class="hero-photo-card hero-photo-right">
+        <img src="pepaan.webp" alt="Kryštof Koblas - forma">
       </div>
+
     </div>
 
     <!-- Rámeček na uplatnění slevového kódu -->
@@ -714,6 +772,7 @@
                 btnGift.setAttribute('href', 'objednavka.html?sluzba=' + pkg + '&darek=1&kod=' + data.code);
 
               } else {
+                var orig = basePrices[pkg];
                 var disc = data.type === 'percent' ? Math.round(orig * (Number(data.value) / 100)) : Number(data.value);
                 var finalP = Math.max(0, orig - disc);
 
