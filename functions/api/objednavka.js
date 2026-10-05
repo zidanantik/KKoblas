@@ -503,9 +503,11 @@ export async function onRequestPost(context) {
       }
     }
 
-    // ── Zneplatnění použitého kódu v KV databázi ──
+// ── Zneplatnění použitého kódu v KV databázi ──
     if (matchedPromo && store) {
-      matchedPromo.used = true;
+      if (matchedPromo.oneTime) {
+        matchedPromo.used = true;
+      }
       matchedPromo.usedCount = (Number(matchedPromo.usedCount) || 0) + 1;
       await store.put('PROMO_CODES', JSON.stringify(promoCodes));
     }
