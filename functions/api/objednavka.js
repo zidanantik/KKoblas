@@ -207,6 +207,36 @@ export async function onRequestPost(context) {
     const firstInstallmentAmount = isInstallment ? instConfig.firstAmount : parsedPrice;
     const subsequentAmount = isInstallment ? instConfig.subsequentAmount : 0;
 
+    // ── Výpočet slevy pro transparentní rozpis na faktuře ──
+    let discountAmount = 0;
+    if (body.Pouzity_kod && !isZeroPayment) {
+      // 1. Zkusíme vytáhnout částku z textu Sleva_info (např. "Sleva 10 % (-1 470 Kč)" nebo "Sleva 1 000 Kč")
+      if (body.Sleva_info) {
+        const matchParen = String(body.Sleva_info).match(/-\s*([\d\s]+)\s*Kč/);
+        if (matchParen) {
+          discountAmount = parseInt(matchParen[1].replace(/\s/g, ''), 10) || 0;
+        } else {
+          const matchSimple = String(body.Sleva_info).match(/Sleva\s+([\d\s]+)\s*Kč/i);
+          if (matchSimple) {
+            discountAmount = parseInt(matchSimple[1].replace(/\s/g, ''), 10) || 0;
+          }
+        }
+      }
+
+      // 2. Pokud se nepodařilo z textu, dopočítáme podle typu kódu z databáze
+      if (!discountAmount && matchedPromo) {
+        if (matchedPromo.type === 'fixed') {
+          discountAmount = Number(matchedPromo.value) || 0;
+        } else if (matchedPromo.type === 'percent') {
+          const pct = Number(matchedPromo.value) || 0;
+          if (pct > 0 && pct < 100) {
+            const origCalculated = Math.round(firstInstallmentAmount / (1 - (pct / 100)));
+            discountAmount = origCalculated - firstInstallmentAmount;
+          }
+        }
+      }
+    }
+
     let createdInvoiceId = null;
 
     // Vystavení proformy ve Fakturoidu (jen pro nákupy > 0 Kč)
@@ -221,17 +251,43 @@ export async function onRequestPost(context) {
         lineName += ` – 1. splátka z ${totalInstallments}`;
       }
 
+      // Základní položka: pokud byla uplatněna sleva, uvádíme plnou původní cenu
+      const originalPrice = discountAmount > 0 ? (firstInstallmentAmount + discountAmount) : firstInstallmentAmount;
+
+      const invoiceLines = [
+        {
+          name: lineName,
+          quantity: 1,
+          unit_price: originalPrice,
+          unit_name: 'ks'
+        }
+      ];
+
+      // Záporná položka pro odečet slevy:
+      if (discountAmount > 0) {
+        let discountLabel = 'Sleva';
+        if (matchedPromo && matchedPromo.type === 'percent') {
+          discountLabel = `Sleva ${matchedPromo.value} %`;
+        } else if (body.Sleva_info && body.Sleva_info.includes('%')) {
+          const pctMatch = body.Sleva_info.match(/(\d+)\s*%/);
+          if (pctMatch) discountLabel = `Sleva ${pctMatch[1]} %`;
+        }
+
+        const promoCodeUpper = body.Pouzity_kod ? body.Pouzity_kod.trim().toUpperCase() : '';
+        const discountLineName = promoCodeUpper ? `${discountLabel} – kód ${promoCodeUpper}` : discountLabel;
+
+        invoiceLines.push({
+          name: discountLineName,
+          quantity: 1,
+          unit_price: -discountAmount,
+          unit_name: 'ks'
+        });
+      }
+
       const invoicePayload = {
         subject_id: subjectId,
         document_type: 'proforma',
-        lines: [
-          {
-            name: lineName,
-            quantity: 1,
-            unit_price: firstInstallmentAmount,
-            unit_name: 'ks'
-          }
-        ],
+        lines: invoiceLines,
         note: isGift 
           ? 'Objednáno jako dárkový poukaz – voucher se odešle po úhradě.' 
           : (isInstallment ? `Splátkový kalendář (1/${totalInstallments})` : '')
@@ -415,6 +471,9 @@ export async function onRequestPost(context) {
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">E-mail</td><td style="padding:8px 14px;border-bottom:1px solid #eee;"><a href="mailto:${body.Email}">${body.Email}</a></td></tr>
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Bydliště / Adresa</td><td style="padding:8px 14px;border-bottom:1px solid #eee;">${body.Ulice}, ${body.PSC} ${body.Mesto} (${body.Zeme})</td></tr>
               <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Částka k úhradě</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:bold;">${firstInstallmentAmount} Kč</td></tr>
+              ${discountAmount > 0 ? `
+              <tr><td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;">Uplatněná sleva</td><td style="padding:8px 14px;border-bottom:1px solid #eee;font-family:monospace;font-weight:bold;color:#ff9900;">${body.Pouzity_kod \vert{}\vert{} ''} (-${discountAmount} Kč)</td></tr>
+              ` : ''}
 
               ${!isGift ? `
                 <tr><td colspan="2" style="background:#1a1a1a;color:#2ecc71;padding:10px 14px;font-weight:bold;">Vyplněné údaje pro analýzu</td></tr>
