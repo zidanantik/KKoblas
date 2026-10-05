@@ -221,17 +221,68 @@ export async function onRequestPost(context) {
         lineName += ` – 1. splátka z ${totalInstallments}`;
       }
 
+     // Výpočet slevy pro samostatný záporný řádek na faktuře
+      let discountAmount = 0;
+      if (body.Pouzity_kod) {
+        if (body.Sleva_info) {
+          const matchParen = String(body.Sleva_info).match(/-\s*([\d\s]+)\s*Kč/);
+          if (matchParen) {
+            discountAmount = parseInt(matchParen[1].replace(/\s/g, ''), 10) || 0;
+          } else {
+            const matchSimple = String(body.Sleva_info).match(/Sleva\s+([\d\s]+)\s*Kč/i);
+            if (matchSimple) {
+              discountAmount = parseInt(matchSimple[1].replace(/\s/g, ''), 10) || 0;
+            }
+          }
+        }
+        if (!discountAmount && matchedPromo) {
+          if (matchedPromo.type === 'fixed') {
+            discountAmount = Number(matchedPromo.value) || 0;
+          } else if (matchedPromo.type === 'percent') {
+            const pct = Number(matchedPromo.value) || 0;
+            if (pct > 0 && pct < 100) {
+              const origCalculated = Math.round(firstInstallmentAmount / (1 - (pct / 100)));
+              discountAmount = origCalculated - firstInstallmentAmount;
+            }
+          }
+        }
+      }
+
+      const originalPrice = discountAmount > 0 ? (firstInstallmentAmount + discountAmount) : firstInstallmentAmount;
+
+      const invoiceLines = [
+        {
+          name: lineName,
+          quantity: 1,
+          unit_price: originalPrice,
+          unit_name: 'ks'
+        }
+      ];
+
+      if (discountAmount > 0) {
+        let discountLabel = 'Sleva';
+        if (matchedPromo && matchedPromo.type === 'percent') {
+          discountLabel = 'Sleva ' + matchedPromo.value + ' %';
+        } else if (body.Sleva_info && String(body.Sleva_info).includes('%')) {
+          const pctMatch = String(body.Sleva_info).match(/(\d+)\s*%/);
+          if (pctMatch) discountLabel = 'Sleva ' + pctMatch[1] + ' %';
+        }
+
+        const promoCodeUpper = body.Pouzity_kod ? String(body.Pouzity_kod).trim().toUpperCase() : '';
+        const discountLineName = promoCodeUpper ? (discountLabel + ' – kód ' + promoCodeUpper) : discountLabel;
+
+        invoiceLines.push({
+          name: discountLineName,
+          quantity: 1,
+          unit_price: -discountAmount,
+          unit_name: 'ks'
+        });
+      }
+
       const invoicePayload = {
         subject_id: subjectId,
         document_type: 'proforma',
-        lines: [
-          {
-            name: lineName,
-            quantity: 1,
-            unit_price: firstInstallmentAmount,
-            unit_name: 'ks'
-          }
-        ],
+        lines: invoiceLines,
         note: isGift 
           ? 'Objednáno jako dárkový poukaz – voucher se odešle po úhradě.' 
           : (isInstallment ? `Splátkový kalendář (1/${totalInstallments})` : '')
