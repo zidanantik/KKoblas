@@ -210,7 +210,6 @@ export async function onRequestPost(context) {
     // ── Výpočet slevy pro transparentní rozpis na faktuře ──
     let discountAmount = 0;
     if (body.Pouzity_kod && !isZeroPayment) {
-      // 1. Zkusíme vytáhnout částku z textu Sleva_info (např. "Sleva 10 % (-1 470 Kč)" nebo "Sleva 1 000 Kč")
       if (body.Sleva_info) {
         const matchParen = String(body.Sleva_info).match(/-\s*([\d\s]+)\s*Kč/);
         if (matchParen) {
@@ -223,7 +222,6 @@ export async function onRequestPost(context) {
         }
       }
 
-      // 2. Pokud se nepodařilo z textu, dopočítáme podle typu kódu z databáze
       if (!discountAmount && matchedPromo) {
         if (matchedPromo.type === 'fixed') {
           discountAmount = Number(matchedPromo.value) || 0;
@@ -251,7 +249,6 @@ export async function onRequestPost(context) {
         lineName += ` – 1. splátka z ${totalInstallments}`;
       }
 
-      // Základní položka: pokud byla uplatněna sleva, uvádíme plnou původní cenu
       const originalPrice = discountAmount > 0 ? (firstInstallmentAmount + discountAmount) : firstInstallmentAmount;
 
       const invoiceLines = [
@@ -263,7 +260,6 @@ export async function onRequestPost(context) {
         }
       ];
 
-      // Záporná položka pro odečet slevy:
       if (discountAmount > 0) {
         let discountLabel = 'Sleva';
         if (matchedPromo && matchedPromo.type === 'percent') {
@@ -343,7 +339,6 @@ export async function onRequestPost(context) {
       const waLink = cleanPhone.startsWith('+') ? `https://wa.me/${cleanPhone.replace('+', '')}` : `https://wa.me/420${cleanPhone}`;
 
       if (isZeroPayment) {
-        // Klient aktivoval poukaz (0 Kč)
         if (body.Email) {
           const subjectClient = `Podklady pro zahájení spolupráce – ${sluzbaNazev}`;
           const plainTextClient = `Ahoj ${body.Jmeno},\n\ntvůj poukaz na balíček ${sluzbaNazev} byl úspěšně aktivován a pouštíme se do práce.\n\n2 DŮLEŽITÉ ÚKOLY PŘED PRVNÍ SCHŮZKOU:\n1. Zápis jídelníčku: Měj ready aspoň 3 dny zápisu v aplikaci ZOF (https://www.zofapp.cz/).\n2. Měření InBody: Zařiď si prosím ve svém okolí měření InBody a pošli mi výsledky na WhatsApp (+420 774 143 176) nebo e-mailem na koblas.nutricni@gmail.com.\n\nJAK BUDEME V KONTAKTU:\n- Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín první online konzultace. Můžeš mi samozřejmě napsat i sám/sama.\n\nČAS SPOLUPRÁCE:\nČas balíčku ti oficiálně počítám až ode dne naší první online schůzky, do té doby řešíme jen podklady.\n\nTěším se na výsledky!\nKryštof Koblas`;
@@ -388,7 +383,6 @@ export async function onRequestPost(context) {
           });
         }
 
-        // Notifikace majiteli o uplatnění dárku
         await new Promise(r => setTimeout(r, 600));
 
         let buyerHtml = '';
@@ -446,7 +440,6 @@ export async function onRequestPost(context) {
         });
 
       } else {
-        // Běžná nová objednávka NEBO nákup dárkového poukazu
         const orderSubject = isGift
           ? `Nová objednávka (DÁREK): ${sluzbaNazev} – ${body.Jmeno}`
           : `Nová objednávka: ${sluzbaNazev} – ${body.Jmeno}`;
@@ -513,7 +506,9 @@ export async function onRequestPost(context) {
 
     // ── Zneplatnění použitého kódu v KV databázi ──
     if (matchedPromo && store) {
-      matchedPromo.used = true;
+      if (matchedPromo.oneTime) {
+        matchedPromo.used = true;
+      }
       matchedPromo.usedCount = (Number(matchedPromo.usedCount) || 0) + 1;
       await store.put('PROMO_CODES', JSON.stringify(promoCodes));
     }
