@@ -504,13 +504,13 @@ export async function onRequestPost(context) {
     }
 
 // ── Zneplatnění použitého kódu v KV databázi ──
-    if (matchedPromo && store) {
+  /*  if (matchedPromo && store) {
       if (matchedPromo.oneTime) {
         matchedPromo.used = true;
       }
       matchedPromo.usedCount = (Number(matchedPromo.usedCount) || 0) + 1;
       await store.put('PROMO_CODES', JSON.stringify(promoCodes));
-    }
+    }*/
 
     // ── Uložení klienta do KV databáze ──
     if (store) {
