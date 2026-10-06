@@ -585,10 +585,10 @@ export async function onRequestPost(context) {
           const rawHeight = parseFloat(body.Vyska_cm) || 0;
           const vyskaM = rawHeight > 3 ? Number((rawHeight / 100).toFixed(2)) : rawHeight;
 
-          let pohlaviValue = body.Pohlavi;
+         let pohlaviValue = body.Pohlavi;
           if (isChild) {
-            if (pohlaviValue === 'Muž') pohlaviValue = 'Chlapec';
-            if (pohlaviValue === 'Žena') pohlaviValue = 'Dívka';
+            if (pohlaviValue === 'Muž' || pohlaviValue === 'Muz' || pohlaviValue === 'Kluk') pohlaviValue = 'Kluk';
+            if (pohlaviValue === 'Žena' || pohlaviValue === 'Zena' || pohlaviValue === 'Holka') pohlaviValue = 'Holka';
           }
 
           const notionPayload = {
