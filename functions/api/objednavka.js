@@ -575,6 +575,50 @@ export async function onRequestPost(context) {
       await store.put('CLIENTS', JSON.stringify(clients));
     }
 
+    // ── Automatické odeslání vstupního měření do Notionu ──
+    if (!isGift || isGiftRedemption) {
+      const syncNotion = async () => {
+        try {
+          const vekNum = Number(body.Vek) || 0;
+          const isChild = vekNum > 0 && vekNum < 18;
+
+          const rawHeight = parseFloat(body.Vyska_cm) || 0;
+          const vyskaM = rawHeight > 3 ? Number((rawHeight / 100).toFixed(2)) : rawHeight;
+
+          let pohlaviValue = body.Pohlavi;
+          if (isChild) {
+            if (pohlaviValue === 'Muž') pohlaviValue = 'Chlapec';
+            if (pohlaviValue === 'Žena') pohlaviValue = 'Dívka';
+          }
+
+          const notionPayload = {
+            isChild: isChild,
+            zapis: `Vstupní měření – ${body.Jmeno}`,
+            datum: new Date().toISOString().split('T')[0],
+            vaha: parseFloat(body.Vaha_kg) || 0,
+            vyska: vyskaM,
+            vek: vekNum,
+            pas: parseFloat(obvodPasu) || 0,
+            boky: parseFloat(obvodBoku) || 0,
+            pohlavi: pohlaviValue
+          };
+
+          await fetch('https://nutri-api.koblas-nutricni.workers.dev/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(notionPayload)
+          });
+        } catch (err) {
+          console.error('Chyba při zápisu do Notionu:', err);
+        }
+      };
+
+      if (context.waitUntil) {
+        context.waitUntil(syncNotion());
+      } else {
+        await syncNotion();
+      }
+    }
     return new Response(JSON.stringify({ ok: true, invoiceId: createdInvoiceId }), {
       status: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
