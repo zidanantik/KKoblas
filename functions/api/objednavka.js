@@ -575,41 +575,62 @@ export async function onRequestPost(context) {
       await store.put('CLIENTS', JSON.stringify(clients));
     }
 
-    // ── Automatické odeslání vstupního měření do Notionu ──
-    if (!isGift || isGiftRedemption) {
+   // ── Automatické odeslání do Notionu POUZE při uplatnění dárku (0 Kč) ──
+    // Běžné objednávky čekají na úhradu a zapíší se automaticky až po připsání platby
+    if (isGiftRedemption) {
       const syncNotion = async () => {
         try {
+          const today = new Date().toISOString().split('T')[0];
           const vekNum = Number(body.Vek) || 0;
           const isChild = vekNum > 0 && vekNum < 18;
 
           const rawHeight = parseFloat(body.Vyska_cm) || 0;
           const vyskaM = rawHeight > 3 ? Number((rawHeight / 100).toFixed(2)) : rawHeight;
 
-         let pohlaviValue = body.Pohlavi;
+          let pohlaviValue = body.Pohlavi;
           if (isChild) {
             if (pohlaviValue === 'Muž' || pohlaviValue === 'Muz' || pohlaviValue === 'Kluk') pohlaviValue = 'Kluk';
             if (pohlaviValue === 'Žena' || pohlaviValue === 'Zena' || pohlaviValue === 'Holka') pohlaviValue = 'Holka';
           }
 
-          const notionPayload = {
-            isChild: isChild,
-            zapis: `Vstupní měření – ${body.Jmeno}`,
-            datum: new Date().toISOString().split('T')[0],
-            vaha: parseFloat(body.Vaha_kg) || 0,
-            vyska: vyskaM,
-            vek: vekNum,
-            pas: parseFloat(obvodPasu) || 0,
-            boky: parseFloat(obvodBoku) || 0,
-            pohlavi: pohlaviValue
-          };
-
-          await fetch('https://nutri-api.koblas-nutricni.workers.dev/', {
+          const res = await fetch('https://nutri-api.koblas-nutricni.workers.dev/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(notionPayload)
+            body: JSON.stringify({
+              createClient: true,
+              jmeno: body.Jmeno || 'Obdarovaný klient',
+              sluzba: sluzbaNazev,
+              startDate: today,
+              endDate: computeEndDate(today, sluzbaNazev),
+              isChild: isChild,
+              zapis: `Vstupní měření – ${body.Jmeno}`,
+              datum: today,
+              vaha: parseFloat(body.Vaha_kg) || 0,
+              vyska: vyskaM,
+              vek: vekNum,
+              pas: parseFloat(obvodPasu) || 0,
+              boky: parseFloat(obvodBoku) || 0,
+              pohlavi: pohlaviValue
+            })
           });
+
+          // Uložení vygenerovaného Notion ID k obdarovanému do KV databáze
+          if (res.ok && store && body.Email) {
+            const syncData = await res.json();
+            if (syncData.clientPageId) {
+              const rawLatest = await store.get('CLIENTS');
+              if (rawLatest) {
+                let latestClients = JSON.parse(rawLatest);
+                const matchIdx = latestClients.findIndex(c => c.kupujici && c.kupujici.email && c.kupujici.email.toLowerCase() === body.Email.toLowerCase());
+                if (matchIdx > -1) {
+                  latestClients[matchIdx].notion_client_id = syncData.clientPageId;
+                  await store.put('CLIENTS', JSON.stringify(latestClients));
+                }
+              }
+            }
+          }
         } catch (err) {
-          console.error('Chyba při zápisu do Notionu:', err);
+          console.error('Chyba při zápisu dárku do Notionu:', err);
         }
       };
 
@@ -619,6 +640,7 @@ export async function onRequestPost(context) {
         await syncNotion();
       }
     }
+
     return new Response(JSON.stringify({ ok: true, invoiceId: createdInvoiceId }), {
       status: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
