@@ -650,7 +650,7 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ ok: true, installmentPaid: paidInstallmentNum }), { status: 200 });
     }
 
-    // ── SCÉNÁŘ C: PRVNÍ PLATBA (PŘÍMÝ NÁKUP NEBO 1. SPLÁTKA) ──
+// ── SCÉNÁŘ C: PRVNÍ PLATBA (PŘÍMÝ NÁKUP NEBO 1. SPLÁTKA) ──
     client.status = 'aktivni';
     client.pocita_se = true;
     client.datum_platby = new Date().toISOString();
@@ -664,6 +664,52 @@ export async function onRequestPost(context) {
       nextDate.setDate(nextDate.getDate() + 30);
       client.next_installment_date = nextDate.toISOString().split('T')[0];
       client.next_installment_num = 2;
+    }
+
+    // 👉 AUTOMATICKÉ ZALOŽENÍ V NOTIONU PŘI PŘIJETÍ PLATBY
+    try {
+      const diag = client.diagnostika || {};
+      const vekNum = Number(diag.vek) || 0;
+      const isChild = vekNum > 0 && vekNum < 18;
+
+      const rawHeight = parseFloat(diag.vyska) || 0;
+      const vyskaM = rawHeight > 3 ? Number((rawHeight / 100).toFixed(2)) : rawHeight;
+
+      let pohlaviValue = diag.pohlavi;
+      if (isChild) {
+        if (pohlaviValue === 'Muž' || pohlaviValue === 'Muz' || pohlaviValue === 'Kluk') pohlaviValue = 'Kluk';
+        if (pohlaviValue === 'Žena' || pohlaviValue === 'Zena' || pohlaviValue === 'Holka') pohlaviValue = 'Holka';
+      }
+
+      const syncRes = await fetch('https://nutri-api.koblas-nutricni.workers.dev/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          createClient: true,
+          jmeno: (client.kupujici && client.kupujici.jmeno) || 'Nový klient',
+          sluzba: client.sluzba_nazev || client.sluzba || '',
+          startDate: client.start_date || null,
+          endDate: client.end_date || null,
+          isChild: isChild,
+          zapis: `Vstupní měření – ${(client.kupujici && client.kupujici.jmeno) || ''}`,
+          datum: client.start_date || todayYMD,
+          vaha: parseFloat(diag.vaha) || 0,
+          vyska: vyskaM,
+          vek: vekNum,
+          pas: parseFloat(diag.obvod_pasu) || 0,
+          boky: parseFloat(diag.obvod_boku) || 0,
+          pohlavi: pohlaviValue
+        })
+      });
+
+      if (syncRes.ok) {
+        const syncData = await syncRes.json();
+        if (syncData.clientPageId) {
+          client.notion_client_id = syncData.clientPageId;
+        }
+      }
+    } catch (notionErr) {
+      console.error('Chyba při automatickém zápisu do Notionu po platbě:', notionErr);
     }
 
     if (resendKey && client.kupujici && client.kupujici.email) {
