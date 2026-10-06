@@ -347,14 +347,12 @@
                 <label for="fage">Věk <span class="req">*</span></label>
                 <input type="number" id="fage" name="Vek" required placeholder="28">
               </div>
-              <div class="form-group">
+             <div class="form-group">
                 <label for="fgender">Pohlaví <span class="req">*</span></label>
                 <select id="fgender" name="Pohlavi" required>
                   <option value="">Vyberte</option>
-                  <option value="Muz">Muž</option>
-                  <option value="Zena">Žena</option>
-                  <option disabled>──────────</option>
-                  <option value="Jine">Jiné</option>
+                  <option value="Muž">Muž</option>
+                  <option value="Žena">Žena</option>
                 </select>
               </div>
               <div class="form-group">
@@ -800,6 +798,38 @@
         });
       }
 
+      // Dynamická změna pohlaví podle věku (Dospělý vs. Dítě -> Kluk / Holka)
+      const fageInput = document.getElementById('fage');
+      const fgenderSelect = document.getElementById('fgender');
+
+      if (fageInput && fgenderSelect) {
+        function updateGenderLabels() {
+          const val = parseInt(fageInput.value, 10);
+          const isChild = !isNaN(val) && val > 0 && val < 18;
+          const currentVal = fgenderSelect.value;
+
+          fgenderSelect.innerHTML = isChild ? `
+            <option value="">Vyberte</option>
+            <option value="Kluk">Kluk</option>
+            <option value="Holka">Holka</option>
+          ` : `
+            <option value="">Vyberte</option>
+            <option value="Muž">Muž</option>
+            <option value="Žena">Žena</option>
+          `;
+
+          if (isChild) {
+            if (currentVal === 'Muž' || currentVal === 'Muz' || currentVal === 'Kluk') fgenderSelect.value = 'Kluk';
+            else if (currentVal === 'Žena' || currentVal === 'Zena' || currentVal === 'Holka') fgenderSelect.value = 'Holka';
+          } else {
+            if (currentVal === 'Kluk' || currentVal === 'Muž' || currentVal === 'Muz') fgenderSelect.value = 'Muž';
+            else if (currentVal === 'Holka' || currentVal === 'Žena' || currentVal === 'Zena') fgenderSelect.value = 'Žena';
+          }
+        }
+
+        fageInput.addEventListener('input', updateGenderLabels);
+        fageInput.addEventListener('change', updateGenderLabels);
+      }
       // 1. Aktivace dárkového režimu z URL (?darek=1 nebo ?darek=ano)
       if (!isSplatky && (urlParams.get('darek') === '1' || urlParams.get('darek') === 'ano')) {
         if (giftCheckbox) {
