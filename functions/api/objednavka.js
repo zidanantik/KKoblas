@@ -603,7 +603,7 @@ export async function onRequestPost(context) {
               startDate: today,
               endDate: computeEndDate(today, sluzbaNazev),
               isChild: isChild,
-              zapis: `Vstupní měření – ${body.Jmeno}`,
+              zapis: 'Vstupní dotazník (web)',
               datum: today,
               vaha: parseFloat(body.Vaha_kg) || 0,
               vyska: vyskaM,
