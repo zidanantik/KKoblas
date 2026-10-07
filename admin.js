@@ -562,6 +562,12 @@ function handleStartDateChange(idKey, sluzba) {
 }
 
 async function saveClientRow(idKey) {
+  var btn = window.event ? (window.event.target || window.event.srcElement) : null;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ ...';
+  }
+
   var startVal = document.getElementById('start-' + idKey).value;
   var endVal = document.getElementById('end-' + idKey).value;
   var statusVal = document.getElementById('status-' + idKey).value;
@@ -585,6 +591,11 @@ async function saveClientRow(idKey) {
     await loadStatus();
   } catch (err) {
     alert(err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '💾 Uložit';
+    }
   }
 }
 
