@@ -691,7 +691,7 @@ export async function onRequestPost(context) {
           startDate: client.start_date || null,
           endDate: client.end_date || null,
           isChild: isChild,
-          zapis: `Vstupní měření – ${(client.kupujici && client.kupujici.jmeno) || ''}`,
+          zapis: 'Vstupní dotazník (web)',
           datum: client.start_date || todayYMD,
           vaha: parseFloat(diag.vaha) || 0,
           vyska: vyskaM,
