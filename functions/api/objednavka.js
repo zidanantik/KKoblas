@@ -581,14 +581,19 @@ export async function onRequestPost(context) {
         try {
           const rawLatest = store ? await store.get('CLIENTS') : null;
           let latestClients = rawLatest ? JSON.parse(rawLatest) : [];
-          const buyerEmail = String(body.Email || '').toLowerCase().trim();
+         const buyerEmail = String(body.Email || '').toLowerCase().trim();
+          const buyerName = String(body.Jmeno || '').toLowerCase().trim();
 
-          // Kontrola, zda už tento e-mail v Notionu kartu má
+          // Kontrola, zda už klient v Notionu kartu má (podle e-mailu NEBO jména)
           const previousClient = latestClients.find(c => {
             if (!c.notion_client_id) return false;
             if (c.is_gift && !c.is_gift_redemption) return false;
             const cEmail = (c.kupujici && c.kupujici.email) ? String(c.kupujici.email).toLowerCase().trim() : '';
-            return cEmail === buyerEmail;
+            const cName = (c.kupujici && c.kupujici.jmeno) ? String(c.kupujici.jmeno).toLowerCase().trim() : '';
+            
+            const matchEmail = buyerEmail && cEmail === buyerEmail;
+            const matchName = buyerName && cName === buyerName;
+            return matchEmail || matchName;
           });
 
           if (previousClient) {
