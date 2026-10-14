@@ -311,17 +311,29 @@ document.getElementById('priceSave').addEventListener('click', async function ()
 // ── Správa kapacity ──────────────────────────────
 function handleCapacityModeChange() {
   var mode = document.getElementById('capacityMode').value;
-  var wrap = document.getElementById('capTotalWrapper');
-  if (wrap) wrap.style.display = mode === 'total' ? 'flex' : 'none';
+  var totalWrap = document.getElementById('capTotalWrapper');
+  var pkgsWrap  = document.getElementById('capPackagesWrapper');
+
+  if (totalWrap) totalWrap.style.display = (mode === 'total') ? 'flex' : 'none';
+  if (pkgsWrap)  pkgsWrap.style.display  = (mode === 'packages') ? 'flex' : 'none';
 }
 
 async function saveCapacitySettings() {
   var mode = document.getElementById('capacityMode').value;
-  var limit = parseInt(document.getElementById('capTotalLimit').value, 10) || 10;
+  var totalLimit = parseInt(document.getElementById('capTotalLimit').value, 10) || 10;
+
+  var suLimit = parseInt((document.getElementById('capLimitStartup') || {}).value, 10) || 0;
+  var meLimit = parseInt((document.getElementById('capLimitMentoring') || {}).value, 10) || 0;
+  var ulLimit = parseInt((document.getElementById('capLimitUltimate') || {}).value, 10) || 0;
 
   if (!currentStatus.capacity) currentStatus.capacity = {};
   currentStatus.capacity.mode = mode;
-  currentStatus.capacity.totalLimit = limit;
+  currentStatus.capacity.totalLimit = totalLimit;
+  currentStatus.capacity.limits = {
+    startup: suLimit,
+    mentoring: meLimit,
+    ultimate: ulLimit
+  };
 
   var pass = ENTERED_PASS || sessionStorage.getItem(SESSION_KEY + '_pass') || '';
   setDeploy('⚡ Ukládám kapacitu...', 'loading');
@@ -356,8 +368,9 @@ async function saveCapacitySettings() {
 }
 
 function updateCapacityDisplay(data) {
-  var cap = data.capacity || { mode: 'total', totalLimit: 10 };
+  var cap = data.capacity || { mode: 'total', totalLimit: 10, limits: { startup: 0, mentoring: 0, ultimate: 0 } };
   var counts = data.counts || { startup: 0, mentoring: 0, ultimate: 0, total: 0 };
+  var limits = cap.limits || { startup: 0, mentoring: 0, ultimate: 0 };
 
   var modeSelect = document.getElementById('capacityMode');
   if (modeSelect) modeSelect.value = cap.mode || 'total';
@@ -365,16 +378,37 @@ function updateCapacityDisplay(data) {
   var limitInput = document.getElementById('capTotalLimit');
   if (limitInput) limitInput.value = cap.totalLimit || 10;
 
+  var suInput = document.getElementById('capLimitStartup');
+  if (suInput) suInput.value = limits.startup || 0;
+
+  var meInput = document.getElementById('capLimitMentoring');
+  if (meInput) meInput.value = limits.mentoring || 0;
+
+  var ulInput = document.getElementById('capLimitUltimate');
+  if (ulInput) ulInput.value = limits.ultimate || 0;
+
   handleCapacityModeChange();
 
   var countStartup = document.getElementById('count-startup');
-  if (countStartup) countStartup.textContent = counts.startup;
+  if (countStartup) {
+    countStartup.textContent = (cap.mode === 'packages' && limits.startup > 0)
+      ? counts.startup + ' / ' + limits.startup
+      : counts.startup;
+  }
 
   var countMentoring = document.getElementById('count-mentoring');
-  if (countMentoring) countMentoring.textContent = counts.mentoring;
+  if (countMentoring) {
+    countMentoring.textContent = (cap.mode === 'packages' && limits.mentoring > 0)
+      ? counts.mentoring + ' / ' + limits.mentoring
+      : counts.mentoring;
+  }
 
   var countUltimate = document.getElementById('count-ultimate');
-  if (countUltimate) countUltimate.textContent = counts.ultimate;
+  if (countUltimate) {
+    countUltimate.textContent = (cap.mode === 'packages' && limits.ultimate > 0)
+      ? counts.ultimate + ' / ' + limits.ultimate
+      : counts.ultimate;
+  }
 
   var badge = document.getElementById('capacityBadge');
   var display = document.getElementById('capCountDisplay');
@@ -389,6 +423,11 @@ function updateCapacityDisplay(data) {
       }
     } else {
       display.textContent = counts.total + ' (celkem)';
+      if (badge) {
+        badge.style.background = 'rgba(52,152,219,0.15)';
+        badge.style.borderColor = '#3498db';
+        badge.style.color = '#3498db';
+      }
     }
   }
 }
