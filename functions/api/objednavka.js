@@ -512,12 +512,14 @@ export async function onRequestPost(context) {
       await store.put('PROMO_CODES', JSON.stringify(promoCodes));
     }*/
 
-    // ── Uložení klienta do KV databáze ──
+// ── Uložení klienta do KV databáze (Spodní část functions/api/objednavka.js) ──
+    let savedClientId = crypto.randomUUID();
+
     if (store) {
       const todayStr = new Date().toISOString().split('T')[0];
 
       const clientData = {
-        id: crypto.randomUUID(),
+        id: savedClientId,
         fakturoid_id: createdInvoiceId || (isGiftRedemption ? `POUKAZ-${body.Pouzity_kod}` : 'POUKAZ-ZDARMA'),
         invoice_ids: createdInvoiceId ? [createdInvoiceId] : [],
         paid_invoice_ids: [],
@@ -526,9 +528,9 @@ export async function onRequestPost(context) {
         datum_platby: isZeroPayment ? new Date().toISOString() : null,
         start_date: isZeroPayment ? todayStr : null,
         end_date: isZeroPayment ? computeEndDate(todayStr, sluzbaNazev) : null,
-        sluzba: body.Sluzba || '',
+       sluzba: body.Sluzba || '',
         sluzba_nazev: sluzbaNazev,
-        is_gift: isGift,
+        is_gift: isGift && !isGiftRedemption,
         is_gift_redemption: isGiftRedemption,
         pouzity_kod: body.Pouzity_kod || null,
         souhlas_reference: hasConsentReference,
@@ -565,7 +567,8 @@ export async function onRequestPost(context) {
       };
 
       if (isGiftRedemption && existingGiftClientIndex > -1) {
-        clientData.id = clients[existingGiftClientIndex].id || clientData.id;
+        savedClientId = clients[existingGiftClientIndex].id || savedClientId;
+        clientData.id = savedClientId;
         clientData.kod_voucheru = clients[existingGiftClientIndex].kod_voucheru;
         clients[existingGiftClientIndex] = clientData;
       } else {
@@ -575,17 +578,18 @@ export async function onRequestPost(context) {
       await store.put('CLIENTS', JSON.stringify(clients));
     }
 
-  // ── Odeslání do Notionu při 0 Kč platbě (Ošetřeno proti duplicitám) ──
+    // ── Odeslání do Notionu při 0 Kč platbě (Ošetřeno proti duplicitám) ──
     if (isZeroPayment && !isGift) {
       const syncNotion = async () => {
         try {
           const rawLatest = store ? await store.get('CLIENTS') : null;
           let latestClients = rawLatest ? JSON.parse(rawLatest) : [];
-         const buyerEmail = String(body.Email || '').toLowerCase().trim();
+          const buyerEmail = String(body.Email || '').toLowerCase().trim();
           const buyerName = String(body.Jmeno || '').toLowerCase().trim();
 
-          // Kontrola, zda už klient v Notionu kartu má (podle e-mailu NEBO jména)
+          // Kontrola, zda už klient v Notionu kartu má (mimo právě vytvořený záznam)
           const previousClient = latestClients.find(c => {
+            if (String(c.id) === String(savedClientId)) return false;
             if (!c.notion_client_id) return false;
             if (c.is_gift && !c.is_gift_redemption) return false;
             const cEmail = (c.kupujici && c.kupujici.email) ? String(c.kupujici.email).toLowerCase().trim() : '';
@@ -598,7 +602,7 @@ export async function onRequestPost(context) {
 
           if (previousClient) {
             // Klient už v Notionu kartu má -> nezakládáme duplikát, připravíme k navázání v adminu
-            const curIdx = latestClients.findIndex(c => c.kupujici && c.kupujici.email && c.kupujici.email.toLowerCase().trim() === buyerEmail);
+            const curIdx = latestClients.findIndex(c => String(c.id) === String(savedClientId));
             if (curIdx > -1) {
               latestClients[curIdx].pending_merge_target_id = previousClient.id;
               latestClients[curIdx].pending_merge_notion_id = previousClient.notion_client_id;
@@ -642,13 +646,13 @@ export async function onRequestPost(context) {
             })
           });
 
-          if (res.ok && store && body.Email) {
+          if (res.ok && store) {
             const syncData = await res.json();
             if (syncData.clientPageId) {
               const freshRaw = await store.get('CLIENTS');
               if (freshRaw) {
                 let freshClients = JSON.parse(freshRaw);
-                const matchIdx = freshClients.findIndex(c => c.kupujici && c.kupujici.email && c.kupujici.email.toLowerCase() === buyerEmail);
+                const matchIdx = freshClients.findIndex(c => String(c.id) === String(savedClientId));
                 if (matchIdx > -1) {
                   freshClients[matchIdx].notion_client_id = syncData.clientPageId;
                   await store.put('CLIENTS', JSON.stringify(freshClients));
