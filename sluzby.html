@@ -299,17 +299,18 @@
             </li>
           </ul>
 
+       <!-- Patička u 2. MENTORING -->
           <div class="pkg-card__footer">
             <div class="pkg-card__meta">
               <span class="pkg-card__duration">4 měsíce</span>
               <div class="pkg-card__pricing">
-                <span class="pkg-card__price" id="price-mentoring">14 700 Kč</span>
-                <span class="pkg-card__price-inbody" id="inbody-mentoring">Hodnota: 15 900 Kč (odečteno 1 200 Kč na InBody)</span>
+                <span class="pkg-card__price" id="price-mentoring">15 900 Kč</span>
+                <span class="pkg-card__price-inbody" id="inbody-mentoring">Hodnota: 17 100 Kč (odečteno 1 200 Kč na InBody)</span>
                 <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
               </div>
             </div>
             <div class="pkg-btns pkg-btns--normal">
-              <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn btn--primary btn--block" id="btn-mentoring-jed">Koupit jednorázově za 14 700 Kč</a>
+              <a href="objednavka.html?sluzba=mentoring&platba=jednorizove" class="btn btn--primary btn--block" id="btn-mentoring-jed">Koupit jednorázově za 15 900 Kč</a>
               <a href="objednavka.html?sluzba=mentoring&platba=splatky" class="btn btn--outline btn--block" id="btn-mentoring-spl">Chci na splátky – 1. platba 7 500 Kč</a>
               <a href="objednavka.html?sluzba=mentoring&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-mentoring-gift">🎁 Koupit jako dárkový poukaz</a>
             </div>
@@ -354,18 +355,19 @@
             </li>
           </ul>
 
+         <!-- Patička u 3. ULTIMATE -->
           <div class="pkg-card__footer">
             <div class="pkg-card__meta">
               <span class="pkg-card__duration">6 měsíců</span>
               <div class="pkg-card__pricing">
-                <span class="pkg-card__price" id="price-ultimate">22 300 Kč</span>
-                <span class="pkg-card__price-inbody" id="inbody-ultimate">Hodnota: 23 900 Kč (odečteno 1 600 Kč na InBody)</span>
+                <span class="pkg-card__price" id="price-ultimate">19 900 Kč</span>
+                <span class="pkg-card__price-inbody" id="inbody-ultimate">Hodnota: 21 500 Kč (odečteno 1 600 Kč na InBody)</span>
                 <span class="pkg-card__price-note"><a href="#inbody" class="pkg-anchor">více info zde</a></span>
               </div>
             </div>
             <div class="pkg-btns pkg-btns--normal">
-              <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn btn--primary btn--block" id="btn-ultimate-jed">Koupit jednorázově za 22 300 Kč</a>
-              <a href="objednavka.html?sluzba=ultimate&platba=splatky" class="btn btn--outline btn--block" id="btn-ultimate-spl">Chci na splátky – 1. platba 11 900 Kč</a>
+              <a href="objednavka.html?sluzba=ultimate&platba=jednorizove" class="btn btn--primary btn--block" id="btn-ultimate-jed">Koupit jednorázově za 19 900 Kč</a>
+              <a href="objednavka.html?sluzba=ultimate&platba=splatky" class="btn btn--outline btn--block" id="btn-ultimate-spl">Chci na splátky – 1. platba 9 900 Kč</a>
               <a href="objednavka.html?sluzba=ultimate&platba=jednorizove&darek=1" class="pkg-gift-btn" id="btn-ultimate-gift">🎁 Koupit jako dárkový poukaz</a>
             </div>
             <div class="pkg-btns pkg-btns--plno">
@@ -489,10 +491,10 @@
       function set(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
       function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
 
-      var currentPrices = {
+     var currentPrices = {
         startup:   { jed: 6900 },
-        mentoring: { jed: 14700, spl: 7500 },
-        ultimate:  { jed: 22300, spl: 11900 }
+        mentoring: { jed: 15900, spl: 7500 },
+        ultimate:  { jed: 19900, spl: 9900 }
       };
 
       var INBODY_AMOUNTS = {
@@ -605,12 +607,12 @@
           var me = p.mentoring || {};
           var ul = p.ultimate  || {};
 
-          currentPrices.startup.jed   = parseKc(su.jednorizove) || 6900;
-          currentPrices.mentoring.jed = parseKc(me.jednorizove) || 14700;
+          currentPrices.startup.jed   = parseKc(su.jednorizove || su.jednorazove) || 6900;
+          currentPrices.mentoring.jed = parseKc(me.jednorizove || me.jednorazove) || 15900;
           currentPrices.mentoring.spl = parseKc(me.splatky)     || 7500;
 
-          currentPrices.ultimate.jed  = parseKc(ul.jednorizove) || 22300;
-          currentPrices.ultimate.spl  = parseKc(ul.splatky)     || 11900;
+          currentPrices.ultimate.jed  = parseKc(ul.jednorizove || ul.jednorazove) || 19900;
+          currentPrices.ultimate.spl  = parseKc(ul.splatky)     || 9900;
 
           ['startup', 'mentoring', 'ultimate'].forEach(function(pkg) {
             originalClosedMap[pkg] = s[pkg] === 'uzavreny';
