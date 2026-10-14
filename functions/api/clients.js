@@ -13,6 +13,14 @@ function computeEndDate(startDateStr, pkgName) {
   return d.toISOString().split('T')[0];
 }
 
+function formatPackageTitle(pkgSlugOrName) {
+  const s = String(pkgSlugOrName || '').toUpperCase();
+  if (s.includes('ULTIMATE')) return 'ULTIMATE';
+  if (s.includes('MENTOR')) return 'MENTORING';
+  if (s.includes('START')) return 'START-UP';
+  return pkgSlugOrName || 'START-UP';
+}
+
 export async function onRequestGet(context) {
   try {
     const adminPass = context.request.headers.get('x-admin-pass');
@@ -31,7 +39,6 @@ export async function onRequestGet(context) {
 
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Doplnění výchozích dat, pokud chybí
     let changed = false;
     clients.forEach(c => {
       if (!c.id) {
@@ -78,6 +85,105 @@ export async function onRequestPost(context) {
     const rawClients = store ? await store.get('CLIENTS') : null;
     let clients = rawClients ? JSON.parse(rawClients) : [];
 
+    // ── SPECIÁLNÍ AKCE: NAVÁZÁNÍ NA STÁVAJÍCÍ KARTU KLIENTA (MERGE) ──
+    if (body.action === 'merge_client') {
+      const newOrderIdx = clients.findIndex(c => String(c.id) === String(body.newClientId));
+      const oldClientIdx = clients.findIndex(c => String(c.id) === String(body.targetClientId));
+
+      if (newOrderIdx === -1 || oldClientIdx === -1) {
+        return new Response(JSON.stringify({ ok: false, error: 'Záznamy pro navázání nebyly nalezeny.' }), { status: 404 });
+      }
+
+      const newOrder = clients[newOrderIdx];
+      const masterClient = clients[oldClientIdx];
+
+      // 1. Uložíme předchozí balíček do historie klienta
+      if (!Array.isArray(masterClient.history)) {
+        masterClient.history = [];
+      }
+      masterClient.history.push({
+        sluzba: formatPackageTitle(masterClient.sluzba_nazev || masterClient.sluzba),
+        start_date: masterClient.start_date || '',
+        end_date: masterClient.end_date || '',
+        archived_at: new Date().toISOString().split('T')[0]
+      });
+
+      // 2. Aktualizujeme hlavní záznam klienta novým balíčkem, termíny a diagnostikou
+      const newPkgName = formatPackageTitle(newOrder.sluzba_nazev || newOrder.sluzba);
+      const startD = newOrder.start_date || new Date().toISOString().split('T')[0];
+      const endD = computeEndDate(startD, newPkgName);
+
+      masterClient.sluzba = newPkgName.toLowerCase();
+      masterClient.sluzba_nazev = newPkgName;
+      masterClient.start_date = startD;
+      masterClient.end_date = endD;
+      masterClient.status = 'aktivni';
+      masterClient.pocita_se = true;
+      masterClient.is_installment = newOrder.is_installment;
+      masterClient.total_installments = newOrder.total_installments;
+      masterClient.current_installment = newOrder.current_installment;
+      masterClient.next_installment_date = newOrder.next_installment_date || null;
+
+      if (newOrder.fakturoid_id) {
+        masterClient.fakturoid_id = newOrder.fakturoid_id;
+        if (!Array.isArray(masterClient.invoice_ids)) masterClient.invoice_ids = [];
+        masterClient.invoice_ids.push(newOrder.fakturoid_id);
+      }
+      if (newOrder.diagnostika && newOrder.diagnostika.vaha) {
+        masterClient.diagnostika = newOrder.diagnostika;
+      }
+
+      // 3. Pošleme do Notionu aktualizaci karty + připíšeme nové měření "Vstupní dotazník (web)"
+      if (masterClient.notion_client_id) {
+        try {
+          const diag = newOrder.diagnostika || masterClient.diagnostika || {};
+          const vekNum = Number(diag.vek) || 0;
+          const isChild = vekNum > 0 && vekNum < 18;
+          const rawHeight = parseFloat(diag.vyska) || 0;
+          const vyskaM = rawHeight > 3 ? Number((rawHeight / 100).toFixed(2)) : rawHeight;
+
+          let pohlaviValue = diag.pohlavi;
+          if (isChild) {
+            if (pohlaviValue === 'Muž' || pohlaviValue === 'Muz' || pohlaviValue === 'Kluk') pohlaviValue = 'Kluk';
+            if (pohlaviValue === 'Žena' || pohlaviValue === 'Zena' || pohlaviValue === 'Holka') pohlaviValue = 'Holka';
+          }
+
+          await fetch('https://nutri-api.koblas-nutricni.workers.dev/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'update_client',
+              clientPageId: masterClient.notion_client_id,
+              sluzba: newPkgName,
+              startDate: startD,
+              endDate: endD,
+              status: 'aktivni',
+              appendMeasurement: true,
+              isChild: isChild,
+              vaha: parseFloat(diag.vaha) || 0,
+              vyska: vyskaM,
+              vek: vekNum,
+              pas: parseFloat(diag.obvod_pasu) || 0,
+              boky: parseFloat(diag.obvod_boku) || 0,
+              pohlavi: pohlaviValue
+            })
+          });
+        } catch (err) {
+          console.error('Chyba při navázání karty v Notionu:', err);
+        }
+      }
+
+      // 4. Odstraníme dočasný duplicitní řádek nové objednávky
+      clients.splice(newOrderIdx, 1);
+      await store.put('CLIENTS', JSON.stringify(clients));
+
+      return new Response(JSON.stringify({ ok: true, merged: true, client: masterClient }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // ── BĚŽNÁ ÚPRAVA ŘÁDKU V ADMINU (ULOŽENÍ TERMÍNŮ, STAVU NEBO BALÍČKU) ──
     const targetId = body.id ? String(body.id).trim() : '';
     const targetEmail = body.email ? String(body.email).toLowerCase().trim() : '';
 
@@ -97,13 +203,36 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Aktualizace termínů nebo stavu v KV databázi
-    if (body.start_date !== undefined) clients[idx].start_date = body.start_date;
-    if (body.end_date !== undefined) clients[idx].end_date = body.end_date;
-    if (body.status !== undefined) clients[idx].status = body.status;
-    if (body.note !== undefined) clients[idx].admin_note = body.note;
-
     const client = clients[idx];
+
+    // Pokud admin změnil typ balíčku, uložíme předchozí do historie (pokud se liší a klient už běžel)
+    if (body.sluzba !== undefined) {
+      const oldPkg = formatPackageTitle(client.sluzba_nazev || client.sluzba);
+      const newPkg = formatPackageTitle(body.sluzba);
+      if (oldPkg !== newPkg && client.start_date) {
+        if (!Array.isArray(client.history)) client.history = [];
+        client.history.push({
+          sluzba: oldPkg,
+          start_date: client.start_date,
+          end_date: client.end_date || '',
+          archived_at: new Date().toISOString().split('T')[0]
+        });
+      }
+      client.sluzba = newPkg.toLowerCase();
+      client.sluzba_nazev = newPkg;
+    }
+
+    if (body.start_date !== undefined) client.start_date = body.start_date;
+    if (body.end_date !== undefined) client.end_date = body.end_date;
+    if (body.status !== undefined) client.status = body.status;
+    if (body.note !== undefined) client.admin_note = body.note;
+
+    // Pokud admin kliknul na "Založit novou kartu" u známého klienta, vymažeme čekající merge
+    if (body.forceNewCard) {
+      delete client.pending_merge_target_id;
+      delete client.pending_merge_notion_id;
+    }
+
     const isGiftBuyer = client.is_gift && !client.is_gift_redemption;
 
     // ── SYNCHRONIZACE S NOTIONEM (Dárce ignorujeme, zapisujeme pouze skutečné klienty) ──
@@ -136,7 +265,7 @@ export async function onRequestPost(context) {
             })
           });
         } 
-        // 2. Klient je aktivní, ale v Notionu ještě není -> vytvoříme kartu klienta i vstupní měření
+        // 2. Klient je aktivní, ale v Notionu ještě není -> vytvoříme kartu klienta i čisté vstupní měření
         else if (client.status === 'aktivni') {
           const syncRes = await fetch('https://nutri-api.koblas-nutricni.workers.dev/', {
             method: 'POST',
@@ -148,7 +277,7 @@ export async function onRequestPost(context) {
               startDate: client.start_date || null,
               endDate: client.end_date || null,
               isChild: isChild,
-              zapis: `Vstupní dotazník (web) – ${(client.kupujici && client.kupujici.jmeno) || ''}`,
+              zapis: 'Vstupní dotazník (web)',
               datum: client.start_date || new Date().toISOString().split('T')[0],
               vaha: parseFloat(diag.vaha) || 0,
               vyska: vyskaM,
@@ -210,11 +339,9 @@ export async function onRequestDelete(context) {
       const cFakId = c.fakturoid_id ? String(c.fakturoid_id).trim() : '';
       const cEmail = (c.kupujici && c.kupujici.email) ? String(c.kupujici.email).toLowerCase().trim() : '';
 
-      // Shoda podle ID nebo Fakturoid ID
       if (targetId && targetId !== 'undefined' && targetId !== 'null' && (cId === targetId || cFakId === targetId)) {
         return false;
       }
-      // Shoda podle e-mailu kupujícího (spolehlivá pojistka pro testovací záznamy)
       if (targetEmail && cEmail === targetEmail) {
         return false;
       }
