@@ -501,14 +501,17 @@ function renderClientsTable() {
     var idKey = c.id || c.fakturoid_id || '';
     var clientEmail = (kup.email || '').replace(/'/g, "\\'");
 
-    var matchTargetId = c.pending_merge_target_id || null;
-    if (!matchTargetId && !c.is_gift && !c.notion_client_id && kup.email) {
+  var matchTargetId = c.pending_merge_target_id || null;
+    if (!matchTargetId && !c.is_gift && !c.notion_client_id && (kup.email || kup.jmeno)) {
       var olderMatch = loadedClientsCache.find(function(other) {
         if (String(other.id) === String(idKey)) return false;
         if (other.is_gift && !other.is_gift_redemption) return false;
         if (!other.notion_client_id) return false;
         var oEmail = (other.kupujici && other.kupujici.email) ? other.kupujici.email.toLowerCase().trim() : '';
-        return oEmail === kup.email.toLowerCase().trim();
+        var oName  = (other.kupujici && other.kupujici.jmeno) ? other.kupujici.jmeno.toLowerCase().trim() : '';
+        var curEmail = (kup.email || '').toLowerCase().trim();
+        var curName  = (kup.jmeno || '').toLowerCase().trim();
+        return (curEmail && oEmail === curEmail) || (curName && oName === curName);
       });
       if (olderMatch) matchTargetId = olderMatch.id;
     }
