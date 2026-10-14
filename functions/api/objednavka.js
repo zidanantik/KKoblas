@@ -577,7 +577,7 @@ export async function onRequestPost(context) {
 
    // ── Automatické odeslání do Notionu POUZE při uplatnění dárku (0 Kč) ──
     // Běžné objednávky čekají na úhradu a zapíší se automaticky až po připsání platby
-    if (isGiftRedemption) {
+    if (isZeroPayment && !isGift) {
       const syncNotion = async () => {
         try {
           const today = new Date().toISOString().split('T')[0];
