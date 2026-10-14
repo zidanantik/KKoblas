@@ -65,9 +65,25 @@
           </select>
         </label>
 
-        <div id="capTotalWrapper" style="display: flex; align-items: center; gap: 8px;">
+<div id="capTotalWrapper" style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 11px; color: #aaa;">MAX KLIENTŮ:</span>
           <input type="number" id="capTotalLimit" class="event-input" style="width: 70px; padding: 6px 8px; margin: 0; text-align: center;" min="1" max="100">
+        </div>
+
+        <div id="capPackagesWrapper" style="display: none; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <label style="font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 6px;">
+            START-UP:
+            <input type="number" id="capLimitStartup" class="event-input" style="width: 60px; padding: 6px 8px; margin: 0; text-align: center;" min="0" max="100" placeholder="0">
+          </label>
+          <label style="font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 6px;">
+            MENTORING:
+            <input type="number" id="capLimitMentoring" class="event-input" style="width: 60px; padding: 6px 8px; margin: 0; text-align: center;" min="0" max="100" placeholder="0">
+          </label>
+          <label style="font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 6px;">
+            ULTIMATE:
+            <input type="number" id="capLimitUltimate" class="event-input" style="width: 60px; padding: 6px 8px; margin: 0; text-align: center;" min="0" max="100" placeholder="0">
+          </label>
+          <span style="font-size: 10px; color: #777;">(0 = bez limitu)</span>
         </div>
 
         <button type="button" onclick="saveCapacitySettings()" class="event-save-btn" style="margin: 0; padding: 8px 16px;">💾 ULOŽIT KAPACITU</button>
