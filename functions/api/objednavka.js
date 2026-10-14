@@ -575,11 +575,34 @@ export async function onRequestPost(context) {
       await store.put('CLIENTS', JSON.stringify(clients));
     }
 
-   // ── Automatické odeslání do Notionu POUZE při uplatnění dárku (0 Kč) ──
-    // Běžné objednávky čekají na úhradu a zapíší se automaticky až po připsání platby
+  // ── Odeslání do Notionu při 0 Kč platbě (Ošetřeno proti duplicitám) ──
     if (isZeroPayment && !isGift) {
       const syncNotion = async () => {
         try {
+          const rawLatest = store ? await store.get('CLIENTS') : null;
+          let latestClients = rawLatest ? JSON.parse(rawLatest) : [];
+          const buyerEmail = String(body.Email || '').toLowerCase().trim();
+
+          // Kontrola, zda už tento e-mail v Notionu kartu má
+          const previousClient = latestClients.find(c => {
+            if (!c.notion_client_id) return false;
+            if (c.is_gift && !c.is_gift_redemption) return false;
+            const cEmail = (c.kupujici && c.kupujici.email) ? String(c.kupujici.email).toLowerCase().trim() : '';
+            return cEmail === buyerEmail;
+          });
+
+          if (previousClient) {
+            // Klient už v Notionu kartu má -> nezakládáme duplikát, připravíme k navázání v adminu
+            const curIdx = latestClients.findIndex(c => c.kupujici && c.kupujici.email && c.kupujici.email.toLowerCase().trim() === buyerEmail);
+            if (curIdx > -1) {
+              latestClients[curIdx].pending_merge_target_id = previousClient.id;
+              latestClients[curIdx].pending_merge_notion_id = previousClient.notion_client_id;
+              await store.put('CLIENTS', JSON.stringify(latestClients));
+            }
+            return;
+          }
+
+          // ÚPLNĚ NOVÝ KLIENT -> Založíme v Notionu novou kartu
           const today = new Date().toISOString().split('T')[0];
           const vekNum = Number(body.Vek) || 0;
           const isChild = vekNum > 0 && vekNum < 18;
@@ -598,7 +621,7 @@ export async function onRequestPost(context) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               createClient: true,
-              jmeno: body.Jmeno || 'Obdarovaný klient',
+              jmeno: body.Jmeno || 'Nový klient',
               sluzba: sluzbaNazev,
               startDate: today,
               endDate: computeEndDate(today, sluzbaNazev),
@@ -614,23 +637,22 @@ export async function onRequestPost(context) {
             })
           });
 
-          // Uložení vygenerovaného Notion ID k obdarovanému do KV databáze
           if (res.ok && store && body.Email) {
             const syncData = await res.json();
             if (syncData.clientPageId) {
-              const rawLatest = await store.get('CLIENTS');
-              if (rawLatest) {
-                let latestClients = JSON.parse(rawLatest);
-                const matchIdx = latestClients.findIndex(c => c.kupujici && c.kupujici.email && c.kupujici.email.toLowerCase() === body.Email.toLowerCase());
+              const freshRaw = await store.get('CLIENTS');
+              if (freshRaw) {
+                let freshClients = JSON.parse(freshRaw);
+                const matchIdx = freshClients.findIndex(c => c.kupujici && c.kupujici.email && c.kupujici.email.toLowerCase() === buyerEmail);
                 if (matchIdx > -1) {
-                  latestClients[matchIdx].notion_client_id = syncData.clientPageId;
-                  await store.put('CLIENTS', JSON.stringify(latestClients));
+                  freshClients[matchIdx].notion_client_id = syncData.clientPageId;
+                  await store.put('CLIENTS', JSON.stringify(freshClients));
                 }
               }
             }
           }
         } catch (err) {
-          console.error('Chyba při zápisu dárku do Notionu:', err);
+          console.error('Chyba při zápisu do Notionu:', err);
         }
       };
 
