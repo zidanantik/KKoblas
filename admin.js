@@ -440,6 +440,17 @@ function filterClientsTable() {
   renderClientsTable();
 }
 
+function computeDaysLeftHtml(endDateVal, isActive) {
+  if (!endDateVal || !isActive) return '';
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var endD = new Date(endDateVal + 'T00:00:00');
+  var diffDays = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
+  if (diffDays > 0) return ' <span style="color:#00ff66;font-size:10px;">(zbývá ' + diffDays + ' dní)</span>';
+  if (diffDays === 0) return ' <span style="color:#ffaa00;font-size:10px;">(končí dnes)</span>';
+  return ' <span style="color:#ff5555;font-size:10px;">(vypršelo)</span>';
+}
+
 function normalizePkgKey(str) {
   var s = String(str || '').toLowerCase();
   if (s.includes('ultimate')) return 'Ultimate';
@@ -549,12 +560,7 @@ function renderClientsTable() {
     var startDateVal = c.start_date || (c.datum_platby ? c.datum_platby.split('T')[0] : '');
     var endDateVal = c.end_date || '';
 
-    var daysLeft = '';
-    if (endDateVal && c.status === 'aktivni' && !isGiftDonorAlreadyClaimed) {
-      var diffDays = Math.ceil((new Date(endDateVal) - new Date()) / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) daysLeft = ' <span style="color:#00ff66;font-size:10px;">(zbývá ' + diffDays + ' dní)</span>';
-      else daysLeft = ' <span style="color:#ff5555;font-size:10px;">(vypršelo)</span>';
-    }
+    var daysLeftHtml = '<span id="daysleft-' + idKey + '">' + computeDaysLeftHtml(endDateVal, c.status === 'aktivni' && !isGiftDonorAlreadyClaimed) + '</span>';
 
     var currentPkgKey = normalizePkgKey(c.sluzba_nazev || c.sluzba);
     var pkgSelectHtml = isGiftDonorAlreadyClaimed
@@ -567,7 +573,7 @@ function renderClientsTable() {
 
     var statusSelectHtml = isGiftDonorAlreadyClaimed
       ? '<span style="color: #888; font-size: 11px;">✔ Uplatněno (Obdarovaný převzal)</span>'
-      : '<select id="status-' + idKey + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0;">'
+      : '<select id="status-' + idKey + '" onchange="handleEndDateManualChange(\'' + idKey + '\')" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0;">'
         + '<option value="aktivni"' + (c.status === 'aktivni' ? ' selected' : '') + '>● Aktivní</option>'
         + '<option value="ceka_na_platbu"' + (c.status === 'ceka_na_platbu' ? ' selected' : '') + '>○ Čeká na platbu</option>'
         + '<option value="ukonceno"' + (c.status === 'ukonceno' ? ' selected' : '') + '>× Ukončeno</option>'
@@ -579,7 +585,7 @@ function renderClientsTable() {
 
     var dateEndHtml = isGiftDonorAlreadyClaimed 
       ? '<span style="color:#666;font-size:11px;">—</span>'
-      : '<input type="date" id="end-' + idKey + '" value="' + endDateVal + '" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;">' + daysLeft;
+      : '<input type="date" id="end-' + idKey + '" value="' + endDateVal + '" onchange="handleEndDateManualChange(\'' + idKey + '\')" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0; width: 125px;">' + daysLeftHtml;
 
     var saveBtnHtml = isGiftDonorAlreadyClaimed
       ? ''
@@ -587,7 +593,7 @@ function renderClientsTable() {
 
     return '<tr style="border-bottom: 1px solid rgba(255,255,255,0.06);' + (isGiftDonorAlreadyClaimed ? 'opacity: 0.6;' : '') + '">'
       + '<td style="padding: 12px 10px;">' + clientHtml + (diagText ? '<div style="font-size: 10px; color: #777; margin-top: 4px;">' + diagText + '</div>' : '') + '</td>'
-      + '<td style="padding: 12px 10px;">' + pkgSelectHtml + '<br><span style="font-size:10px;color:#888;display:inline-block;margin-top:3px;">' + (c.is_installment ? 'Splátky (' + (c.current_installment || 1) + '/' + (c.total_installments || 1) + ')' : 'Jednorázově') + (c.pouzity_kod ? ' · Kód: ' + c.pouzity_kod : '') + '</span></td>'
+      + '<td style="padding: 12px 10px;">' + pkgSelectHtml + '<br><span style="font-size:10px;color:#888;display:inline-block;margin-top:3px;">' + (c.is_installment ? 'Splátky (' + (c.current_installment || 1) + '/' + (c.total_installments || 1) + ')' : 'Jednorázově') + '</span></td>'
       + '<td style="padding: 12px 10px;">' + dateStartHtml + '</td>'
       + '<td style="padding: 12px 10px;">' + dateEndHtml + '</td>'
       + '<td style="padding: 12px 10px;">' + statusSelectHtml + '</td>'
@@ -605,14 +611,25 @@ function handlePkgOrDateChange(idKey) {
   var pkgSelect  = document.getElementById('pkg-' + idKey);
   if (!startInput || !endInput || !startInput.value) return;
 
-  var d = new Date(startInput.value);
+  var d = new Date(startInput.value + 'T00:00:00');
   var s = pkgSelect ? String(pkgSelect.value).toLowerCase() : '';
   var months = 1;
   if (s.includes('ultimate')) months = 6;
   else if (s.includes('mentor')) months = 4;
 
   d.setMonth(d.getMonth() + months);
-  endInput.value = d.toISOString().split('T')[0];
+  var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+  endInput.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  handleEndDateManualChange(idKey);
+}
+
+function handleEndDateManualChange(idKey) {
+  var endInput   = document.getElementById('end-' + idKey);
+  var statusEl   = document.getElementById('status-' + idKey);
+  var daysSpan   = document.getElementById('daysleft-' + idKey);
+  if (!endInput || !daysSpan) return;
+  var isActive = !statusEl || statusEl.value === 'aktivni';
+  daysSpan.innerHTML = computeDaysLeftHtml(endInput.value, isActive);
 }
 
 async function mergeClientCards(newClientId, targetClientId) {
