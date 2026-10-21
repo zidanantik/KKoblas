@@ -474,12 +474,13 @@ function renderClientsTable() {
     if (filter === 'all') return true;
     var isGiftAlreadyRedeemed = c.is_gift && c.kod_voucheru && redeemedCodes.has(String(c.kod_voucheru).trim().toUpperCase());
     var isActive = c.status === 'aktivni' && (!c.end_date || c.end_date >= todayStr) && !isGiftAlreadyRedeemed;
-    var isWaiting = c.status === 'ceka_na_platbu';
-    var isEnded = c.status === 'ukonceno' || (c.end_date && c.end_date < todayStr) || isGiftAlreadyRedeemed;
+var isWaiting = c.status === 'ceka_na_platbu';
+    var isExpiredPayment = c.status === 'expirovana_platba';
+    var isEnded = c.status === 'ukonceno' || c.status === 'zamitnuto' || (c.end_date && c.end_date < todayStr) || isGiftAlreadyRedeemed;
 
-    if (filter === 'active') return isActive || isWaiting;
+    if (filter === 'active') return isActive || isWaiting || isExpiredPayment;
     if (filter === 'only_active') return isActive;
-    if (filter === 'waiting') return isWaiting;
+    if (filter === 'waiting') return isWaiting || isExpiredPayment;
     if (filter === 'ended') return isEnded;
     return true;
   });
