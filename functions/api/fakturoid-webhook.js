@@ -445,15 +445,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
-    if (!sender.includes('<')) {
-      const cleanEmail = sender.includes('@') ? sender : `info@${sender}`;
-      sender = `Kryštof Koblas <${cleanEmail}>`;
-    }
-
-    const pkgSlug = normalizePkg(client.sluzba || client.sluzba_nazev);
-    const packageName = client.sluzba_nazev || 'nutriční program';
-
+    
     // ── SCÉNÁŘ A: DÁRKOVÝ POUKAZ ──
     if (client.is_gift) {
       client.status = 'aktivni';
