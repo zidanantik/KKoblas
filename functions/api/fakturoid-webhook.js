@@ -352,7 +352,7 @@ export async function onRequestPost(context) {
 
     const client = clients[clientIndex];
 
-    // Ochrana proti duplicitním webhookům
+// Ochrana proti duplicitním webhookům
     if (!Array.isArray(client.paid_invoice_ids)) {
       client.paid_invoice_ids = [];
     }
@@ -363,6 +363,87 @@ export async function onRequestPost(context) {
 
     const resendKey = context.env.RESEND_API_KEY;
     const pdfshiftKey = context.env.PDFSHIFT_API_KEY;
+
+    let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
+    if (!sender.includes('<')) {
+      const cleanEmail = sender.includes('@') ? sender : `info@${sender}`;
+      sender = `Kryštof Koblas <${cleanEmail}>`;
+    }
+
+    const pkgSlug = normalizePkg(client.sluzba || client.sluzba_nazev);
+    const packageName = client.sluzba_nazev || 'nutriční program';
+
+    // ── KONTROLA EXPIRACE FAKTURY (PO SPLATNOSTI O VÍCE NEŽ 7 DNÍ) ──
+    const invoiceDueDate = invoice.due_on || invoice.due_date;
+    let isPaymentExpired = false;
+    let daysOverdue = 0;
+
+    if (invoiceDueDate) {
+      const dueD = new Date(invoiceDueDate + 'T23:59:59');
+      const paidD = invoice.paid_at ? new Date(invoice.paid_at) : new Date();
+      const diffMs = paidD.getTime() - dueD.getTime();
+      daysOverdue = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      // Pokud je platba připsána více než 7 dní po datu splatnosti
+      if (daysOverdue > 7) {
+        isPaymentExpired = true;
+      }
+    }
+
+    // Pokud je faktura po expiraci, zastavíme automatickou aktivaci a vyžádáme ruční schválení v adminu
+    if (isPaymentExpired) {
+      client.status = 'expirovana_platba';
+      client.datum_platby = new Date().toISOString();
+      client.pocita_se = false;
+      client.expired_payment_info = {
+        invoice_id: invoiceId,
+        due_on: invoiceDueDate,
+        days_overdue: daysOverdue,
+        total_amount: invoice.total || invoice.subtotal || 'neuvedeno'
+      };
+
+      await context.env.STATUS_STORE.put('CLIENTS', JSON.stringify(clients));
+
+      // Notifikace majiteli o nutnosti prověření
+      if (resendKey) {
+        const kupName = (client.kupujici && client.kupujici.jmeno) || 'Neznámý plátce';
+        const kupEmail = (client.kupujici && client.kupujici.email) || '';
+        const kupTel = (client.kupujici && client.kupujici.telefon) || '';
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: sender,
+            to: [OWNER_EMAIL],
+            reply_to: kupEmail || OWNER_EMAIL,
+            subject: `⚠️ POZOR: Platba po splatnosti (${daysOverdue} dní) – ${packageName} – ${kupName}`,
+            html: `
+              <div style="font-family:sans-serif;max-width:640px;color:#222;line-height:1.6;">
+                <h3 style="color:#e67e22;margin-top:0;">Přijata platba po expiraci faktury!</h3>
+                <p>Plátce <strong>${kupName}</strong> (${kupEmail}, ${kupTel}) právě uhradil fakturu za <strong>${packageName}</strong>, která byla splatná dne <strong>${invoiceDueDate}</strong> (zpoždění o <strong>${daysOverdue} dní</strong>).</p>
+                <div style="background:#fff3cd;color:#856404;padding:12px 15px;border-left:4px solid #ffeeba;border-radius:4px;margin:15px 0;">
+                  🛑 <strong>Automatická aktivace byla pozastavena.</strong><br>
+                  Klient <strong>nebyl</strong> zapsán do Notionu, neodečetl kapacitu a nebyl mu odeslán uvítací e-mail / voucher.<br><br>
+                  Otevři si <a href="https://koblas-nutricni.cz/admin.html" style="font-weight:bold;color:#856404;">administraci webu</a> a rozhodni:
+                  <ul>
+                    <li><strong>Schválit a aktivovat:</strong> Klient se aktivuje, zapíše se do Notionu (nebo vygeneruje poukaz) a odešle se uvítací mail.</li>
+                    <li><strong>Zamítnout / Vráceno:</strong> Objednávku můžeš odmítnout a platbu vrátit z bankovního účtu.</li>
+                  </ul>
+                </div>
+              </div>
+            `
+          })
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true, heldForReview: true, daysOverdue: daysOverdue }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
     if (!sender.includes('<')) {
