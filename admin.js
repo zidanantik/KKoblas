@@ -556,6 +556,16 @@ var isWaiting = c.status === 'ceka_na_platbu';
           + '<button type="button" onclick="forceCreateNewCard(\'' + idKey + '\')" style="background: #222; color: #ccc; border: 1px solid #555; padding: 3px 8px; border-radius: 3px; font-size: 10px; cursor: pointer;">➕ Založit novou kartu</button>'
           + '</div>';
       }
+      if (c.status === 'expirovana_platba') {
+        var expInfo = c.expired_payment_info || {};
+        var daysText = expInfo.days_overdue ? ('o ' + expInfo.days_overdue + ' dní po splatnosti') : 'po expiraci faktury';
+        clientHtml += '<div style="margin-top: 8px; padding: 8px 10px; background: rgba(231,76,60,0.12); border: 1.5px solid #e74c3c; border-radius: 4px;">'
+          + '<div style="font-size: 11px; color: #ff6b6b; font-weight: bold; margin-bottom: 4px;">⚠️ PLATBA PŘIJATA PO SPLATNOSTI (' + daysText + ')</div>'
+          + '<div style="font-size: 10px; color: #ccc; margin-bottom: 6px;">Automatická aktivace byla pozastavena. Zkontroluj kapacitu a rozhodni:</div>'
+          + '<button type="button" onclick="approveExpiredPayment(\'' + idKey + '\')" style="background: #2ecc71; color: #000; border: none; padding: 4px 8px; border-radius: 3px; font-weight: bold; font-size: 10.5px; cursor: pointer; margin-right: 6px;">✅ Schválit a aktivovat</button>'
+          + '<button type="button" onclick="rejectExpiredPayment(\'' + idKey + '\')" style="background: rgba(231,76,60,0.2); color: #ff6b6b; border: 1px solid #e74c3c; padding: 4px 8px; border-radius: 3px; font-size: 10.5px; cursor: pointer;">❌ Zamítnout / Vráceno</button>'
+          + '</div>';
+      }
     }
 
     var diag = c.diagnostika || {};
@@ -575,11 +585,13 @@ var isWaiting = c.status === 'ceka_na_platbu';
         + '<option value="Ultimate"' + (currentPkgKey === 'Ultimate' ? ' selected' : '') + '>Ultimate (6m)</option>'
         + '</select>';
 
-    var statusSelectHtml = isGiftDonorAlreadyClaimed
+var statusSelectHtml = isGiftDonorAlreadyClaimed
       ? '<span style="color: #888; font-size: 11px;">✔ Uplatněno (Obdarovaný převzal)</span>'
       : '<select id="status-' + idKey + '" onchange="handleEndDateManualChange(\'' + idKey + '\')" class="event-input" style="padding: 4px 6px; font-size: 11px; margin: 0;">'
         + '<option value="aktivni"' + (c.status === 'aktivni' ? ' selected' : '') + '>● Aktivní</option>'
         + '<option value="ceka_na_platbu"' + (c.status === 'ceka_na_platbu' ? ' selected' : '') + '>○ Čeká na platbu</option>'
+        + '<option value="expirovana_platba"' + (c.status === 'expirovana_platba' ? ' selected' : '') + '>⚠️ Expirovaná platba</option>'
+        + '<option value="zamitnuto"' + (c.status === 'zamitnuto' ? ' selected' : '') + '>⛔ Zamítnuto / Vráceno</option>'
         + '<option value="ukonceno"' + (c.status === 'ukonceno' ? ' selected' : '') + '>× Ukončeno</option>'
         + '</select>';
 
@@ -662,6 +674,39 @@ async function forceCreateNewCard(idKey) {
       body: JSON.stringify({ id: idKey, status: 'aktivni', forceNewCard: true })
     });
     if (!res.ok) throw new Error('Chyba při zakládání nové karty');
+    await loadClients();
+    await loadStatus();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+async function approveExpiredPayment(idKey) {
+  if (!confirm('Opravdu chceš tuto opožděnou platbu schválit a klienta aktivovat?\n\n• Založí se karta v Notionu (nebo aktivuje dárkový poukaz).\n• Klientovi odejde uvítací e-mail se ZOFem a InBody.\n• Začne se počítat do aktivní kapacity.')) return;
+
+  try {
+    var res = await fetch('/api/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pass': getAdminAuthPass() },
+      body: JSON.stringify({ action: 'approve_expired', id: idKey })
+    });
+    if (!res.ok) throw new Error('Chyba při schvalování platby');
+    await loadClients();
+    await loadStatus();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function rejectExpiredPayment(idKey) {
+  if (!confirm('Označit tuto platbu jako Zamítnutou?\n\nKlient zůstane v historii se statusem "Zamítnuto / Vráceno", neovlivní kapacitu a budeš moci platbu vrátit na bankovní účet.')) return;
+
+  try {
+    var res = await fetch('/api/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pass': getAdminAuthPass() },
+      body: JSON.stringify({ id: idKey, status: 'zamitnuto' })
+    });
+    if (!res.ok) throw new Error('Chyba při změně statusu');
     await loadClients();
     await loadStatus();
   } catch (err) {
