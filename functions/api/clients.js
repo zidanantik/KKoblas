@@ -193,6 +193,186 @@ export async function onRequestPost(context) {
       });
     }
 
+    // ── SPECIÁLNÍ AKCE: SCHVÁLENÍ PLATBY PO EXPIRACI ──
+    if (body.action === 'approve_expired') {
+      const targetId = body.id ? String(body.id).trim() : '';
+      const idx = clients.findIndex(c => String(c.id) === targetId || String(c.fakturoid_id) === targetId);
+
+      if (idx === -1) {
+        return new Response(JSON.stringify({ ok: false, error: 'Klient nenalezen' }), { status: 404 });
+      }
+
+      const client = clients[idx];
+      const resendKey = context.env.RESEND_API_KEY;
+      const pdfshiftKey = context.env.PDFSHIFT_API_KEY;
+      const OWNER_EMAIL = 'koblas.nutricni@gmail.com';
+
+      let sender = (context.env.FROM_DOMAIN || 'info@koblas-nutricni.cz').trim();
+      if (!sender.includes('<')) {
+        const cleanEmail = sender.includes('@') ? sender : `info@${sender}`;
+        sender = `Kryštof Koblas <${cleanEmail}>`;
+      }
+
+      const pkgSlug = formatPackageTitle(client.sluzba_nazev || client.sluzba).toLowerCase().replace(/[^a-z]/g, '');
+      const packageName = client.sluzba_nazev || 'nutriční program';
+      const todayYMD = new Date().toISOString().split('T')[0];
+
+      // A) DÁRKOVÝ POUKAZ
+      if (client.is_gift && !client.is_gift_redemption) {
+        client.status = 'aktivni';
+        client.pocita_se = true;
+        delete client.expired_payment_info;
+
+        if (!client.kod_voucheru) {
+          const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+          let gCode = '';
+          for (let i = 0; i < 6; i++) gCode += chars.charAt(Math.floor(Math.random() * chars.length));
+          client.kod_voucheru = 'DAR-' + gCode;
+        }
+
+        const giftCode = client.kod_voucheru;
+        const rawCodes = await store.get('PROMO_CODES');
+        let codes = rawCodes ? JSON.parse(rawCodes) : [];
+
+        const buyerName = (client.kupujici && client.kupujici.jmeno) ? client.kupujici.jmeno : 'Dárkový nákup';
+        const purchaseDate = new Date().toLocaleDateString('cs-CZ');
+
+        if (!codes.some(c => c.code === giftCode)) {
+          codes.unshift({
+            id: crypto.randomUUID(),
+            code: giftCode,
+            type: 'gift',
+            value: 100,
+            oneTime: true,
+            splatky: false,
+            darekOnly: false,
+            packages: [pkgSlug || 'startup'],
+            active: true,
+            used: false,
+            usedCount: 0,
+            createdAt: new Date().toISOString(),
+            note: `${buyerName} (${purchaseDate})`
+          });
+          await store.put('PROMO_CODES', JSON.stringify(codes));
+        }
+
+        if (resendKey && client.kupujici && client.kupujici.email) {
+          const redeemUrl = `https://koblas-nutricni.cz/objednavka.html?sluzba=${encodeURIComponent(pkgSlug)}&kod=${encodeURIComponent(giftCode)}`;
+          const voucherWebUrl = `https://koblas-nutricni.cz/voucher.html?kod=${encodeURIComponent(giftCode)}`;
+
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: sender,
+              to: [client.kupujici.email],
+              reply_to: OWNER_EMAIL,
+              subject: `Dárkový poukaz – ${packageName} (Kód: ${giftCode})`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; color: #222; line-height: 1.6; font-size: 15px;">
+                  <p>Ahoj ${client.kupujici.jmeno},</p>
+                  <p>děkuji za úhradu dárkového poukazu na službu <strong>${packageName}</strong>.</p>
+                  <div style="background: #141414; border: 2px solid #c88a2c; padding: 25px; border-radius: 8px; margin: 25px 0; text-align: center; color: #fff;">
+                    <div style="font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 2px;">Kód dárkového poukazu</div>
+                    <div style="font-family: monospace; font-size: 28px; font-weight: bold; color: #ff9900; letter-spacing: 4px; margin: 10px 0;">${giftCode}</div>
+                    <div style="margin-top: 18px;">
+                      <a href="${voucherWebUrl}" target="_blank" style="display: inline-block; background: #ff9900; color: #000; font-weight: bold; font-family: monospace; font-size: 13px; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
+                        🖨 OTEVŘÍT / VYTISKNOUT POUKAZ ON-LINE →
+                      </a>
+                    </div>
+                  </div>
+                  <p style="font-size: 14px; color: #555;">Obdarovaný si může balíček aktivovat na adrese: <a href="${redeemUrl}">${redeemUrl}</a></p>
+                  <p>S pozdravem,<br><strong>Kryštof Koblas</strong><br>koblas-nutricni.cz</p>
+                </div>
+              `
+            })
+          });
+        }
+
+      } else {
+        // B) BĚŽNÝ PROGRAM
+        client.status = 'aktivni';
+        client.pocita_se = true;
+        client.start_date = todayYMD;
+        client.end_date = computeEndDate(todayYMD, client.sluzba_nazev || client.sluzba);
+        delete client.expired_payment_info;
+
+        try {
+          const diag = client.diagnostika || {};
+          const vekNum = Number(diag.vek) || 0;
+          const isChild = vekNum > 0 && vekNum < 18;
+          const rawHeight = parseFloat(diag.vyska) || 0;
+          const vyskaM = rawHeight > 3 ? Number((rawHeight / 100).toFixed(2)) : rawHeight;
+
+          let pohlaviValue = diag.pohlavi;
+          if (isChild) {
+            if (pohlaviValue === 'Muž' || pohlaviValue === 'Muz' || pohlaviValue === 'Kluk') pohlaviValue = 'Kluk';
+            if (pohlaviValue === 'Žena' || pohlaviValue === 'Zena' || pohlaviValue === 'Holka') pohlaviValue = 'Holka';
+          }
+
+          const syncRes = await fetch('https://nutri-api.koblas-nutricni.workers.dev/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              createClient: true,
+              jmeno: (client.kupujici && client.kupujici.jmeno) || 'Nový klient',
+              sluzba: client.sluzba_nazev || client.sluzba || '',
+              startDate: client.start_date,
+              endDate: client.end_date,
+              isChild: isChild,
+              zapis: 'Vstupní dotazník (web)',
+              datum: client.start_date,
+              vaha: parseFloat(diag.vaha) || 0,
+              vyska: vyskaM,
+              vek: vekNum,
+              pas: parseFloat(diag.obvod_pasu || diag.pas) || 0,
+              boky: parseFloat(diag.obvod_boku || diag.boky) || 0,
+              pohlavi: pohlaviValue || 'Muž'
+            })
+          });
+
+          if (syncRes.ok) {
+            const syncData = await syncRes.json();
+            if (syncData.clientPageId) client.notion_client_id = syncData.clientPageId;
+          }
+        } catch (notionErr) {
+          console.error('Chyba při dodatečném zápisu do Notionu:', notionErr);
+        }
+
+        if (resendKey && client.kupujici && client.kupujici.email) {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: sender,
+              to: [client.kupujici.email],
+              reply_to: OWNER_EMAIL,
+              subject: `Podklady pro zahájení spolupráce – ${packageName}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; color: #222; line-height: 1.6; font-size: 15px;">
+                  <p>Ahoj ${client.kupujici.jmeno},</p>
+                  <p>tvoje platba za balíček <strong>${packageName}</strong> byla schválena a oficiálně odmáváme startovní čáru!</p>
+                  <p style="font-weight: bold; margin-top: 20px;">Dva důležité úkoly před naší první online schůzkou:</p>
+                  <ol style="padding-left: 20px;">
+                    <li style="margin-bottom: 8px;"><strong>Zápis jídelníčku:</strong> Měj ready aspoň 3 dny zápisu v aplikaci <a href="https://www.zofapp.cz/" style="color: #0066cc;">zofapp.cz</a>.</li>
+                    <li style="margin-bottom: 8px;"><strong>Měření InBody:</strong> Zařiď si prosím ve svém okolí měření na InBody a výsledky mi pošli na WhatsApp nebo na e-mail: <strong>koblas.nutricni@gmail.com</strong>.</li>
+                  </ol>
+                  <p>Co nejdříve se ti ozvu na WhatsApp, abychom domluvili termín úvodní konzultace.</p>
+                  <p style="margin-top: 25px;">Kryštof Koblas<br><span style="color: #666; font-size: 13px;">Nutriční poradce | koblas-nutricni.cz</span></p>
+                </div>
+              `
+            })
+          });
+        }
+      }
+
+      await store.put('CLIENTS', JSON.stringify(clients));
+      return new Response(JSON.stringify({ ok: true, approved: true, client: client }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     // ── BĚŽNÁ ÚPRAVA ŘÁDKU V ADMINU (ULOŽENÍ TERMÍNŮ, STAVU NEBO BALÍČKU) ──
     const targetId = body.id ? String(body.id).trim() : '';
 
