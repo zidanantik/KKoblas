@@ -285,7 +285,11 @@
         <form id="orderForm" novalidate>
           <input type="hidden" name="subject" id="emailSubject" value="Nova objednavka – KKoblas">
           <input type="hidden" name="from_name" value="Web KKoblas">
-          <input type="hidden" name="botcheck" value="" style="display:none">
+         <!-- Honeypot ochrana proti botům -->
+          <div aria-hidden="true" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; height: 0; width: 0; overflow: hidden;">
+            <label for="form_hp_check">Nevyplňujte toto pole</label>
+            <input type="text" id="form_hp_check" name="form_hp_check" tabindex="-1" autocomplete="off">
+          </div>
           <input type="hidden" name="Sluzba" id="hiddenSluzba">
           <input type="hidden" name="Platba" id="hiddenPlatba">
           <input type="hidden" name="Cena" id="hiddenPrice">
