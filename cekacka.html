@@ -98,7 +98,11 @@
           <!-- Web3Forms skrytá pole -->
           <input type="hidden" name="subject" value="Nova zprava z cekaci listiny – KKoblas">
           <input type="hidden" name="from_name" value="Web KKoblas">
-          <input type="hidden" name="botcheck" value="" style="display:none">
+         <!-- Web3Forms Honeypot ochrana proti botům -->
+          <div aria-hidden="true" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; height: 0; width: 0; overflow: hidden;">
+            <label for="ck-botcheck">Nevyplňujte toto pole</label>
+            <input type="text" id="ck-botcheck" name="botcheck" tabindex="-1" autocomplete="off">
+          </div>
 
           <div class="ck-grid">
             <div class="form-group">
