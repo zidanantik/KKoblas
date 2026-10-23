@@ -97,3 +97,43 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => { frame = requestAnimationFrame(floatTick); }, i * 120 + 600);
   });
 });
+
+// ── Cookie Consent Banner & Google Consent Mode v2 ──
+(function() {
+  var banner = document.getElementById('cookieBanner');
+  if (!banner) return;
+
+  var consent = localStorage.getItem('kk_cookie_consent');
+
+  if (!consent) {
+    banner.hidden = false;
+  }
+
+  document.getElementById('cookieAccept')?.addEventListener('click', function() {
+    localStorage.setItem('kk_cookie_consent', 'granted');
+    banner.hidden = true;
+
+    if (typeof gtag === 'function') {
+      gtag('consent', 'update', {
+        'ad_storage': 'granted',
+        'ad_user_data': 'granted',
+        'ad_personalization': 'granted',
+        'analytics_storage': 'granted'
+      });
+    }
+  });
+
+  document.getElementById('cookieReject')?.addEventListener('click', function() {
+    localStorage.setItem('kk_cookie_consent', 'denied');
+    banner.hidden = true;
+
+    if (typeof gtag === 'function') {
+      gtag('consent', 'update', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied'
+      });
+    }
+  });
+})();
