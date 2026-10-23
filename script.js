@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ── Cookie Consent Banner & Google Consent Mode v2 ──
-(function() {
+document.addEventListener("DOMContentLoaded", function() {
   var banner = document.getElementById('cookieBanner');
   if (!banner) return;
 
@@ -136,4 +136,4 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   });
-})();
+});
